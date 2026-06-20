@@ -1,0 +1,128 @@
+# SoDamHarness 🛟
+
+> 한국어 문서: [README.md](./README.md) (Korean is the primary, authoritative version)
+
+**An "AI safety belt" for complete beginners** — install it into Claude Code with one click, and before the AI does something **irreversible** (deleting or overwriting files), it **automatically stops, asks, and backs up first**. If something goes wrong, you can **undo in one step**.
+
+> Built so that people new to both coding and AI (teens included) can follow along as-is.
+
+---
+
+## What you get
+
+- 🛑 **Auto-stop on risky actions**: dangerous work is halted **before** it runs. Hard-to-reverse things like **deleting a whole folder** are **blocked outright**; file deletes/overwrites are **backed up first, then confirmed**.
+- 💾 **Automatic backup**: a copy is made **right before** a risky action.
+- ↩️ **Undo**: if something goes wrong, run `/sodamharness:undo` to restore from a backup.
+- 🗣️ **Plain Korean**: the AI explains in **easy words** instead of developer jargon.
+- 🔒 **The tool itself is safe**: it **never touches** your passwords, tokens, or login files, and **never sends** your data anywhere.
+
+> ⚠️ **Honest limit**: it blocks defined risks but **cannot block 100% of all cases**. It is a reference-grade safety belt; the final responsibility is the user's.
+
+---
+
+## 1. Prerequisites
+
+| Needed | What it is | Check / Install |
+|---|---|---|
+| **Claude Code** | The AI coding tool this plugin attaches to | OK if you already use it |
+| **Node.js** (18+) | The engine the safety features run on | If missing, install **LTS** from https://nodejs.org |
+| OS | **Windows / Mac** | Both supported (verified on Windows; Mac uses the same code, real-device check pending) |
+
+After installing, check with `/sodamharness:status`.
+
+---
+
+## 2. Install (click by click)
+
+1. Open Claude Code.
+2. Add **SoDamHarness** from the marketplace (plugin store).
+3. After installing, **fully close and reopen Claude Code** to turn the safety belt on.
+4. Type `/sodamharness:install` for a getting-started guide.
+
+> On first run, Windows **SmartScreen** / Mac **Gatekeeper** may warn you. If you got it from the official source, click "Run anyway". (If the source is suspicious, stop.)
+
+---
+
+## 3. Quick start (5 minutes)
+
+The easiest way is to **just ask the AI in plain language**.
+
+1. Make an empty practice folder and open Claude Code inside it.
+2. Try: **"Make a simple intro page here."**
+3. Try something risky: **"Delete this whole folder."**
+   → The safety belt **blocks it**, saying **"Deleting a whole folder is blocked."**
+4. Try deleting one file: **"Delete the file I just made."**
+   → It is **auto-backed-up** right before deletion. If it was a mistake, run **`/sodamharness:undo`** → restore by picking from the backup list.
+
+---
+
+## 4. How it works
+
+- **Plain tone**: the AI always speaks in easy Korean and unpacks hard terms.
+- **Block / confirm**: risky work stops **before** running. **Irreversible things like whole-folder/recursive deletion are blocked (`deny`)**; file deletes/overwrites are **backed up then confirmed (`ask`)**.
+- **Auto-backup**: right before a risky action, the target **file** is copied to the backup folder. (A folder itself can't be backed up, which is why folder deletion is blocked.)
+- **Undo**: shows the **backup list and lets you pick what you just lost** to restore. (So it never restores the wrong thing even when many tasks are mixed.)
+- **Self-check**: tells you the current state and the next thing to do.
+
+### Workflow
+```
+Install → (ask the AI in plain language) → on risky action: stop, back up, confirm
+   → if an accident happens, /sodamharness:undo to restore
+   → if stuck, /sodamharness:status (state) · /sodamharness:fix (troubleshoot)
+```
+
+---
+
+## 5. Commands
+
+| Command | When to use |
+|---|---|
+| `/sodamharness:install` | Getting-started guide right after install |
+| `/sodamharness:status` | Current state + what to do next (self-check) |
+| `/sodamharness:fix` | Symptom-based help when something breaks |
+| `/sodamharness:undo` | Undo (restore by **picking** from the backup list) |
+
+---
+
+## 6. File / backup location
+
+- **Backup folder** (auto-created): inside your home folder, `.sodamharness/backups/`
+  - Windows: `C:\Users\<name>\.sodamharness\backups\`
+  - Mac: `/Users/<name>/.sodamharness/backups/`
+- This folder **never stores passwords or tokens.** Only backup files go here.
+
+---
+
+## 7. Troubleshooting
+
+| Symptom | Why | Do this now |
+|---|---|---|
+| Risky action wasn't stopped | Plugin off, or an unknown risk pattern | Restart Claude Code → `/sodamharness:status` |
+| Asks too often | Safety-first (L1) default | Adjust strength once you're used to it (coming later) |
+| "Node.js missing" | The safety hook runs on Node | Install LTS from https://nodejs.org, then restart |
+| Run-block warning (SmartScreen/Gatekeeper) | OS asks once for a new program | If from the official source, "Run anyway" |
+| Want to undo | — | `/sodamharness:undo` |
+| Backup folder error (permission/space) | Disk full / permissions | Free space and retry (if backup fails, the risky action is auto-stopped) |
+| Garbled Korean | Encoding | This plugin is Node.js so it usually doesn't break; otherwise `/sodamharness:fix` |
+| Explanations are too hard (tone) | The easy tone is delivered via a Skill and **may not always auto-activate** | Just tell the AI **"Explain it simply"** |
+
+---
+
+## 8. Uninstall
+
+1. Remove SoDamHarness from the Claude Code marketplace.
+2. To delete backups, remove the `.sodamharness/` folder in your home directory. (Leave it to keep your backups.)
+
+---
+
+## 9. Safety & License (one-liners)
+
+- **Safety**: this tool doesn't access tokens/secrets and doesn't send data out. But "100% accident prevention" is not guaranteed (reference use, user's responsibility).
+- **About confirmation prompts**: if you run Claude Code in **"auto-approve" mode**, the "Are you sure?" prompt may pass automatically. Even so, **dangerous things like whole-folder deletion are still blocked** in that mode. To always see the prompt, use the **default mode**.
+- **License**: **Apache-2.0** — modify, copy, redistribute, **commercial use & client delivery allowed** (keep LICENSE/NOTICE). See [LICENSE](./LICENSE), [NOTICE](./NOTICE).
+- **Disclaimer**: no warranty · limited liability · **not legal advice**. AI model terms (Anthropic/OpenAI), API fees, and third-party service terms must be **checked separately by the user**.
+- Third-party trademarks ("Claude Code", etc.) belong to their owners; this product is **not affiliated** with them.
+
+---
+
+*SoDamHarness — by SoDam AI Studio · Phase 1 (MVP)*
