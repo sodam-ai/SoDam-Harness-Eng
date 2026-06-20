@@ -46,10 +46,10 @@
 function guard(input):
     cmd, paths = parse(input)            # 검사만, 절대 실행/eval 금지 (H 보안)
 
-    # 1) 경로 안전 (손시뮬 H4)
+    # 1) 경로 안전 (손시뮬 H4 — 2026-06-21 실측: outsideWorkspace 무조건 deny는 과잉차단이라 폐기)
     for p in paths:
-        if has(p, "..") or outsideWorkspace(p) or isSymlink(p):
-            return DENY("작업 폴더 밖이라 안전을 위해 막았어요")
+        if isSensitive(p) or isSymlink(p):   # 시스템·홈·자격증명 폴더·드라이브 루트 / 바로가기
+            return DENY("시스템·홈 등 민감한 위치라 안전을 위해 막았어요")
 
     # 2) 위험 등급 분류 (패턴은 초안 — 첫 테스트에서 확정)
     if matchesCatastrophic(cmd):         # rm -rf ~, 디스크 직접 쓰기, 시스템 폴더 삭제 등
@@ -66,6 +66,7 @@ function guard(input):
 #  덮어쓰기: >  리다이렉트, 강제 write, git checkout -- (대량)
 #  배포:   git push --force, *deploy*, vercel/netlify/firebase deploy
 #  외부전송: curl/wget POST, scp, fetch(외부 URL) 업로드
+#  [2026-06-21 실측 보강] 폴더 통째/재귀 삭제는 ask가 아니라 deny(백업 불가). Add-Type/VisualBasic·[IO]::Delete·shutil.rmtree·node fs.rm 등 우회 삭제도 탐지.
 ```
 
 **불변 규칙(보안)**: 경로는 `os.homedir()` 사용·하드코딩 금지 / `windowsHide:true` / 외부 코드 다운로드·실행 0 / 토큰·인증파일 접근 0.
@@ -99,7 +100,7 @@ function guard(input):
 | H1 설치 진입점 | install 명령 + README 클릭 단위(정확한 명령은 Phase 1 확인) |
 | H2 기존 설정 충돌 | §1: **덮어쓰기 X·병합/추가만**, 충돌 알림 |
 | H3 확인창 한국어 | §2: 훅 **사유 메시지 한국어**(프롬프트 자체 문구 범위는 Phase 1 확인) |
-| H4 보호 범위 | §2: 작업 폴더 밖·`..`·심볼릭 → deny |
+| H4 보호 범위 | §2: **민감 위치(시스템·홈·자격증명·드라이브 루트)·심볼릭 → deny** (2026-06-21 실측: outsideWorkspace 무조건 deny는 과잉차단이라 폐기). 폴더 통째/재귀 삭제도 deny |
 | H5 되돌리기 인지 | §3: AI가 **먼저 안내** + undo 명령 |
 | H6 Node 점검 | §4: status가 Node 유무 점검·안내 |
 | H7 백업 실패 | §2: 백업 실패 시 **위험 작업 중단(deny)** |
@@ -110,4 +111,4 @@ function guard(input):
 - 위험 패턴 **정확한 목록**(실제 명령 테스트로 확정).
 - Claude Code **권한 프롬프트 문구** 커스터마이즈 가능 범위(H3).
 - `hooks.json` matcher 범위(Bash/Write/Edit 등 어디까지 감시).
-- "작업 폴더(workspace)" 판정 방법(cwd 기준 정의).
+- ~~"작업 폴더(workspace)" 판정 방법~~ → **해결(2026-06-21)**: workspace 컨테인먼트 폐기, **민감 위치 차단 모델**로 대체(과잉차단 수정).
