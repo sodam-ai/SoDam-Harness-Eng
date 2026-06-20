@@ -1,0 +1,21 @@
+SoDamHarness
+Copyright 2026 SoDam AI Studio
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License in the LICENSE file or at
+http://www.apache.org/licenses/LICENSE-2.0
+
+---
+
+상표 고지 (Trademark notice):
+"Claude Code", "Claude", "Anthropic", "Codex", "OpenAI", "Cursor",
+"Gemini" 는 각 소유자의 상표입니다. SoDamHarness 는 이들과
+제휴·보증·후원 관계가 없습니다 (not affiliated with, endorsed by,
+or sponsored by Anthropic, OpenAI, or any other tool vendor).
+호환·연동 사실의 명목적 표시(nominative use)로만 언급합니다.
+
+제3자 코드 (Third-party code):
+이 릴리스에는 번들된 제3자 소스 코드가 없습니다.
+향후 외부 hook 예제/스니펫을 차용할 경우, 그 출처와 라이선스를
+여기에 명시합니다. (AGPL/GPL 등 비호환 카피레프트 코드는 차용하지 않습니다.)

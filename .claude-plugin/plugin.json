@@ -1,0 +1,12 @@
+{
+  "name": "sodamharness",
+  "displayName": "SoDamHarness",
+  "description": "완전 초보자를 위한 AI 안전벨트 — 위험 작업 차단·확인·자동 백업·되돌리기 + 쉬운 한국어 안내.",
+  "version": "0.1.0",
+  "author": {
+    "name": "SoDam AI Studio"
+  },
+  "homepage": "https://github.com/sodam-ai/sodamharness",
+  "license": "Apache-2.0",
+  "keywords": ["safety", "guardrails", "beginner", "korean", "hooks", "backup", "undo"]
+}

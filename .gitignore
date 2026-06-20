@@ -1,0 +1,22 @@
+# SoDamHarness — Git 추적 제외 (보안: 비밀값·사용자 데이터 보호)
+
+# 의존성 설치 폴더
+node_modules/
+
+# 로컬 설정·백업 (사용자 파일·잠재적 민감정보 — 절대 커밋 금지)
+.sodamharness/
+
+# 다른 플러그인 작업 폴더·산출물(이 저장소와 무관 — 공개 시 제외)
+.omc/
+.todos-report.md/
+.complexity-log.md
+.remember/
+
+# 테스트 임시 산출물
+_selftest.mjs
+*.tmp
+
+# OS·에디터 부산물
+.DS_Store
+Thumbs.db
+*.log
