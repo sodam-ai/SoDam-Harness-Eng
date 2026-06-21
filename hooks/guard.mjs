@@ -222,6 +222,28 @@ function isRecursiveDeletePattern(cmd) {
   return false;
 }
 
+// ── '삭제' 계열 명령인지 (폴더가 인자로 있을 때만 폴더-차단을 적용할 대상) ──
+// 위험명령이라도 삭제가 아니면(예: `git add . && git push`, 자동커밋) 폴더 인자는 삭제 대상이 아니다.
+// 이 게이트가 없으면 폴더를 '언급'만 해도 폴더-차단 오발동(false block)이 난다(실측 2026-06-21).
+const DELETE_SIGNAL = [
+  /\brm\b/i,
+  /\b(del|erase)\b/i,
+  /\b(rmdir|rd)\b/i,
+  /\bunlink\b/i,
+  /\bremove-item\b/i,
+  /\bri\b\s/i,
+  /\.(rmtree|removedirs)\s*\(/i,
+  /\bos\.(remove|unlink|rmdir)\s*\(/i,
+  /\bfs\.(rm|rmsync|unlink|unlinksync|rmdir|rmdirsync)\b/i,
+  /\[\s*(system\.)?io\.(file|directory)\]::\s*delete/i,
+  /deletedirectory\s*\(/i,
+  /add-type[\s\S]*visualbasic[\s\S]*delete/i,
+];
+function isDeleteCommand(cmd) {
+  for (const re of DELETE_SIGNAL) if (re.test(cmd)) return true;
+  return false;
+}
+
 // ── 메인 ──
 function main() {
   const raw = readStdin();
@@ -281,8 +303,9 @@ function main() {
     }
     // risky(단일 파일 등) → 백업 후 ask (백업 실패 시 fail-safe deny — H7)
     const res = backupPaths(paths, cwd, sessionId);
-    // 백업 대상에 실제 '폴더'가 있었으면(예: 빈 폴더 삭제) 역시 차단
-    if (Array.isArray(res.skippedDirs) && res.skippedDirs.length > 0) {
+    // 백업 대상에 실제 '폴더'가 있고 + 그게 '삭제' 명령일 때만 차단(빈 폴더 삭제 등).
+    // 비삭제 위험명령이 폴더를 인자로 가진 경우(예: 자동커밋 `git add . && git push`)는 오차단하지 않는다.
+    if (Array.isArray(res.skippedDirs) && res.skippedDirs.length > 0 && isDeleteCommand(cmd)) {
       decide("deny", FOLDER_DENY_MSG);
       return;
     }
