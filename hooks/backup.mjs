@@ -5,8 +5,10 @@
 
 import { homedir } from "node:os";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import {
   mkdirSync,
+  chmodSync,
   copyFileSync,
   existsSync,
   writeFileSync,
@@ -56,8 +58,16 @@ export function backupPaths(paths, cwd, sessionId) {
       }
     });
 
-    const dir = path.join(backupsRoot(), timestamp());
+    // 폴더명 = 시각 + 짧은 난수. 같은 1초 내 백업 2건이 같은 폴더를 쓰면
+    // manifest가 덮어써져 undo가 한쪽을 못 보는 충돌을 막는다(시각 접두사라 정렬은 그대로).
+    const dir = path.join(backupsRoot(), `${timestamp()}-${randomUUID().slice(0, 8)}`);
     mkdirSync(dir, { recursive: true });
+    // 백업 폴더는 본인만 접근(POSIX). Windows는 해당 없음(no-op). (01_PRD §8.7)
+    if (process.platform !== "win32") {
+      try {
+        chmodSync(baseDir(), 0o700);
+      } catch {}
+    }
 
     const files = [];
     let count = 0;

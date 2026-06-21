@@ -6,7 +6,7 @@
   "author": {
     "name": "SoDam AI Studio"
   },
-  "homepage": "https://github.com/sodam-ai/sodamharness",
+  "homepage": "https://github.com/sodam-ai/SoDamHarness",
   "license": "Apache-2.0",
   "keywords": ["safety", "guardrails", "beginner", "korean", "hooks", "backup", "undo"]
 }
