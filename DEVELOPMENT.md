@@ -8,7 +8,7 @@
 ## 1. 구조
 
 ```
-.claude-plugin/plugin.json      플러그인 정보(name=sodamharness, Apache-2.0)
+.claude-plugin/plugin.json      플러그인 정보(name=sodam-harness, Apache-2.0)
 .claude-plugin/marketplace.json 마켓플레이스 등록 정보
 hooks/hooks.json                PreToolUse 훅 등록(matcher → guard.mjs)
 hooks/guard.mjs                 위험 판정 엔진(deny/ask/통과)

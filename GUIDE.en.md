@@ -38,7 +38,7 @@
 1. **Open Claude Code.**
 2. Add **SoDamHarness** from the **marketplace (plugin store)**.
 3. After adding, **fully close and reopen Claude Code** (the belt arms once, on start).
-4. Type **`/sodamharness:install`** and press Enter → when "the safety belt is on ✅" appears, install is done.
+4. Type **`/sodam-harness:install`** and press Enter → when "the safety belt is on ✅" appears, install is done.
 
 > 🟡 On first run, Windows **SmartScreen** or Mac **Gatekeeper** may warn you. If you got it from the **official source**, click "Run anyway". (If the source is suspicious, stop.)
 
@@ -52,7 +52,7 @@ The easiest way is to **just ask the AI in plain language**.
 2. Type: **"Make a simple intro page here."** → the AI creates files (safe action, not blocked).
 3. Try something risky: **"Delete this whole folder."** → the belt **blocks it**, saying **"Deleting a whole folder is blocked."**
 4. Delete one file: **"Delete the file I just made."** → it is **auto-backed-up** right before deletion.
-5. Undo: **`/sodamharness:undo`** → **pick what you just lost** from the backup list to restore.
+5. Undo: **`/sodam-harness:undo`** → **pick what you just lost** from the backup list to restore.
 
 ---
 
@@ -71,8 +71,8 @@ The easiest way is to **just ask the AI in plain language**.
 ### Workflow
 ```
 Install → (ask the AI in plain language) → on risky action: stop, back up, confirm
-   → if an accident happens, /sodamharness:undo to restore
-   → if stuck, /sodamharness:status (state) · /sodamharness:fix (troubleshoot)
+   → if an accident happens, /sodam-harness:undo to restore
+   → if stuck, /sodam-harness:status (state) · /sodam-harness:fix (troubleshoot)
 ```
 
 ---
@@ -81,10 +81,10 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 
 | Command | When to use | What happens |
 |---|---|---|
-| `/sodamharness:install` | Right after install | Confirms install + getting-started guide |
-| `/sodamharness:status` | When unsure it works | Health check + "what to do next" |
-| `/sodamharness:fix` | When something breaks | Symptom-based help |
-| `/sodamharness:undo` | After an accidental delete | Restore by **picking** from the backup list |
+| `/sodam-harness:install` | Right after install | Confirms install + getting-started guide |
+| `/sodam-harness:status` | When unsure it works | Health check + "what to do next" |
+| `/sodam-harness:fix` | When something breaks | Symptom-based help |
+| `/sodam-harness:undo` | After an accidental delete | Restore by **picking** from the backup list |
 
 ---
 
@@ -106,14 +106,14 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 
 | Symptom | Why | Do now |
 |---|---|---|
-| Risky action wasn't stopped | Plugin off, or an unknown risk pattern | Restart Claude Code → `/sodamharness:status` |
+| Risky action wasn't stopped | Plugin off, or an unknown risk pattern | Restart Claude Code → `/sodam-harness:status` |
 | Installed but no effect | Didn't restart | **Fully close and reopen** Claude Code |
 | Asks too often | Safety-first (L1) default | Adjust strength once used to it (coming later) |
 | "Node.js missing" | The safety hook runs on Node | Install LTS from https://nodejs.org, then restart |
 | Run-block warning (SmartScreen/Gatekeeper) | OS asks once for a new program | If from the official source, "Run anyway" |
-| Want to undo | — | `/sodamharness:undo` (pick from the list) |
+| Want to undo | — | `/sodam-harness:undo` (pick from the list) |
 | Backup folder error (permission/space) | Disk full / permissions | Free space and retry (if backup fails, the risky action is auto-stopped) |
-| Garbled Korean | Encoding | Usually fine (Node.js); otherwise `/sodamharness:fix` |
+| Garbled Korean | Encoding | Usually fine (Node.js); otherwise `/sodam-harness:fix` |
 | Explanations too hard (tone) | The easy tone is via a Skill and **may not always auto-activate** | Tell the AI **"Explain it simply"** |
 
 ---
@@ -146,7 +146,7 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 - **Q. Is it truly safe?** — It blocks common risks but **cannot block 100% of all cases.** It is a "seatbelt", not a "bulletproof shield".
 - **Q. Does it see my passwords/tokens?** — **No.** It doesn't access tokens/auth files and doesn't send data out.
 - **Q. Do I need the internet?** — Only to install. The safety features run locally on your computer.
-- **Q. I accidentally deleted a folder.** — Folders can't be backed up wholesale, so **folder deletion itself is blocked.** Files can be restored with `/sodamharness:undo`.
+- **Q. I accidentally deleted a folder.** — Folders can't be backed up wholesale, so **folder deletion itself is blocked.** Files can be restored with `/sodam-harness:undo`.
 
 ---
 *SoDamHarness — © 2026 SoDam AI Studio · Apache-2.0 · Phase 1 (MVP)*

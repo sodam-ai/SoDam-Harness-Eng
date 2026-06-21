@@ -12,7 +12,7 @@
 
 - 🛑 **Auto-stop on risky actions**: dangerous work is halted **before** it runs. Hard-to-reverse things like **deleting a whole folder** are **blocked outright**; file deletes/overwrites are **backed up first, then confirmed**.
 - 💾 **Automatic backup**: a copy is made **right before** a risky action.
-- ↩️ **Undo**: if something goes wrong, run `/sodamharness:undo` to restore from a backup.
+- ↩️ **Undo**: if something goes wrong, run `/sodam-harness:undo` to restore from a backup.
 - 🗣️ **Plain Korean**: the AI explains in **easy words** instead of developer jargon.
 - 🔒 **The tool itself is safe**: it **never touches** your passwords, tokens, or login files, and **never sends** your data anywhere.
 
@@ -28,7 +28,7 @@
 | **Node.js** (18+) | The engine the safety features run on | If missing, install **LTS** from https://nodejs.org |
 | OS | **Windows / Mac** | Both supported (verified on Windows; Mac uses the same code, real-device check pending) |
 
-After installing, check with `/sodamharness:status`.
+After installing, check with `/sodam-harness:status`.
 
 ---
 
@@ -37,7 +37,7 @@ After installing, check with `/sodamharness:status`.
 1. Open Claude Code.
 2. Add **SoDamHarness** from the marketplace (plugin store).
 3. After installing, **fully close and reopen Claude Code** to turn the safety belt on.
-4. Type `/sodamharness:install` for a getting-started guide.
+4. Type `/sodam-harness:install` for a getting-started guide.
 
 > On first run, Windows **SmartScreen** / Mac **Gatekeeper** may warn you. If you got it from the official source, click "Run anyway". (If the source is suspicious, stop.)
 
@@ -52,7 +52,7 @@ The easiest way is to **just ask the AI in plain language**.
 3. Try something risky: **"Delete this whole folder."**
    → The safety belt **blocks it**, saying **"Deleting a whole folder is blocked."**
 4. Try deleting one file: **"Delete the file I just made."**
-   → It is **auto-backed-up** right before deletion. If it was a mistake, run **`/sodamharness:undo`** → restore by picking from the backup list.
+   → It is **auto-backed-up** right before deletion. If it was a mistake, run **`/sodam-harness:undo`** → restore by picking from the backup list.
 
 ---
 
@@ -67,8 +67,8 @@ The easiest way is to **just ask the AI in plain language**.
 ### Workflow
 ```
 Install → (ask the AI in plain language) → on risky action: stop, back up, confirm
-   → if an accident happens, /sodamharness:undo to restore
-   → if stuck, /sodamharness:status (state) · /sodamharness:fix (troubleshoot)
+   → if an accident happens, /sodam-harness:undo to restore
+   → if stuck, /sodam-harness:status (state) · /sodam-harness:fix (troubleshoot)
 ```
 
 ---
@@ -77,10 +77,10 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 
 | Command | When to use |
 |---|---|
-| `/sodamharness:install` | Getting-started guide right after install |
-| `/sodamharness:status` | Current state + what to do next (self-check) |
-| `/sodamharness:fix` | Symptom-based help when something breaks |
-| `/sodamharness:undo` | Undo (restore by **picking** from the backup list) |
+| `/sodam-harness:install` | Getting-started guide right after install |
+| `/sodam-harness:status` | Current state + what to do next (self-check) |
+| `/sodam-harness:fix` | Symptom-based help when something breaks |
+| `/sodam-harness:undo` | Undo (restore by **picking** from the backup list) |
 
 ---
 
@@ -97,13 +97,13 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 
 | Symptom | Why | Do this now |
 |---|---|---|
-| Risky action wasn't stopped | Plugin off, or an unknown risk pattern | Restart Claude Code → `/sodamharness:status` |
+| Risky action wasn't stopped | Plugin off, or an unknown risk pattern | Restart Claude Code → `/sodam-harness:status` |
 | Asks too often | Safety-first (L1) default | Adjust strength once you're used to it (coming later) |
 | "Node.js missing" | The safety hook runs on Node | Install LTS from https://nodejs.org, then restart |
 | Run-block warning (SmartScreen/Gatekeeper) | OS asks once for a new program | If from the official source, "Run anyway" |
-| Want to undo | — | `/sodamharness:undo` |
+| Want to undo | — | `/sodam-harness:undo` |
 | Backup folder error (permission/space) | Disk full / permissions | Free space and retry (if backup fails, the risky action is auto-stopped) |
-| Garbled Korean | Encoding | This plugin is Node.js so it usually doesn't break; otherwise `/sodamharness:fix` |
+| Garbled Korean | Encoding | This plugin is Node.js so it usually doesn't break; otherwise `/sodam-harness:fix` |
 | Explanations are too hard (tone) | The easy tone is delivered via a Skill and **may not always auto-activate** | Just tell the AI **"Explain it simply"** |
 
 ---
@@ -118,7 +118,7 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 ## 9. Safety & License (one-liners)
 
 - **Safety**: this tool doesn't access tokens/secrets and doesn't send data out. But "100% accident prevention" is not guaranteed (reference use, user's responsibility).
-- **About confirmation prompts**: "Ask"-type actions (file delete/overwrite, `git push`) may pass automatically if you run Claude Code in **"auto-approve" mode**. Even so, **(1) whole-folder deletion is still blocked, (2) auto-backup and (3) undo (`/sodamharness:undo`) always work** — these three are the core protections. To always see the prompt, use the **default mode**.
+- **About confirmation prompts**: "Ask"-type actions (file delete/overwrite, `git push`) may pass automatically if you run Claude Code in **"auto-approve" mode**. Even so, **(1) whole-folder deletion is still blocked, (2) auto-backup and (3) undo (`/sodam-harness:undo`) always work** — these three are the core protections. To always see the prompt, use the **default mode**.
 - **License**: **Apache-2.0** — modify, copy, redistribute, **commercial use & client delivery allowed** (keep LICENSE/NOTICE). See [LICENSE](./LICENSE), [NOTICE](./NOTICE).
 - **Disclaimer**: no warranty · limited liability · **not legal advice**. AI model terms (Anthropic/OpenAI), API fees, and third-party service terms must be **checked separately by the user**.
 - Third-party trademarks ("Claude Code", etc.) belong to their owners; this product is **not affiliated** with them.
