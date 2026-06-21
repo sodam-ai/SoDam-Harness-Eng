@@ -1,5 +1,5 @@
 {
-  "name": "sodamharness",
+  "name": "sodam-harness",
   "version": "0.1.0",
   "description": "완전 초보자를 위한 AI 안전벨트 — Claude Code 플러그인 (위험 작업 차단·확인·백업·되돌리기)",
   "type": "module",
