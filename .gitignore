@@ -20,3 +20,6 @@ _selftest.mjs
 .DS_Store
 Thumbs.db
 *.log
+
+# 로컬 전용 메모 (절대 push 금지 — 사용자 지정, 앞에 점 붙은 dotfile)
+/.이 문서는 반드시 깃허브 저장소에 푸시 하지 않기.md
