@@ -64,6 +64,9 @@ function commandPaths(cmd) {
   const toks = bashTokens(cmd);
   for (let i = 0; i < toks.length; i++) {
     if (i === 0) continue; // 명령어 자체 제외
+    // git -C <경로> / -c <key=val> 의 '값'은 삭제 대상이 아니라 옵션 인자 → 경로 후보에서 제외(실측 2026-06-21)
+    const prevTok = (toks[i - 1] || "").replace(/^["']+|["']+$/g, "");
+    if (/^-[Cc]$/.test(prevTok)) continue;
     // 경로에 셸 구분기호(;,&,|)·따옴표가 붙어오면 정리 (예: "x.txt"; → x.txt) — 백업 누락 방지(실측 2026-06-21)
     const t = toks[i].replace(/^["';|&]+|["';|&]+$/g, "");
     if (!t) continue;
@@ -188,6 +191,11 @@ const RISKY = [
   /\bfs\.(rm|rmsync|unlink|unlinksync|rmdir|rmdirsync)\b/i, // node fs 삭제(fs.rm...)
   /\b(rmsync|unlinksync|rmdirsync)\s*\(/i, // node 삭제(require('fs').rmSync(...) 형태)
 ];
+// git 전역 옵션(-C <경로>, -c <key=val>)을 떼어 "git <명령>" 형태로 정규화한다.
+// 없으면 `git -C <폴더> push`(reset --hard·clean -f·push --force 포함)가 위험 분류를 통째로 빠져나간다(실측 2026-06-21).
+function normalizeForClassify(cmd) {
+  return cmd.replace(/\bgit\s+(?:(?:-C|-c)\s+(?:"[^"]*"|'[^']*'|\S+)\s+)+/gi, "git ");
+}
 function classify(cmd) {
   for (const re of CATASTROPHIC) if (re.test(cmd)) return "catastrophic";
   for (const re of RISKY) if (re.test(cmd)) return "risky";
@@ -243,7 +251,7 @@ function main() {
   // ── 셸 명령 ──
   if (isShellTool) {
     const cmd = String(ti.command || "");
-    const level = classify(cmd);
+    const level = classify(normalizeForClassify(cmd));
     if (level === "safe") {
       passThrough();
       return;

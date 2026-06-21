@@ -118,7 +118,7 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 ## 9. Safety & License (one-liners)
 
 - **Safety**: this tool doesn't access tokens/secrets and doesn't send data out. But "100% accident prevention" is not guaranteed (reference use, user's responsibility).
-- **About confirmation prompts**: if you run Claude Code in **"auto-approve" mode**, the "Are you sure?" prompt may pass automatically. Even so, **dangerous things like whole-folder deletion are still blocked** in that mode. To always see the prompt, use the **default mode**.
+- **About confirmation prompts**: "Ask"-type actions (file delete/overwrite, `git push`) may pass automatically if you run Claude Code in **"auto-approve" mode**. Even so, **(1) whole-folder deletion is still blocked, (2) auto-backup and (3) undo (`/sodamharness:undo`) always work** — these three are the core protections. To always see the prompt, use the **default mode**.
 - **License**: **Apache-2.0** — modify, copy, redistribute, **commercial use & client delivery allowed** (keep LICENSE/NOTICE). See [LICENSE](./LICENSE), [NOTICE](./NOTICE).
 - **Disclaimer**: no warranty · limited liability · **not legal advice**. AI model terms (Anthropic/OpenAI), API fees, and third-party service terms must be **checked separately by the user**.
 - Third-party trademarks ("Claude Code", etc.) belong to their owners; this product is **not affiliated** with them.
