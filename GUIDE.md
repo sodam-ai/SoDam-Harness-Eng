@@ -35,11 +35,28 @@
 
 ## 2. 다운로드 & 설치 (클릭 단위)
 
-1. **Claude Code를 엽니다.**
-2. **마켓플레이스(플러그인 장터)** 에서 **SoDamHarness** 를 추가합니다.
-3. 추가가 끝나면 **Claude Code를 완전히 껐다가 다시 켭니다.** (안전벨트는 "켤 때" 한 번 장착돼요.)
-4. 입력칸에 **`/sodam-harness:install`** 을 치고 Enter → "안전벨트가 켜졌어요 ✅" 안내가 나오면 설치 완료.
+설치는 **① 마켓플레이스 추가 → ② 플러그인 설치 → ③ 재시작 → ④ 확인** 4단계예요. 둘 중 편한 방법을 고르세요.
 
+### 방법 A — 메뉴로 (마우스·방향키, 가장 쉬움)
+1. **Claude Code를 엽니다.**
+2. 입력칸에 **`/plugin`** 을 치고 Enter → 플러그인 관리 화면이 열립니다.
+3. **마켓플레이스 추가(Add marketplace)** 에서 **`sodam-ai/SoDam-Harness`** 를 입력해 추가합니다.
+4. 플러그인 목록에서 **`sodam-harness`** 를 골라 **설치(Install)** 합니다.
+
+### 방법 B — 명령어로 (정확함)
+입력칸에 **`!`** 를 붙여 한 줄씩 실행하세요(또는 터미널에서 `!` 없이):
+1. `!claude plugin marketplace add sodam-ai/SoDam-Harness`
+2. `!claude plugin install sodam-harness@sodamharness-marketplace`
+
+### ③ 재시작 (꼭 필요) — 안전벨트는 "켤 때" 장착돼요
+- 입력칸에 **`/exit`** 입력 → Claude Code가 꺼집니다.
+- 그 다음 터미널(검은 창)에 **`claude`** 를 다시 입력해 켭니다. (또는 터미널 창을 닫았다가 다시 열기.)
+
+### ④ 확인
+- 입력칸에 **`/sodam-harness:install`** → "안전벨트가 켜졌어요 ✅" 가 나오면 설치 완료.
+- 안 보이면 **`/sodam-harness`** 까지만 쳐 보세요 → 명령 5개가 뜨면 정상입니다.
+
+> 🔒 **비공개 베타**: 지금은 저장소(`sodam-ai/SoDam-Harness`)에 **접근 권한이 있어야** 추가됩니다. 공개 후에는 누구나 위 방법으로 설치할 수 있어요.
 > 🟡 처음 실행 시 윈도우 **SmartScreen** 또는 맥 **Gatekeeper** 경고가 뜰 수 있어요. **공식 경로로 받은 게 맞다면** "실행 허용"을 누르세요. (출처가 의심되면 멈추세요.)
 
 ---
@@ -120,7 +137,7 @@
 
 ## 8. 제거(삭제) 방법
 
-1. Claude Code 마켓플레이스에서 **SoDamHarness 를 제거**합니다.
+1. Claude Code에서 **`/plugin`** → **SoDamHarness 제거(Uninstall)**. 또는 입력칸에 `!claude plugin uninstall sodam-harness@sodamharness-marketplace`.
 2. 백업까지 지우려면 홈 폴더의 **`.sodamharness/` 폴더를 삭제**합니다. (백업을 남기고 싶으면 그대로 두세요.)
 
 ---

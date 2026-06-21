@@ -34,12 +34,16 @@ After installing, check with `/sodam-harness:status`.
 
 ## 2. Install (click by click)
 
-1. Open Claude Code.
-2. Add **SoDamHarness** from the marketplace (plugin store).
-3. After installing, **fully close and reopen Claude Code** to turn the safety belt on.
-4. Type `/sodam-harness:install` for a getting-started guide.
+It's **4 steps: ① add → ② install → ③ restart → ④ verify.**
 
-> On first run, Windows **SmartScreen** / Mac **Gatekeeper** may warn you. If you got it from the official source, click "Run anyway". (If the source is suspicious, stop.)
+1. In the Claude Code input box, type **`/plugin`** → the plugin store (marketplace) screen opens.
+2. Add the marketplace **`sodam-ai/SoDam-Harness`**, then install the plugin **`sodam-harness`** (Install).
+   - Or by command (prefix with `!` in the input box): `!claude plugin marketplace add sodam-ai/SoDam-Harness` → `!claude plugin install sodam-harness@sodamharness-marketplace`
+3. **Restart (required)**: type **`/exit`**, then run **`claude`** again in the terminal. (The belt arms on start.)
+4. Type **`/sodam-harness:install`** → when "the safety belt is on ✅" appears, you're done.
+
+> 💡 Typing just **`/sodam-harness`** lists all 5 of this plugin's commands (never mixed with other plugins).
+> 🔒 **Private beta**: for now you need access to the repo to add it (anyone can once it's public). On first run, if Windows **SmartScreen** / Mac **Gatekeeper** warns you, click "Run anyway" only if the source is official.
 
 ---
 
@@ -110,7 +114,7 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 
 ## 8. Uninstall
 
-1. Remove SoDamHarness from the Claude Code marketplace.
+1. In Claude Code, **`/plugin`** → Uninstall SoDamHarness. Or type `!claude plugin uninstall sodam-harness@sodamharness-marketplace`.
 2. To delete backups, remove the `.sodamharness/` folder in your home directory. (Leave it to keep your backups.)
 
 ---

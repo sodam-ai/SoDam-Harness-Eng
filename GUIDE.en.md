@@ -35,12 +35,29 @@
 
 ## 2. Download & Install (click by click)
 
-1. **Open Claude Code.**
-2. Add **SoDamHarness** from the **marketplace (plugin store)**.
-3. After adding, **fully close and reopen Claude Code** (the belt arms once, on start).
-4. Type **`/sodam-harness:install`** and press Enter → when "the safety belt is on ✅" appears, install is done.
+Installing is **4 steps: ① add marketplace → ② install plugin → ③ restart → ④ verify.** Pick whichever is easier.
 
-> 🟡 On first run, Windows **SmartScreen** or Mac **Gatekeeper** may warn you. If you got it from the **official source**, click "Run anyway". (If the source is suspicious, stop.)
+### Method A — via menu (mouse/arrow keys, easiest)
+1. **Open Claude Code.**
+2. Type **`/plugin`** and press Enter → the plugin management screen opens.
+3. Under **Add marketplace**, enter **`sodam-ai/SoDam-Harness`** to add it.
+4. From the plugin list, pick **`sodam-harness`** and **Install** it.
+
+### Method B — by command (precise)
+Prefix each line with **`!`** in the input box (or run without `!` in a terminal):
+1. `!claude plugin marketplace add sodam-ai/SoDam-Harness`
+2. `!claude plugin install sodam-harness@sodamharness-marketplace`
+
+### ③ Restart (required) — the belt arms only on start
+- Type **`/exit`** → Claude Code shuts down.
+- Then type **`claude`** in the terminal to start it again. (Or close and reopen the terminal window.)
+
+### ④ Verify
+- Type **`/sodam-harness:install`** → when "the safety belt is on ✅" appears, install is done.
+- If you don't see it, type just **`/sodam-harness`** → if 5 commands appear, it's working.
+
+> 🔒 **Private beta**: for now the repo (`sodam-ai/SoDam-Harness`) requires **access** to add. Once public, anyone can install with the steps above.
+> 🟡 On first run, Windows **SmartScreen** or Mac **Gatekeeper** may warn you. If from the **official source**, click "Run anyway". (If suspicious, stop.)
 
 ---
 
@@ -120,7 +137,7 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 
 ## 8. Uninstall
 
-1. Remove **SoDamHarness** from the Claude Code marketplace.
+1. In Claude Code, **`/plugin`** → **Uninstall SoDamHarness**. Or type `!claude plugin uninstall sodam-harness@sodamharness-marketplace`.
 2. To delete backups too, remove the **`.sodamharness/` folder** in your home directory. (Leave it to keep your backups.)
 
 ---
