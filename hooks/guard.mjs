@@ -22,6 +22,7 @@ import path from "node:path";
 import { backupPaths } from "./backup.mjs";
 
 const WIN = process.platform === "win32";
+const MAC = process.platform === "darwin";
 
 // ── stdin 전체 읽기 ──
 function readStdin() {
@@ -120,7 +121,9 @@ function resolveLoose(cwd, p) {
 
 // ── 민감 위치 판정 (여기를 건드리면 deny) ──
 function toComparable(p) {
-  return WIN ? p.replace(/\//g, "\\").toLowerCase() : p;
+  if (WIN) return p.replace(/\//g, "\\").toLowerCase();
+  if (MAC) return p.toLowerCase(); // macOS 기본 FS는 대소문자 무시 → /System 과 /system 동일 취급(C1 버그 수정)
+  return p; // Linux: 대소문자 구분
 }
 function isSensitive(absInput) {
   let abs;
@@ -135,7 +138,11 @@ function isSensitive(absInput) {
 
   if (a === home) return true; // 홈 루트 자체
   // 홈 아래 자격증명/민감 폴더
-  for (const d of [".ssh", ".aws", ".codex", ".claude", ".gnupg", ".config"]) {
+  const homeDirs = [".ssh", ".aws", ".codex", ".claude", ".gnupg", ".config"];
+  // %APPDATA%(=AppData\Roaming, 앱 설정·자격) 보호. %LOCALAPPDATA%(Local, Temp 포함)는 정상 작업공간이라 제외(C1).
+  if (WIN) homeDirs.push(path.join("AppData", "Roaming"));
+  if (MAC) homeDirs.push("Library"); // ~/Library (키체인·앱 자격 등) (C1)
+  for (const d of homeDirs) {
     const sd = toComparable(path.join(homedir(), d));
     if (a === sd || a.startsWith(sd + path.sep)) return true;
   }
