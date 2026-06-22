@@ -35,8 +35,8 @@
 **① 추가 → ② 설치 → ③ 재시작 → ④ 확인** 4단계예요.
 
 1. Claude Code 입력칸에 **`/plugin`** 입력 → 플러그인 장터(마켓플레이스) 화면이 열려요.
-2. 마켓플레이스에 **`sodam-ai/SoDam-Harness`** 를 추가하고, 플러그인 **`sodam-harness`** 를 설치(Install)합니다.
-   - 명령으로도 가능 (입력칸에 `!` 를 붙여): `!claude plugin marketplace add sodam-ai/SoDam-Harness` → `!claude plugin install sodam-harness@sodamharness-marketplace`
+2. 마켓플레이스에 **`sodam-ai/SoDam-Harness-Eng`** 를 추가하고, 플러그인 **`sodam-harness`** 를 설치(Install)합니다.
+   - 명령으로도 가능 (입력칸에 `!` 를 붙여): `!claude plugin marketplace add sodam-ai/SoDam-Harness-Eng` → `!claude plugin install sodam-harness@sodamharness-marketplace`
 3. **재시작(꼭 필요)**: 입력칸에 **`/exit`** → 꺼지면 터미널에 **`claude`** 를 다시 입력. (안전벨트는 켤 때 장착돼요.)
 4. **`/sodam-harness:install`** 입력 → "안전벨트가 켜졌어요 ✅" 가 나오면 완료.
 

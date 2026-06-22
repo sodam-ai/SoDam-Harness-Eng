@@ -40,12 +40,12 @@ Installing is **4 steps: ① add marketplace → ② install plugin → ③ rest
 ### Method A — via menu (mouse/arrow keys, easiest)
 1. **Open Claude Code.**
 2. Type **`/plugin`** and press Enter → the plugin management screen opens.
-3. Under **Add marketplace**, enter **`sodam-ai/SoDam-Harness`** to add it.
+3. Under **Add marketplace**, enter **`sodam-ai/SoDam-Harness-Eng`** to add it.
 4. From the plugin list, pick **`sodam-harness`** and **Install** it.
 
 ### Method B — by command (precise)
 Prefix each line with **`!`** in the input box (or run without `!` in a terminal):
-1. `!claude plugin marketplace add sodam-ai/SoDam-Harness`
+1. `!claude plugin marketplace add sodam-ai/SoDam-Harness-Eng`
 2. `!claude plugin install sodam-harness@sodamharness-marketplace`
 
 ### ③ Restart (required) — the belt arms only on start
@@ -56,7 +56,7 @@ Prefix each line with **`!`** in the input box (or run without `!` in a terminal
 - Type **`/sodam-harness:install`** → when "the safety belt is on ✅" appears, install is done.
 - If you don't see it, type just **`/sodam-harness`** → if 5 commands appear, it's working.
 
-> 🔒 **Private beta**: for now the repo (`sodam-ai/SoDam-Harness`) requires **access** to add. Once public, anyone can install with the steps above.
+> 🔒 **Private beta**: for now the repo (`sodam-ai/SoDam-Harness-Eng`) requires **access** to add. Once public, anyone can install with the steps above.
 > 🟡 On first run, Windows **SmartScreen** or Mac **Gatekeeper** may warn you. If from the **official source**, click "Run anyway". (If suspicious, stop.)
 
 ---

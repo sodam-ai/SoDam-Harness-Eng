@@ -37,8 +37,8 @@ After installing, check with `/sodam-harness:status`.
 It's **4 steps: ① add → ② install → ③ restart → ④ verify.**
 
 1. In the Claude Code input box, type **`/plugin`** → the plugin store (marketplace) screen opens.
-2. Add the marketplace **`sodam-ai/SoDam-Harness`**, then install the plugin **`sodam-harness`** (Install).
-   - Or by command (prefix with `!` in the input box): `!claude plugin marketplace add sodam-ai/SoDam-Harness` → `!claude plugin install sodam-harness@sodamharness-marketplace`
+2. Add the marketplace **`sodam-ai/SoDam-Harness-Eng`**, then install the plugin **`sodam-harness`** (Install).
+   - Or by command (prefix with `!` in the input box): `!claude plugin marketplace add sodam-ai/SoDam-Harness-Eng` → `!claude plugin install sodam-harness@sodamharness-marketplace`
 3. **Restart (required)**: type **`/exit`**, then run **`claude`** again in the terminal. (The belt arms on start.)
 4. Type **`/sodam-harness:install`** → when "the safety belt is on ✅" appears, you're done.
 
