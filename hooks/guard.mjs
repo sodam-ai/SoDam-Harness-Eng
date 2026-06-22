@@ -266,7 +266,8 @@ function main() {
   try {
     input = JSON.parse(raw);
   } catch {
-    passThrough();
+    // 입력을 해석 못함 = 불확실 → fail-closed(ask). 과거 passThrough(fail-open)는 07_AUDIT B1 위반.
+    decide("ask", "입력을 해석하지 못해, 안전을 위해 먼저 확인을 요청해요. 계속할까요?");
     return;
   }
 
@@ -374,4 +375,29 @@ function main() {
   passThrough(); // 새 파일 생성 등 — 안전
 }
 
-main();
+// 안전벨트가 살아있는지 빠른 자가 점검(배포 포함 — status가 호출, _selftest와 별개·경량).
+// 위험 페이로드를 "분류 로직"에만 통과시켜 차단 판정이 나오는지 확인한다(실제 파일 작업 0·외부 전송 0).
+function selfcheck() {
+  const cases = [
+    { name: "치명(rm -rf ~) 차단", ok: classify(normalizeForClassify("rm -rf ~")) === "catastrophic" },
+    { name: "재귀 폴더삭제 차단", ok: isRecursiveDeletePattern("rm -rf somedir") },
+    { name: "파일삭제(rm) 위험감지", ok: classify(normalizeForClassify("rm file.txt")) === "risky" },
+    { name: "민감위치 감지", ok: isSensitive(WIN ? "C:\\Windows\\x" : "/etc/x") },
+    { name: "안전명령(echo) 통과", ok: classify(normalizeForClassify("echo hi")) === "safe" },
+  ];
+  const allOk = cases.every((c) => c.ok);
+  const body = cases.map((c) => `  ${c.ok ? "OK " : "X  "} ${c.name}`).join("\n");
+  process.stdout.write(`안전벨트 자가점검: ${allOk ? "정상 ✅" : "문제 발견 ⚠️"}\n${body}\n`);
+  process.exit(allOk ? 0 : 1);
+}
+
+if (process.argv[2] === "--selfcheck") {
+  selfcheck();
+} else {
+  try {
+    main();
+  } catch {
+    // 예기치 못한 오류 → fail-closed(ask). passThrough(fail-open) 절대 금지(07_AUDIT B1).
+    decide("ask", "안전 점검 중 예기치 못한 문제가 생겨, 안전을 위해 먼저 확인을 요청해요. 계속할까요?");
+  }
+}
