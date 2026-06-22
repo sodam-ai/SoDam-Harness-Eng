@@ -35,14 +35,28 @@ export function timestamp() {
   );
 }
 
-// 주어진 경로들 중 "실제 존재하는 파일"만 백업한다.
-// 반환: { ok, count, dir, error }
+// 비밀로 보이는 파일이면 백업에서 제외한다(§8.3 "비밀 접근·저장 0" — 07_AUDIT A3).
+// 판정은 파일 이름(basename) 기준·대소문자 무시. 내용은 절대 열어보지 않는다.
+export function isSecretFile(filePath) {
+  const name = path.basename(String(filePath)).toLowerCase();
+  if (name === ".env" || name.startsWith(".env.")) return true; // .env, .env.local, .env.production ...
+  if (name.includes("auth")) return true; // *auth* (토큰·인증 파일)
+  if (/\.(pem|key|pfx|p12|keystore|jks)$/.test(name)) return true; // 키·인증서
+  if (/^id_(rsa|dsa|ecdsa|ed25519)(\.pub)?$/.test(name)) return true; // SSH 키
+  if (name === ".npmrc" || name === ".git-credentials") return true;
+  if (name === "credentials" || name.startsWith("credentials.")) return true;
+  return false;
+}
+
+// 주어진 경로들 중 "실제 존재하는 파일"만 백업한다(폴더·비밀파일은 제외).
+// 반환: { ok, count, dir, skippedDirs, skippedSecrets, error }
 export function backupPaths(paths, cwd, sessionId) {
   try {
     const root = cwd || process.cwd();
     // 폴더는 통째로 백업하지 못한다(재귀 복사는 대용량·루프 위험 → Phase 2).
     // 건너뛴 폴더를 모아 호출자(guard)가 정직하게 경고할 수 있게 보고한다.
     const skippedDirs = [];
+    const skippedSecrets = []; // 비밀파일은 백업 안 함(보안 1순위) — 호출자가 정직하게 경고
     const targets = (paths || []).filter((p) => {
       try {
         const abs = path.resolve(root, p);
@@ -52,7 +66,12 @@ export function backupPaths(paths, cwd, sessionId) {
           skippedDirs.push(abs);
           return false;
         }
-        return st.isFile();
+        if (!st.isFile()) return false;
+        if (isSecretFile(abs)) {
+          skippedSecrets.push(abs);
+          return false;
+        }
+        return true;
       } catch {
         return false;
       }
@@ -90,9 +109,9 @@ export function backupPaths(paths, cwd, sessionId) {
       ),
       "utf8",
     );
-    return { ok: true, count, dir, skippedDirs };
+    return { ok: true, count, dir, skippedDirs, skippedSecrets };
   } catch (e) {
-    return { ok: false, count: 0, error: e.message, skippedDirs: [] };
+    return { ok: false, count: 0, error: e.message, skippedDirs: [], skippedSecrets: [] };
   }
 }
 

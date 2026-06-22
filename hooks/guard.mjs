@@ -49,6 +49,14 @@ function passThrough() {
   process.exit(0); // 출력 없음 = 기본 권한 흐름(우리가 판단 안 함)
 }
 
+// 비밀파일이 백업에서 제외됐으면(A3) 정직하게 덧붙일 경고. 없으면 빈 문자열.
+function secretNote(res) {
+  const list = res && Array.isArray(res.skippedSecrets) ? res.skippedSecrets : [];
+  if (!list.length) return "";
+  const names = list.map((p) => String(p).split(/[\\/]/).pop()).join(", ");
+  return ` 단, 비밀로 보이는 파일은 보안을 위해 백업하지 않았어요(${names}) — 이건 되돌리기가 안 되니 특히 조심하세요.`;
+}
+
 // ── Bash 명령 토큰화 (따옴표 제거) ──
 function bashTokens(cmd) {
   return cmd
@@ -318,7 +326,7 @@ function main() {
     }
     decide(
       "ask",
-      `되돌리기 어려운 작업이에요. 먼저 백업해 뒀어요(파일 ${res.count}개). 정말 진행할까요? 잘못되면 "되돌려 줘"라고 하면 복구할 수 있어요.`,
+      `되돌리기 어려운 작업이에요. 먼저 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 정말 진행할까요? 잘못되면 "되돌려 줘"라고 하면 복구할 수 있어요.`,
     );
     return;
   }
@@ -352,7 +360,7 @@ function main() {
     }
     decide(
       "ask",
-      `기존 파일을 바꾸기 전에 백업해 뒀어요(파일 ${res.count}개). 진행할까요? 잘못되면 "되돌려 줘"로 복구돼요.`,
+      `기존 파일을 바꾸기 전에 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 진행할까요? 잘못되면 "되돌려 줘"로 복구돼요.`,
     );
     return;
   }
