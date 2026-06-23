@@ -1,5 +1,5 @@
 ---
-name: status
+name: sodam-harness-status
 description: 자가진단 — 지금 상태와 다음에 할 일을 알려줌 (초보자용).
 ---
 

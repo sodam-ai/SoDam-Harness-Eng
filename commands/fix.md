@@ -1,5 +1,5 @@
 ---
-name: fix
+name: sodam-harness-fix
 description: 자주 막히는 문제를 증상→원인→해결 순서로 안내 (초보자용).
 ---
 
