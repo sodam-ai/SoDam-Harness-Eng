@@ -1,5 +1,5 @@
 ---
-name: sodam-harness-install
+name: install
 description: SoDamHarness 설치 확인 + 처음 시작 안내 (초보자용).
 ---
 

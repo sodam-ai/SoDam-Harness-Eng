@@ -1,5 +1,5 @@
 ---
-name: sodam-harness-undo
+name: undo
 description: 되돌리기 — 최근 백업 목록에서 "방금 잃은 것"을 골라 안전하게 복구 (초보자용).
 ---
 

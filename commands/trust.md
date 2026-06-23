@@ -1,5 +1,5 @@
 ---
-name: sodam-harness-trust
+name: trust
 description: 방금 확인(물어보기)했던 작업을 이 폴더에서 이번 세션 동안 안 물어보게 함 (초보자용).
 ---
 

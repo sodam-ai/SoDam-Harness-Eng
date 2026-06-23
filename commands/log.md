@@ -1,5 +1,5 @@
 ---
-name: sodam-harness-log
+name: log
 description: AI가 방금 무엇을 했는지 쉬운 타임라인으로 보여줌 (초보자용 활동 기록).
 ---
 
