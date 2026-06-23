@@ -86,7 +86,8 @@
 | `/sodam-harness-undo` | 되돌리기(백업 목록에서 **골라** 복구) |
 | `/sodam-harness-trust` | "이 폴더 이 작업 안 물어봐도 돼" — 방금 물어본 작업을 이번 세션 동안 그만 묻기 (완전 차단·백업은 그대로 유지) |
 | `/sodam-harness-log` | "방금 뭐 했어?" — AI가 한 일 타임라인 (파일명·시각만, 비밀은 가림) |
-| `/sodam-harness-codex` | Codex에도 같은 말투 + 보수적 안전 설정 적용 안내 (Codex엔 차단·백업 없음 — 한계 있음) |
+
+> 💡 명령은 모두 **Claude Code 전용**입니다. **Codex(코덱스)에서 쓰는 법**은 [GUIDE](./GUIDE.md)의 "(선택) Codex에서도 쓰기"를 참고하세요.
 
 ---
 

@@ -104,7 +104,22 @@
 | `/sodam-harness-undo` | 실수로 지웠을 때 | 백업 목록에서 **골라** 복구 |
 | `/sodam-harness-trust` | 같은 작업 그만 묻게 | "이 폴더 이 작업 안 물어봐도 돼" — 이번 세션 동안 안 묻기 (완전 차단·백업은 유지) |
 | `/sodam-harness-log` | 방금 뭐 했나 궁금할 때 | AI가 한 일 타임라인 (파일명·시각만, 비밀은 가림) |
-| `/sodam-harness-codex` | Codex에서도 쓰고 싶을 때 | 같은 말투(AGENTS.md)+보수 설정 안내 (Codex엔 안전벨트 미적용, 승인·샌드박스로 대체) |
+
+> 💡 위 명령은 모두 **Claude Code 전용**입니다. Codex(코덱스)에서 쓰는 법은 아래 "(선택) Codex에서도 쓰기"를 보세요.
+
+---
+
+## 5-1. (선택) Codex(코덱스)에서도 쓰기
+
+> ⚠️ **정직한 한계 먼저:** SoDamHarness의 **자동 차단·백업·되돌리기(undo)는 Claude Code 전용**이라 **Codex에선 동작하지 않습니다.** Codex에선 **Codex 자체 기능(승인 창 + 샌드박스)**으로 대신하며, 보호 방식·강도가 다릅니다. ("100% 안전"은 없습니다.)
+
+1. **쉬운 말투** — 플러그인 폴더의 **`AGENTS.md`** 를 Codex로 작업할 프로젝트 폴더에 **복사**합니다. (기존 `AGENTS.md`가 있으면 덮어쓰지 말고 내용을 **추가/병합**.)
+2. **보수적 안전 설정** — 템플릿 **`codex/config.toml.example`** 의 두 줄(`approval_policy`, `sandbox_mode`)을 **`~/.codex/config.toml`** 에 **추가/병합**합니다.
+   - ⚠️ 기존 설정 **덮어쓰기 금지** · **`~/.codex/auth.json`(로그인 토큰)은 절대 건드리지 않기** · 적용은 **본인이 직접**.
+   - 값 이름은 Codex 버전마다 다를 수 있어요 → 공식 문서: https://developers.openai.com/codex/config-reference
+3. **확인** — Codex를 다시 켜고 **버려도 되는 빈 폴더**에서 위험 작업을 시켜 **승인 창이 뜨는지** 확인합니다.
+
+> 도움이 필요하면 (Claude Code에서) **"코덱스 안전 설정 도와줘"** 라고 하시면 위 단계를 안내해 드립니다.
 
 ---
 

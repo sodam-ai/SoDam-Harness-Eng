@@ -23,6 +23,6 @@
 
 > Codex에서는 안전 차단을 hook이 아니라 `~/.codex/config.toml`의
 > `approval_policy` + `sandbox_mode`(보수적 기본값)로 매핑합니다(Phase 2).
-> 템플릿: `codex/config.toml.example` · 적용 안내: `/sodam-harness-codex`.
+> 템플릿: `codex/config.toml.example` · 적용 안내: GUIDE.md의 "(선택) Codex에서도 쓰기" 항목.
 > ⚠️ 정직한 한계: SoDamHarness의 차단·백업·되돌리기(undo)는 **Claude Code 전용**이라 Codex에선
 > 동작하지 않습니다. Codex 안전은 위 승인·샌드박스로 '대체'되며 보호 방식·강도가 다릅니다.

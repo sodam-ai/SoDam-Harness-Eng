@@ -88,7 +88,8 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 | `/sodam-harness-undo` | Undo (restore by **picking** from the backup list) |
 | `/sodam-harness-trust` | "Stop asking for this folder/action" — silence the last asked action for this session (hard blocks & backups still apply) |
 | `/sodam-harness-log` | "What did you just do?" — timeline of AI actions (names & time only; secrets masked) |
-| `/sodam-harness-codex` | Guide to apply the same tone + conservative safety config to Codex (no block/backup on Codex — limited) |
+
+> 💡 All commands are **Claude Code only**. To use it with **Codex**, see "(Optional) Using it with Codex" in the [GUIDE](./GUIDE.en.md).
 
 ---
 

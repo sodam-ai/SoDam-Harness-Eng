@@ -104,7 +104,22 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 | `/sodam-harness-undo` | After an accidental delete | Restore by **picking** from the backup list |
 | `/sodam-harness-trust` | To stop being asked for the same action | "Stop asking for this folder/action" — silence it for this session (hard blocks & backups still apply) |
 | `/sodam-harness-log` | When curious what just happened | Timeline of AI actions (names & time only; secrets masked) |
-| `/sodam-harness-codex` | To use it with Codex too | Guide for same tone + conservative config (no belt on Codex; uses approval + sandbox) |
+
+> 💡 All commands above are **Claude Code only**. To use it with Codex, see "(Optional) Using it with Codex" below.
+
+---
+
+## 5-1. (Optional) Using it with Codex
+
+> ⚠️ **Honest limit first:** SoDamHarness's **auto-block / backup / undo are Claude Code only** — they **do not work in Codex.** In Codex, safety is handled by **Codex's own features (approval prompt + sandbox)**; the method and strength differ. (There is no "100% safe".)
+
+1. **Easy tone** — Copy the plugin's **`AGENTS.md`** into the project folder you work on in Codex. (If an `AGENTS.md` already exists, **merge/append** — don't overwrite.)
+2. **Conservative safety config** — Add/merge the two lines (`approval_policy`, `sandbox_mode`) from the template **`codex/config.toml.example`** into **`~/.codex/config.toml`**.
+   - ⚠️ **Don't overwrite** existing config · **never touch `~/.codex/auth.json` (login token)** · apply it **yourself**.
+   - Value names may differ by Codex version → official docs: https://developers.openai.com/codex/config-reference
+3. **Verify** — Restart Codex and, in a **throwaway empty folder**, ask for a risky action to confirm the **approval prompt appears**.
+
+> Need help? In Claude Code, just say **"help me set up Codex safety"** and I'll walk you through these steps.
 
 ---
 
