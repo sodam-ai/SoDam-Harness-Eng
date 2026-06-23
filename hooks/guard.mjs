@@ -16,7 +16,7 @@
 //
 // 정직한 한계: 위험 패턴은 "초안"이며 모든 위험을 100% 잡지 못한다(01_PRD §8.8).
 
-import { readFileSync, existsSync, lstatSync, statSync } from "node:fs";
+import { readFileSync, existsSync, lstatSync, statSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { backupPaths } from "./backup.mjs";
@@ -168,7 +168,7 @@ function toComparable(p) {
   if (MAC) return p.toLowerCase(); // macOS 기본 FS는 대소문자 무시 → /System 과 /system 동일 취급(C1 버그 수정)
   return p; // Linux: 대소문자 구분
 }
-function isSensitive(absInput) {
+function isSensitiveRaw(absInput) {
   let abs;
   try {
     // 이미 resolveLoose를 거친 절대경로를 받는 게 정상이나, 안전하게 한 번 더
@@ -201,9 +201,34 @@ function isSensitive(absInput) {
   for (const s of WIN ? EXTRA.sensWin : EXTRA.sensPosix) {
     if (s && (a === s || a.startsWith(s + path.sep))) return true;
   }
+  // UNC 공유 루트(\\server\share)도 루트로 취급(E1)
+  if (WIN && /^\\\\[^\\]+\\[^\\]+\\?$/.test(a)) return true;
   // 드라이브/파일시스템 루트
   if (WIN && /^[a-z]:\\?$/.test(a)) return true;
   if (!WIN && a === "/") return true;
+  return false;
+}
+// 실제 경로 해석(없으면 부모 폴더 기준) — junction/심볼릭 링크 우회 차단용(E1)
+function realOf(p) {
+  try {
+    return realpathSync(p);
+  } catch {}
+  try {
+    return realpathSync(path.dirname(p)); // 새 파일이면 부모 폴더(junction일 수 있음)
+  } catch {}
+  return null;
+}
+function isSensitive(absInput) {
+  let abs;
+  try {
+    abs = path.isAbsolute(absInput) ? absInput : path.resolve(absInput);
+  } catch {
+    return true;
+  }
+  if (isSensitiveRaw(abs)) return true;
+  // junction/심볼릭 링크가 민감 위치를 가리키면 우회 차단(E1): 실제 경로로 풀어 다시 검사
+  const real = realOf(abs);
+  if (real && toComparable(real) !== toComparable(abs) && isSensitiveRaw(real)) return true;
   return false;
 }
 function isSymlink(p) {

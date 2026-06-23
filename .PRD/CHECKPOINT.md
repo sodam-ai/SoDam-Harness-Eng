@@ -38,10 +38,10 @@
 - 불변(검증됨): deny는 ask 위에서 먼저 반환돼 **절대 화이트리스트 불가** · 신뢰돼도 **백업 항상** · **세션 한정 + 12h 만료**.
 - 검증: self-test 64 PASS/0 FAIL(D1 4: 신뢰 후 통과·세션 한정·deny 불가·신뢰 전 ask).
 
-### M3. E1 경로 엣지 — ⚠️ 저빈도
-- 할 것: junction(reparse) 판정(lstat 한계), UNC(`\\server\share`) 민감 검사, 한글 홈경로 회귀 테스트.
-- 검증: 플랫폼별 self-test 케이스 추가.
-- done-when: junction/UNC가 민감위치 우회 못 함. 상태: pending(엣지).
+### M3. E1 경로 엣지 — ✅ 완료 (2026-06-23)
+- 한 것: isSensitive를 raw+래퍼로 분리 → **realpath로 풀어 재검사**(junction/심볼릭 링크가 민감위치 가리키면 차단),
+  **UNC 공유루트(`\\server\share`)** 민감 추가. 한글 경로는 비교 로직이 유니코드 안전임을 회귀 테스트로 확인.
+- 검증: self-test 67 PASS/0 FAIL(E1 3: 한글 경로·UNC·junction realpath, junction은 mklink /J 실제 검증).
 
 ### M4. Phase 2 (전제: Phase1 베타 통과) — 🚫 지금 범위 밖
 - 활동기록(경량 관측) / 자가검증 루프 / Codex 지원(AGENTS.md + config.toml). (03 Phase 2)
