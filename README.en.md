@@ -11,7 +11,7 @@
 ## What you get
 
 - 🛑 **Auto-stop on risky actions**: dangerous work is halted **before** it runs. Hard-to-reverse things like **deleting a whole folder** are **blocked outright**; file deletes/overwrites are **backed up first, then confirmed**.
-- 💾 **Automatic backup**: a copy is made **right before** a risky action.
+- 💾 **Automatic backup**: a copy is made **right before** a risky action. *(Note: secret files like `.env` are intentionally NOT backed up for security → they cannot be undone, so be extra careful.)*
 - ↩️ **Undo**: if something goes wrong, run `/sodam-harness:undo` to restore from a backup.
 - 🗣️ **Plain Korean**: the AI explains in **easy words** instead of developer jargon.
 - 🔒 **The tool itself is safe**: it **never touches** your passwords, tokens, or login files, and **never sends** your data anywhere.
