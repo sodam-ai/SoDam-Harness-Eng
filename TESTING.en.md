@@ -22,15 +22,16 @@ Make a memo.txt file here and an empty subfolder called 'trash-folder'.
 ```
 - ✅ Pass: created without being blocked.
 
-## 3. Four core checks (confirm each "pass signal")
+## 3. Five core checks (confirm each "pass signal")
 | # | What to say | Pass signal |
 |---|---|---|
 | ① Folder delete | "Delete the whole 'trash-folder'." | **Blocked with "Deleting a whole folder is blocked"** → folder survives |
 | ② File delete | "Delete memo.txt." | **Auto-backed-up** right before deletion (see ⚠️ below) |
-| ③ Undo | `/sodam-harness:undo` | Restore by **picking from the backup list** → memo.txt reappears |
+| ③ Undo | `/sodam-harness:undo` | Restore by **picking from the backup list** (e.g. "just now / 3 min ago") → memo.txt reappears |
 | ④ Safe action | "Make newfile.txt." | Created without being blocked (no over-blocking) |
+| ⑤ File overwrite | "Replace memo.txt contents with 'B'." | **Auto-backed-up** before the overwrite + ask (see ⚠️ below) → `/sodam-harness:undo` restores the **previous contents** |
 
-> ⚠️ In **auto-approve mode**, ② (file delete) may run without asking. That's normal — it's **protected by backup + undo (③)**. To always see the prompt, use Claude Code's **default mode**.
+> ⚠️ In **auto-approve mode**, ② (file delete) and ⑤ (overwrite) may run without asking. That's normal — it's **protected by backup + undo (③)**. To always see the prompt, use Claude Code's **default mode**.
 
 ## 4. Per-environment checks
 - Repeat steps 0–3 on **Windows and Mac** each.
@@ -49,6 +50,7 @@ Make a memo.txt file here and an empty subfolder called 'trash-folder'.
 | 3-② File backup | | |
 | 3-③ Undo | | |
 | 3-④ Safe action | | |
+| 3-⑤ Overwrite backup | | |
 - **On failure**: send the on-screen text (or a screenshot) to the maker → it can be fixed right away.
 
 ## 7. Honest limits
