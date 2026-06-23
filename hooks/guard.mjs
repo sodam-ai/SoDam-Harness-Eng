@@ -16,7 +16,7 @@
 //
 // 정직한 한계: 위험 패턴은 "초안"이며 모든 위험을 100% 잡지 못한다(01_PRD §8.8).
 
-import { readFileSync, existsSync, lstatSync } from "node:fs";
+import { readFileSync, existsSync, lstatSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { backupPaths } from "./backup.mjs";
@@ -90,6 +90,48 @@ function commandPaths(cmd) {
     out.push(t);
   }
   return out;
+}
+
+// ── 셸 명령의 '쓰기/덮어쓰기/이동 대상' 경로 후보 (존재 여부 무관) ──
+// 06_CORE_DRAFTS 명세의 "덮어쓰기: > 리다이렉트 / cp·mv / Copy-Item·Move-Item / Out-File"를 구현.
+// 삭제(rm)와 달리 '대상'만 위험하다(원본 source는 읽기일 뿐) → source는 넣지 않는다.
+// 한계(정직): 따옴표 없는 공백 포함 경로·python open(w)·node writeFileSync·tee 등은 못 잡음(§8.8).
+function writeDestinations(cmd, cwd) {
+  const root = cwd || process.cwd();
+  const cand = new Set();
+  const clean = (p) => String(p).replace(/^["';|&]+|["';|&]+$/g, "");
+  // 1) 리다이렉트 덮어쓰기 '>' / '1>' (단, '>>' 추가는 데이터 안 잃어 제외, '2>' stderr 제외)
+  const reDir = /(?:^|[^>\d])1?>(?!>)\s*("[^"]+"|'[^']+'|[^\s;&|>]+)/g;
+  let m;
+  while ((m = reDir.exec(cmd))) cand.add(clean(m[1]));
+  // 2) cp / mv / copy / move : 마지막 비-플래그 인자 = 대상
+  const toks = bashTokens(cmd);
+  const c0 = (toks[0] || "").toLowerCase();
+  if (/^(cp|mv|copy|move)$/.test(c0)) {
+    for (let i = toks.length - 1; i >= 1; i--) {
+      const t = toks[i];
+      if (!t || t.startsWith("-") || t.startsWith("/") || SHELL_OPS.has(t)) continue;
+      cand.add(clean(t));
+      break;
+    }
+  }
+  // 3) PowerShell Copy-Item / Move-Item / Out-File : -Destination/-FilePath/-Path 값, 없으면 마지막 경로
+  if (/\b(copy-item|move-item|out-file)\b/i.test(cmd)) {
+    const md = cmd.match(/-(?:Destination|FilePath|Path|LiteralPath)\s+("[^"]+"|'[^']+'|\S+)/i);
+    if (md) {
+      cand.add(clean(md[1]));
+    } else {
+      for (let i = toks.length - 1; i >= 1; i--) {
+        const t = toks[i];
+        if (!t || t.startsWith("-") || SHELL_OPS.has(t)) continue;
+        cand.add(clean(t));
+        break;
+      }
+    }
+  }
+  return Array.from(cand)
+    .filter(Boolean)
+    .map((p) => resolveLoose(root, p));
 }
 
 // ── 파일 쓰기 계열 도구의 대상 경로 ──
@@ -290,13 +332,19 @@ function main() {
   if (isShellTool) {
     const cmd = String(ti.command || "");
     const level = classify(normalizeForClassify(cmd));
-    if (level === "safe") {
+    const dests = writeDestinations(cmd, cwd); // 쓰기/덮어쓰기/이동 대상(새 파일 포함)
+
+    // 안전 명령 + 쓰기 대상도 없음(읽기·조회 등) → 통과
+    if (level === "safe" && dests.length === 0) {
       passThrough();
       return;
     }
-    const paths = commandPaths(cmd).map((p) => resolveLoose(cwd, p));
-    // 민감 위치를 건드리면 차단
-    for (const ap of paths) {
+
+    // 위험명령(삭제 등)의 경로 — 안전명령이면 비움(덮어쓰기 source를 민감검사에 넣지 않기 위함)
+    const delPaths = level === "safe" ? [] : commandPaths(cmd).map((p) => resolveLoose(cwd, p));
+
+    // 민감 위치 차단: 삭제계열 경로 + 모든 쓰기 대상(새 파일이어도 시스템 위치엔 쓰기 금지)
+    for (const ap of [...delPaths, ...dests]) {
       if (isSensitive(ap)) {
         decide(
           "deny",
@@ -317,8 +365,24 @@ function main() {
       decide("deny", FOLDER_DENY_MSG);
       return;
     }
-    // risky(단일 파일 등) → 백업 후 ask (백업 실패 시 fail-safe deny — H7)
-    const res = backupPaths(paths, cwd, sessionId);
+
+    // 덮어쓸 '기존 파일'만 추림 — 새 파일 생성/이동은 잃을 게 없어 과잉차단하지 않는다
+    const owExisting = dests.filter((ap) => {
+      try {
+        return existsSync(ap) && statSync(ap).isFile();
+      } catch {
+        return false;
+      }
+    });
+    // 안전 명령인데 덮어쓸 기존 파일이 없으면(전부 새 파일) → 통과 (과잉차단 0)
+    if (level === "safe" && owExisting.length === 0) {
+      passThrough();
+      return;
+    }
+
+    // 백업 대상 = 위험명령 경로(삭제 등) + 덮어쓸 기존 파일 (중복 제거). 실패 시 fail-safe deny(H7)
+    const backupList = Array.from(new Set([...delPaths, ...owExisting]));
+    const res = backupPaths(backupList, cwd, sessionId);
     // 백업 대상에 실제 '폴더'가 있고 + 그게 '삭제' 명령일 때만 차단(빈 폴더 삭제 등).
     // 비삭제 위험명령이 폴더를 인자로 가진 경우(예: 자동커밋 `git add . && git push`)는 오차단하지 않는다.
     if (Array.isArray(res.skippedDirs) && res.skippedDirs.length > 0 && isDeleteCommand(cmd)) {
