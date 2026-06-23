@@ -83,6 +83,7 @@
 | `/sodam-harness:status` | 지금 상태 + 다음에 할 일 확인(자가진단) |
 | `/sodam-harness:fix` | 문제가 생겼을 때 증상별 해결 안내 |
 | `/sodam-harness:undo` | 되돌리기(백업 목록에서 **골라** 복구) |
+| `/sodam-harness:trust` | "이 폴더 이 작업 안 물어봐도 돼" — 방금 물어본 작업을 이번 세션 동안 그만 묻기 (완전 차단·백업은 그대로 유지) |
 
 ---
 

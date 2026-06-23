@@ -85,6 +85,7 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 | `/sodam-harness:status` | Current state + what to do next (self-check) |
 | `/sodam-harness:fix` | Symptom-based help when something breaks |
 | `/sodam-harness:undo` | Undo (restore by **picking** from the backup list) |
+| `/sodam-harness:trust` | "Stop asking for this folder/action" — silence the last asked action for this session (hard blocks & backups still apply) |
 
 ---
 
