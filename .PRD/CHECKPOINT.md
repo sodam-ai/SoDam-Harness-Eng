@@ -49,7 +49,9 @@
   sanitize(명령 원문·파일 내용 미저장, **동사+파일명만**, 비밀명 마스킹) · 512KB 회전 · fail-safe(실패해도 도구 흐름 무방해).
   검증: self-test 72 PASS/0 FAIL(P2-A 5: 동사만·마스킹·일반파일·**토큰 미저장**·--list+ago).
   남은 정밀화: activity↔backup `linked_backup_id` 정밀 연결(현재는 session·시각으로 정렬).
-- **P2-B 자가검증 루프 — 대기**: `skills/self-check`(+선택 Stop 훅). 저코드.
+- **P2-B 자가검증 루프 — ✅ 완료 (2026-06-23)**: `skills/self-check/SKILL.md`(짧은 스킬, 완료 선언·위험/중요 작업 시 로드).
+  끝내기 전 3단계(확인→증거→솔직) + /log·/undo 연결 + 과장 금지. **Stop 훅 미채택**(흐름 방해·과잉 회피).
+  README 한·영 §4에 "자가검증/Verify-before-done" 동작 한 줄 추가. 한계: 스킬=지침이라 100% 강제 아님(§8.8 정직).
 - **P2-C Codex 지원 — 조건부**: `AGENTS.md` + `config.toml`(approval_policy·sandbox_mode) 템플릿 + 가이드. 사장님이 Codex 쓸 때만.
 - **P2-0 실설치 스모크 — 사람 필요**: Phase 2 전제이자 Phase1 졸업 게이트.
 

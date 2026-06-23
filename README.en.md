@@ -67,6 +67,7 @@ The easiest way is to **just ask the AI in plain language**.
 - **Auto-backup**: right before a risky action, the target **file** is copied to the backup folder. (A folder itself can't be backed up, which is why folder deletion is blocked.)
 - **Undo**: shows the **backup list and lets you pick what you just lost** to restore. (So it never restores the wrong thing even when many tasks are mixed.)
 - **Self-check**: tells you the current state and the next thing to do.
+- **Verify-before-done**: before saying "done", the AI checks it actually works and shows evidence (mainly for risky/important work; not a 100% guarantee).
 
 ### Workflow
 ```
