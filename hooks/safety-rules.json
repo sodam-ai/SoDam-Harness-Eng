@@ -1,0 +1,12 @@
+{
+  "_help": "여기에 규칙을 '추가'하면 SoDamHarness가 더 막아줍니다(기본 보호는 코드에 내장돼 있어 이 파일이 비어 있어도 안전합니다). 개인용 추가는 홈폴더의 .sodamharness/safety-rules.json 에 둬도 됩니다(둘 다 합쳐서 적용). catastrophic/risky/recursiveDelete = 정규식 '문자열'(백슬래시는 \\\\ 로 이스케이프, 예: \"\\\\bshred\\\\b\"). sensitivePaths.windows/posix = 보호할 절대경로, homeSubdirs = 홈 아래 보호할 폴더 이름. 잘못된 줄은 무시되고, 파일이 깨져도 기본 보호는 그대로 작동합니다.",
+  "version": 1,
+  "catastrophic": [],
+  "risky": [],
+  "recursiveDelete": [],
+  "sensitivePaths": {
+    "windows": [],
+    "posix": [],
+    "homeSubdirs": []
+  }
+}

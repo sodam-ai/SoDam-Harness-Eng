@@ -184,6 +184,7 @@ function isSensitive(absInput) {
   // %APPDATA%(=AppData\Roaming, 앱 설정·자격) 보호. %LOCALAPPDATA%(Local, Temp 포함)는 정상 작업공간이라 제외(C1).
   if (WIN) homeDirs.push(path.join("AppData", "Roaming"));
   if (MAC) homeDirs.push("Library"); // ~/Library (키체인·앱 자격 등) (C1)
+  homeDirs.push(...EXTRA.homeSubdirs); // 사용자 추가(safety-rules.json)
   for (const d of homeDirs) {
     const sd = toComparable(path.join(homedir(), d));
     if (a === sd || a.startsWith(sd + path.sep)) return true;
@@ -194,6 +195,10 @@ function isSensitive(absInput) {
     : ["/etc", "/usr", "/bin", "/sbin", "/var", "/system", "/library", "/boot", "/dev", "/proc"];
   for (const s of sys) {
     if (a === s || a.startsWith(s + path.sep)) return true;
+  }
+  // 사용자 추가 민감경로(safety-rules.json) — 이미 toComparable 적용됨
+  for (const s of WIN ? EXTRA.sensWin : EXTRA.sensPosix) {
+    if (s && (a === s || a.startsWith(s + path.sep))) return true;
   }
   // 드라이브/파일시스템 루트
   if (WIN && /^[a-z]:\\?$/.test(a)) return true;
@@ -208,6 +213,54 @@ function isSymlink(p) {
     return false;
   }
 }
+
+// ── 확장 규칙 로드 (safety-rules.json) — 08 §1: "이것도 막아줘"를 데이터 1줄로 ──
+// 원칙: 코드 기본 패턴에 '추가'만 한다(기본은 fail-safe로 코드에 남김). 파일 없음/깨짐/잘못된 줄은
+// 조용히 무시 → 기본 보호는 항상 유지(fail-safe). 정규식은 문자열로 저장(대소문자 무시).
+function compileList(arr) {
+  const out = [];
+  if (!Array.isArray(arr)) return out;
+  for (const s of arr) {
+    if (typeof s !== "string" || !s) continue;
+    try {
+      out.push(new RegExp(s, "i"));
+    } catch {
+      /* 잘못된 정규식은 건너뜀 */
+    }
+  }
+  return out;
+}
+function readRulesFile(loc) {
+  try {
+    if (typeof loc === "string" && !existsSync(loc)) return null;
+    const raw = readFileSync(loc, "utf8");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+function loadExtraRules() {
+  const acc = { catastrophic: [], risky: [], recursiveDelete: [], sensWin: [], sensPosix: [], homeSubdirs: [] };
+  const sources = [];
+  try {
+    sources.push(readRulesFile(new URL("./safety-rules.json", import.meta.url))); // 플러그인 동봉 기본
+  } catch {}
+  // 사용자 개인 추가 파일(테스트는 SODAM_RULES_FILE로 주입)
+  const userFile = process.env.SODAM_RULES_FILE || path.join(homedir(), ".sodamharness", "safety-rules.json");
+  sources.push(readRulesFile(userFile));
+  for (const r of sources) {
+    if (!r || typeof r !== "object") continue;
+    acc.catastrophic.push(...compileList(r.catastrophic));
+    acc.risky.push(...compileList(r.risky));
+    acc.recursiveDelete.push(...compileList(r.recursiveDelete));
+    const sp = r.sensitivePaths || {};
+    if (Array.isArray(sp.windows)) acc.sensWin.push(...sp.windows.map((x) => toComparable(String(x))));
+    if (Array.isArray(sp.posix)) acc.sensPosix.push(...sp.posix.map((x) => toComparable(String(x))));
+    if (Array.isArray(sp.homeSubdirs)) acc.homeSubdirs.push(...sp.homeSubdirs.map(String));
+  }
+  return acc;
+}
+const EXTRA = loadExtraRules(); // 모듈 로드 시 1회(매 훅 호출마다 새 프로세스라 사용자 편집을 바로 반영)
 
 // ── 위험 등급 (패턴은 초안 — §8.8 한계) ──
 // 치명: 되돌릴 수 없는 광역 파괴 → deny
@@ -255,7 +308,9 @@ function normalizeForClassify(cmd) {
 }
 function classify(cmd) {
   for (const re of CATASTROPHIC) if (re.test(cmd)) return "catastrophic";
+  for (const re of EXTRA.catastrophic) if (re.test(cmd)) return "catastrophic"; // 사용자 추가(safety-rules.json)
   for (const re of RISKY) if (re.test(cmd)) return "risky";
+  for (const re of EXTRA.risky) if (re.test(cmd)) return "risky"; // 사용자 추가
   return "safe";
 }
 
@@ -276,6 +331,7 @@ const FOLDER_DENY_MSG =
   "폴더를 통째로 지우는 작업은 안전하게 막았어요. 폴더는 백업·되돌리기가 어렵거든요. 정말 필요하면 폴더 안의 파일부터 하나씩 지워 보세요(그건 백업돼요).";
 function isRecursiveDeletePattern(cmd) {
   for (const re of RECURSIVE_DELETE) if (re.test(cmd)) return true;
+  for (const re of EXTRA.recursiveDelete) if (re.test(cmd)) return true; // 사용자 추가
   return false;
 }
 

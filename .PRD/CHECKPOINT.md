@@ -26,11 +26,11 @@
 
 ## B. 남은 작업 — 마일스톤 (전체 PRD 구현 로드맵)
 
-### M1. C1 위험패턴 데이터화 (safety-rules.json) — 🟡 다음 정공법
-- 할 것: 위험패턴·민감위치·정책을 `safety-rules.json` 데이터로 외부화, guard는 "데이터 읽어 판정"(08 §1).
-- 검증: 기존 self-test 0 FAIL 유지 + 데이터 1줄 추가로 새 패턴 차단되는지 테스트.
-- done-when: 코드 패턴 하드코딩 제거 + 데이터 주도, 회귀 0.
-- 상태: pending · 위험: 작동 코드 리팩토링이라 회귀 주의(반드시 self-test 방패).
+### M1. 위험패턴 데이터화 (safety-rules.json) — ✅ 완료 (2026-06-23)
+- 한 것: `hooks/safety-rules.json` 신설 + 사용자 `~/.sodamharness/safety-rules.json`(또는 `SODAM_RULES_FILE`) 병합.
+  guard가 catastrophic/risky/recursiveDelete/sensitivePaths(win·posix·homeSubdirs)를 데이터로 **추가** 로드(08 §2 "이것도 막아줘 → 데이터 1줄").
+- 설계: 기본 패턴은 코드 유지(fail-safe·검증됨) + 데이터는 *추가만* → 회귀 0. 파일 없음/깨짐/잘못된 정규식은 무시(fail-safe).
+- 검증: self-test 60 PASS/0 FAIL(기존 56 그대로 + M1 4: 커스텀 risky·민감경로·깨진 파일 fail-safe).
 
 ### M2. D1 세션 화이트리스트 (ask 피로 완화) — ⏸ 보류
 - 트리거(둘 다 충족 시): M1(safety-rules.json) 완료 + **실초보 베타에서 ask 피로 실측**.
