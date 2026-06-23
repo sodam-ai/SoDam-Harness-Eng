@@ -52,7 +52,11 @@
 - **P2-B 자가검증 루프 — ✅ 완료 (2026-06-23)**: `skills/self-check/SKILL.md`(짧은 스킬, 완료 선언·위험/중요 작업 시 로드).
   끝내기 전 3단계(확인→증거→솔직) + /log·/undo 연결 + 과장 금지. **Stop 훅 미채택**(흐름 방해·과잉 회피).
   README 한·영 §4에 "자가검증/Verify-before-done" 동작 한 줄 추가. 한계: 스킬=지침이라 100% 강제 아님(§8.8 정직).
-- **P2-C Codex 지원 — 조건부**: `AGENTS.md` + `config.toml`(approval_policy·sandbox_mode) 템플릿 + 가이드. 사장님이 Codex 쓸 때만.
+- **P2-C Codex 지원 — ✅ 완료 (2026-06-23, 본인·지인 Codex 공통 사용 확인)**: `AGENTS.md`(말투, 기존) +
+  신규 `codex/config.toml.example`(approval_policy=untrusted·sandbox_mode=workspace-write, 보수) + `commands/codex.md`(적용 가이드).
+  **정직한 한계 전면 명시**: guard·백업·undo는 Claude Code 전용 → Codex 미적용, Codex 자체 승인·샌드박스로 '대체'(보호 강도 다름).
+  안전: `~/.codex` 자동 쓰기 안 함(우리 guard가 보호 → 수동/안내), `auth.json` 미접근(§8.3), 기존 설정 덮어쓰기 금지(H2).
+  한계(검증): Codex 실환경 미검증 — 본인·지인이 Codex로 직접 확인 필요. 값 이름은 Codex 버전 따라 공식문서 확인.
 - **P2-0 실설치 스모크 — 사람 필요**: Phase 2 전제이자 Phase1 졸업 게이트.
 
 ### M5. Phase 3 — 🚫 범위 밖

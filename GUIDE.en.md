@@ -54,7 +54,7 @@ Prefix each line with **`!`** in the input box (or run without `!` in a terminal
 
 ### ④ Verify
 - Type **`/sodam-harness:install`** → when "the safety belt is on ✅" appears, install is done.
-- If you don't see it, type just **`/sodam-harness`** → if 5 commands appear, it's working.
+- If you don't see it, type just **`/sodam-harness`** → if 7 commands appear, it's working.
 
 > 🔒 **Private beta**: for now the repo (`sodam-ai/SoDam-Harness-Eng`) requires **access** to add. Once public, anyone can install with the steps above.
 > 🟡 On first run, Windows **SmartScreen** or Mac **Gatekeeper** may warn you. If from the **official source**, click "Run anyway". (If suspicious, stop.)
@@ -104,6 +104,7 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 | `/sodam-harness:undo` | After an accidental delete | Restore by **picking** from the backup list |
 | `/sodam-harness:trust` | To stop being asked for the same action | "Stop asking for this folder/action" — silence it for this session (hard blocks & backups still apply) |
 | `/sodam-harness:log` | When curious what just happened | Timeline of AI actions (names & time only; secrets masked) |
+| `/sodam-harness:codex` | To use it with Codex too | Guide for same tone + conservative config (no belt on Codex; uses approval + sandbox) |
 
 ---
 

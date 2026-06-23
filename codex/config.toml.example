@@ -1,0 +1,17 @@
+# SoDamHarness — Codex 보수적 안전 설정 예시 (Phase 2 · P2-C)
+#
+# ⚠️ 중요(읽고 적용하세요):
+# 1) 이 파일을 ~/.codex/config.toml 에 "그대로 덮어쓰지" 마세요.
+#    기존 설정이 있으면 아래 두 줄만 '추가/병합' 하세요(기존 보존 — H2).
+# 2) ~/.codex/auth.json 같은 '자격증명(로그인 토큰)' 파일은 절대 건드리지 않습니다(§8.3).
+# 3) 값 이름은 Codex 버전에 따라 다를 수 있어요 → 적용 전 공식 문서로 확인:
+#    https://developers.openai.com/codex/config-reference
+#
+# 정직한 한계: SoDamHarness의 차단(guard)·자동 백업·되돌리기(undo)는 Claude Code 전용 hook이라
+#   Codex에서는 "동작하지 않습니다". Codex 안전은 아래 '승인 + 샌드박스'로 대신합니다(보호 방식이 다름).
+
+# 신뢰되지 않은 작업은 실행 전 사용자 승인을 요구(초보자 안전 우선)
+approval_policy = "untrusted"
+
+# 작업 폴더 안에서만 쓰기 허용 — 시스템 폴더·광역 변경·임의 네트워크는 제한
+sandbox_mode = "workspace-write"
