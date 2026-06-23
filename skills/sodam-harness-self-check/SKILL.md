@@ -1,5 +1,5 @@
 ---
-name: self-check
+name: sodam-harness-self-check
 description: 작업을 끝내거나 "다 됐어요"라고 말하기 전에 실제로 작동하는지 점검하고 증거를 보여줄 때 사용. 위험·중요 작업 마무리, 완료 선언, 검증 요청 시 적용.
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: beginner-tone
+name: sodam-harness-beginner-tone
 description: 완전 초보자(개발·AI 처음)를 돕는 쉬운 한국어 말투와 안전 습관. 코드·파일·설치·삭제·배포 등 모든 작업 안내, 에러 설명, 위험 작업 진행 시 항상 적용한다.
 ---
 
