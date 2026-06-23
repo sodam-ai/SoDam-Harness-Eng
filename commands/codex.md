@@ -1,5 +1,5 @@
 ---
-name: codex
+name: sodam-harness-codex
 description: Codex(코덱스)에서도 같은 쉬운 말투 + 보수적 안전 설정을 쓰도록 안내 (Phase 2).
 ---
 

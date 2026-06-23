@@ -45,7 +45,7 @@
 
 ### M4. Phase 2 — 진행 중 (혼자/지인용 결정으로 착수)
 > 전제(03): Phase1 안정·검증. **P2-0 실설치 스모크(사람)는 미완** — `/plugin` 설치→재시작→위험작업 1개 차단 확인 권장.
-- **P2-A 활동 기록 — ✅ 완료 (2026-06-23)**: PostToolUse 훅 `hooks/activity.mjs` + `commands/log.md`(`/sodam-harness:log`).
+- **P2-A 활동 기록 — ✅ 완료 (2026-06-23)**: PostToolUse 훅 `hooks/activity.mjs` + `commands/log.md`(`/sodam-harness-log`).
   sanitize(명령 원문·파일 내용 미저장, **동사+파일명만**, 비밀명 마스킹) · 512KB 회전 · fail-safe(실패해도 도구 흐름 무방해).
   검증: self-test 72 PASS/0 FAIL(P2-A 5: 동사만·마스킹·일반파일·**토큰 미저장**·--list+ago).
   남은 정밀화: activity↔backup `linked_backup_id` 정밀 연결(현재는 session·시각으로 정렬).

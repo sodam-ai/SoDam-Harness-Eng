@@ -53,7 +53,7 @@ Prefix each line with **`!`** in the input box (or run without `!` in a terminal
 - Then type **`claude`** in the terminal to start it again. (Or close and reopen the terminal window.)
 
 ### ④ Verify
-- Type **`/sodam-harness:install`** → when "the safety belt is on ✅" appears, install is done.
+- Type **`/sodam-harness-install`** → when "the safety belt is on ✅" appears, install is done.
 - If you don't see it, type just **`/sodam-harness`** → if 7 commands appear, it's working.
 
 > 🔒 **Private beta**: for now the repo (`sodam-ai/SoDam-Harness-Eng`) requires **access** to add. Once public, anyone can install with the steps above.
@@ -69,7 +69,7 @@ The easiest way is to **just ask the AI in plain language**.
 2. Type: **"Make a simple intro page here."** → the AI creates files (safe action, not blocked).
 3. Try something risky: **"Delete this whole folder."** → the belt **blocks it**, saying **"Deleting a whole folder is blocked."**
 4. Delete one file: **"Delete the file I just made."** → it is **auto-backed-up** right before deletion.
-5. Undo: **`/sodam-harness:undo`** → **pick what you just lost** from the backup list to restore.
+5. Undo: **`/sodam-harness-undo`** → **pick what you just lost** from the backup list to restore.
 
 ---
 
@@ -88,8 +88,8 @@ The easiest way is to **just ask the AI in plain language**.
 ### Workflow
 ```
 Install → (ask the AI in plain language) → on risky action: stop, back up, confirm
-   → if an accident happens, /sodam-harness:undo to restore
-   → if stuck, /sodam-harness:status (state) · /sodam-harness:fix (troubleshoot)
+   → if an accident happens, /sodam-harness-undo to restore
+   → if stuck, /sodam-harness-status (state) · /sodam-harness-fix (troubleshoot)
 ```
 
 ---
@@ -98,13 +98,13 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 
 | Command | When to use | What happens |
 |---|---|---|
-| `/sodam-harness:install` | Right after install | Confirms install + getting-started guide |
-| `/sodam-harness:status` | When unsure it works | Health check + "what to do next" |
-| `/sodam-harness:fix` | When something breaks | Symptom-based help |
-| `/sodam-harness:undo` | After an accidental delete | Restore by **picking** from the backup list |
-| `/sodam-harness:trust` | To stop being asked for the same action | "Stop asking for this folder/action" — silence it for this session (hard blocks & backups still apply) |
-| `/sodam-harness:log` | When curious what just happened | Timeline of AI actions (names & time only; secrets masked) |
-| `/sodam-harness:codex` | To use it with Codex too | Guide for same tone + conservative config (no belt on Codex; uses approval + sandbox) |
+| `/sodam-harness-install` | Right after install | Confirms install + getting-started guide |
+| `/sodam-harness-status` | When unsure it works | Health check + "what to do next" |
+| `/sodam-harness-fix` | When something breaks | Symptom-based help |
+| `/sodam-harness-undo` | After an accidental delete | Restore by **picking** from the backup list |
+| `/sodam-harness-trust` | To stop being asked for the same action | "Stop asking for this folder/action" — silence it for this session (hard blocks & backups still apply) |
+| `/sodam-harness-log` | When curious what just happened | Timeline of AI actions (names & time only; secrets masked) |
+| `/sodam-harness-codex` | To use it with Codex too | Guide for same tone + conservative config (no belt on Codex; uses approval + sandbox) |
 
 ---
 
@@ -126,14 +126,14 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 
 | Symptom | Why | Do now |
 |---|---|---|
-| Risky action wasn't stopped | Plugin off, or an unknown risk pattern | Restart Claude Code → `/sodam-harness:status` |
+| Risky action wasn't stopped | Plugin off, or an unknown risk pattern | Restart Claude Code → `/sodam-harness-status` |
 | Installed but no effect | Didn't restart | **Fully close and reopen** Claude Code |
 | Asks too often | Safety-first (L1) default | Adjust strength once used to it (coming later) |
 | "Node.js missing" | The safety hook runs on Node | Install LTS from https://nodejs.org, then restart |
 | Run-block warning (SmartScreen/Gatekeeper) | OS asks once for a new program | If from the official source, "Run anyway" |
-| Want to undo | — | `/sodam-harness:undo` (pick from the list) |
+| Want to undo | — | `/sodam-harness-undo` (pick from the list) |
 | Backup folder error (permission/space) | Disk full / permissions | Free space and retry (if backup fails, the risky action is auto-stopped) |
-| Garbled Korean | Encoding | Usually fine (Node.js); otherwise `/sodam-harness:fix` |
+| Garbled Korean | Encoding | Usually fine (Node.js); otherwise `/sodam-harness-fix` |
 | Explanations too hard (tone) | The easy tone is via a Skill and **may not always auto-activate** | Tell the AI **"Explain it simply"** |
 
 ---
@@ -166,7 +166,7 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 - **Q. Is it truly safe?** — It blocks common risks but **cannot block 100% of all cases.** It is a "seatbelt", not a "bulletproof shield".
 - **Q. Does it see my passwords/tokens?** — **No.** It doesn't access tokens/auth files and doesn't send data out.
 - **Q. Do I need the internet?** — Only to install. The safety features run locally on your computer.
-- **Q. I accidentally deleted a folder.** — Folders can't be backed up wholesale, so **folder deletion itself is blocked.** Files can be restored with `/sodam-harness:undo`.
+- **Q. I accidentally deleted a folder.** — Folders can't be backed up wholesale, so **folder deletion itself is blocked.** Files can be restored with `/sodam-harness-undo`.
 
 ---
 *SoDamHarness — © 2026 SoDam AI Studio · Apache-2.0 · Phase 1 (MVP)*

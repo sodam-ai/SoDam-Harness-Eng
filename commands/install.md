@@ -1,5 +1,5 @@
 ---
-name: install
+name: sodam-harness-install
 description: SoDamHarness 설치 확인 + 처음 시작 안내 (초보자용).
 ---
 
@@ -9,7 +9,7 @@ description: SoDamHarness 설치 확인 + 처음 시작 안내 (초보자용).
 2. **사전 점검(Node.js)**: `node --version` 을 실행해 Node.js가 있는지 확인합니다.
    - 있으면: 버전을 알려주고 "준비 끝났어요" 라고 합니다.
    - 없으면: "안전 기능이 동작하려면 Node.js가 필요해요. https://nodejs.org 에서 LTS 버전을 설치한 뒤 Claude Code를 다시 켜 주세요." 라고 **쉽게** 안내합니다.
-3. **무엇이 켜졌는지 한 줄 설명**: "이제 파일을 지우거나 덮어쓰는 위험한 작업을 하기 전에 **자동으로 멈추고 물어보고, 먼저 백업**해요. 잘못되면 `/sodam-harness:undo` 로 되돌릴 수 있어요."
+3. **무엇이 켜졌는지 한 줄 설명**: "이제 파일을 지우거나 덮어쓰는 위험한 작업을 하기 전에 **자동으로 멈추고 물어보고, 먼저 백업**해요. 잘못되면 `/sodam-harness-undo` 로 되돌릴 수 있어요."
 4. **지금 할 것 하나**: "한번 해볼까요? 작은 연습 폴더에서 AI에게 자연어로 시켜 보세요. 예) '여기에 간단한 소개 페이지 만들어 줘'."
 5. **백업 위치 안내**: 백업은 사용자 홈 폴더의 `.sodamharness/backups/` 에 저장된다고 **절대 경로**로 알려줍니다(예: `C:\Users\<이름>\.sodamharness\backups\`).
 
