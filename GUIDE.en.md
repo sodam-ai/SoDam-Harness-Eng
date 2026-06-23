@@ -103,6 +103,7 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
 | `/sodam-harness:fix` | When something breaks | Symptom-based help |
 | `/sodam-harness:undo` | After an accidental delete | Restore by **picking** from the backup list |
 | `/sodam-harness:trust` | To stop being asked for the same action | "Stop asking for this folder/action" — silence it for this session (hard blocks & backups still apply) |
+| `/sodam-harness:log` | When curious what just happened | Timeline of AI actions (names & time only; secrets masked) |
 
 ---
 

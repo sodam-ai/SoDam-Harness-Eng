@@ -43,8 +43,15 @@
   **UNC 공유루트(`\\server\share`)** 민감 추가. 한글 경로는 비교 로직이 유니코드 안전임을 회귀 테스트로 확인.
 - 검증: self-test 67 PASS/0 FAIL(E1 3: 한글 경로·UNC·junction realpath, junction은 mklink /J 실제 검증).
 
-### M4. Phase 2 (전제: Phase1 베타 통과) — 🚫 지금 범위 밖
-- 활동기록(경량 관측) / 자가검증 루프 / Codex 지원(AGENTS.md + config.toml). (03 Phase 2)
+### M4. Phase 2 — 진행 중 (혼자/지인용 결정으로 착수)
+> 전제(03): Phase1 안정·검증. **P2-0 실설치 스모크(사람)는 미완** — `/plugin` 설치→재시작→위험작업 1개 차단 확인 권장.
+- **P2-A 활동 기록 — ✅ 완료 (2026-06-23)**: PostToolUse 훅 `hooks/activity.mjs` + `commands/log.md`(`/sodam-harness:log`).
+  sanitize(명령 원문·파일 내용 미저장, **동사+파일명만**, 비밀명 마스킹) · 512KB 회전 · fail-safe(실패해도 도구 흐름 무방해).
+  검증: self-test 72 PASS/0 FAIL(P2-A 5: 동사만·마스킹·일반파일·**토큰 미저장**·--list+ago).
+  남은 정밀화: activity↔backup `linked_backup_id` 정밀 연결(현재는 session·시각으로 정렬).
+- **P2-B 자가검증 루프 — 대기**: `skills/self-check`(+선택 Stop 훅). 저코드.
+- **P2-C Codex 지원 — 조건부**: `AGENTS.md` + `config.toml`(approval_policy·sandbox_mode) 템플릿 + 가이드. 사장님이 Codex 쓸 때만.
+- **P2-0 실설치 스모크 — 사람 필요**: Phase 2 전제이자 Phase1 졸업 게이트.
 
 ### M5. Phase 3 — 🚫 범위 밖
 - 맞춤 마법사 / 정식 공개 / 영어·다도구. (03 Phase 3)
