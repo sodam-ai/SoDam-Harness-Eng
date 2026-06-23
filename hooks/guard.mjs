@@ -20,6 +20,7 @@ import { readFileSync, existsSync, lstatSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { backupPaths } from "./backup.mjs";
+import { isTrusted, recordPending } from "./whitelist.mjs"; // 세션 화이트리스트(D1)
 
 const WIN = process.platform === "win32";
 const MAC = process.platform === "darwin";
@@ -357,6 +358,14 @@ function isDeleteCommand(cmd) {
   return false;
 }
 
+// 작업 종류(화이트리스트 키) — 거칠게 분류. 같은 폴더라도 종류가 다르면 따로 신뢰(D1).
+function opClassOf(cmd, isOverwrite) {
+  if (isOverwrite) return "overwrite";
+  if (isDeleteCommand(cmd)) return "delete";
+  if (/git\s+push|deploy|publish/i.test(cmd)) return "deploy";
+  return "other";
+}
+
 // ── 메인 ──
 function main() {
   const raw = readStdin();
@@ -452,9 +461,16 @@ function main() {
       );
       return;
     }
+    // 세션 화이트리스트(D1): 이 폴더·이 작업을 이미 신뢰했으면 백업만 하고 묻지 않는다(deny는 위에서 이미 끝남).
+    const opClass = opClassOf(cmd, false);
+    if (isTrusted(sessionId, cwd, opClass)) {
+      passThrough(); // 신뢰됨 — 백업은 이미 떴고, 안 물음(보호는 유지)
+      return;
+    }
+    recordPending(sessionId, cwd, opClass); // "안 물어봐도 돼" 하면 이 작업을 신뢰로 승격
     decide(
       "ask",
-      `되돌리기 어려운 작업이에요. 먼저 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 정말 진행할까요? 잘못되면 "되돌려 줘"라고 하면 복구할 수 있어요.`,
+      `되돌리기 어려운 작업이에요. 먼저 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 정말 진행할까요? 잘못되면 "되돌려 줘"라고 하면 복구할 수 있어요. (이 폴더에서 이런 작업을 계속 할 거면 "이 폴더는 안 물어봐도 돼"라고 하면 이번 세션 동안 안 물을게요.)`,
     );
     return;
   }
@@ -486,9 +502,15 @@ function main() {
       decide("deny", `백업을 못 떠서 안전하게 멈췄어요. (사유: ${res.error})`);
       return;
     }
+    const opClass = opClassOf("", true); // = "overwrite"
+    if (isTrusted(sessionId, cwd, opClass)) {
+      passThrough(); // 신뢰됨 — 백업은 이미 떴고, 안 물음
+      return;
+    }
+    recordPending(sessionId, cwd, opClass);
     decide(
       "ask",
-      `기존 파일을 바꾸기 전에 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 진행할까요? 잘못되면 "되돌려 줘"로 복구돼요.`,
+      `기존 파일을 바꾸기 전에 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 진행할까요? 잘못되면 "되돌려 줘"로 복구돼요. (이 폴더에서 이런 작업을 계속 할 거면 "이 폴더는 안 물어봐도 돼"라고 하면 이번 세션 동안 안 물을게요.)`,
     );
     return;
   }

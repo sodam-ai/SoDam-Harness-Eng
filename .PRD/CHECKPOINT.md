@@ -32,10 +32,11 @@
 - 설계: 기본 패턴은 코드 유지(fail-safe·검증됨) + 데이터는 *추가만* → 회귀 0. 파일 없음/깨짐/잘못된 정규식은 무시(fail-safe).
 - 검증: self-test 60 PASS/0 FAIL(기존 56 그대로 + M1 4: 커스텀 risky·민감경로·깨진 파일 fail-safe).
 
-### M2. D1 세션 화이트리스트 (ask 피로 완화) — ⏸ 보류
-- 트리거(둘 다 충족 시): M1(safety-rules.json) 완료 + **실초보 베타에서 ask 피로 실측**.
-- 할 것: M1 데이터 위에 "조용히" 규칙으로 통합(별도 저장소 금지). deny는 절대 화이트리스트 불가·백업은 유지.
-- 상태: deferred (08 §4 백로그 기록).
+### M2. D1 세션 화이트리스트 (ask 피로 완화) — ✅ 완료 (2026-06-23, 혼자/지인용 결정)
+- 한 것: `hooks/whitelist.mjs`(세션·폴더·작업종류 키, 12h 만료) + `commands/trust.md`(사용자 동의 `--trust-last`).
+  guard가 ask 직전 `isTrusted` 확인 → 신뢰 시 백업만 하고 통과, 아니면 pending 기록 + ask(안내 포함).
+- 불변(검증됨): deny는 ask 위에서 먼저 반환돼 **절대 화이트리스트 불가** · 신뢰돼도 **백업 항상** · **세션 한정 + 12h 만료**.
+- 검증: self-test 64 PASS/0 FAIL(D1 4: 신뢰 후 통과·세션 한정·deny 불가·신뢰 전 ask).
 
 ### M3. E1 경로 엣지 — ⚠️ 저빈도
 - 할 것: junction(reparse) 판정(lstat 한계), UNC(`\\server\share`) 민감 검사, 한글 홈경로 회귀 테스트.
