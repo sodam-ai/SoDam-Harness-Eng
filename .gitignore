@@ -8,9 +8,11 @@ node_modules/
 
 # 다른 플러그인 작업 폴더·산출물(이 저장소와 무관 — 공개 시 제외)
 .omc/
-.todos-report.md/
+.todos-report.md
 .complexity-log.md
 .remember/
+.pair-programming-session.md
+.plugin-config/
 
 # 테스트 임시 산출물
 _selftest.mjs
