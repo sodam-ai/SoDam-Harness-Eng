@@ -8,6 +8,5 @@
   },
   "homepage": "https://github.com/sodam-ai/SoDam-Harness-Eng",
   "license": "Apache-2.0",
-  "keywords": ["safety", "guardrails", "beginner", "korean", "hooks", "backup", "undo"],
-  "hooks": "./hooks/hooks.json"
+  "keywords": ["safety", "guardrails", "beginner", "korean", "hooks", "backup", "undo"]
 }
