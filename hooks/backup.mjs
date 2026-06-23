@@ -139,8 +139,25 @@ export function latestBackup() {
   }
 }
 
+// 폴더 mtime(ms) 기준 "N분 전" 한국어 상대시간 — 초보자가 절대시각으로 백업을 못 고르는 문제 해결(07_AUDIT C2).
+export function relativeAgo(ms) {
+  try {
+    const diff = Date.now() - ms;
+    if (!Number.isFinite(diff) || diff < 0) return "방금"; // 클럭 차이 등으로 미래면 "방금"
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return "방금";
+    if (min < 60) return `${min}분 전`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr}시간 전`;
+    const day = Math.floor(hr / 24);
+    return `${day}일 전`;
+  } catch {
+    return "";
+  }
+}
+
 // 최근 백업 목록(최신순) — undo/status가 "골라서 되돌리기"·현황 표시에 사용.
-// 각 항목: { dir, created_at, cwd, session_id, files:[원본경로...] }
+// 각 항목: { dir, created_at, ago, cwd, session_id, files:[원본경로...] }
 export function listBackups(limit = 8) {
   try {
     const root = backupsRoot();
@@ -158,14 +175,18 @@ export function listBackups(limit = 8) {
     const out = [];
     for (const name of dirs.slice(0, Math.max(1, limit))) {
       const dir = path.join(root, name);
+      let mtime = 0;
+      try { mtime = statSync(dir).mtimeMs; } catch {}
+      const ago = relativeAgo(mtime); // "3분 전" — 초보자가 방금 잃은 백업을 고르기 쉽게(C2)
       const mf = path.join(dir, "manifest.json");
-      let info = { dir, created_at: name, cwd: null, session_id: null, files: [] };
+      let info = { dir, created_at: name, ago, cwd: null, session_id: null, files: [] };
       if (existsSync(mf)) {
         try {
           const m = JSON.parse(readFileSync(mf, "utf8"));
           info = {
             dir,
             created_at: m.created_at || name,
+            ago,
             cwd: m.cwd || null,
             session_id: m.session_id || null,
             files: (m.files || []).map((f) => f.source),
