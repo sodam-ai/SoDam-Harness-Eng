@@ -1,111 +1,124 @@
-# SoDamHarness Beginner Guide 🛟 (English)
+# SoDamHarness User Guide (GUIDE) — For Absolute Beginners
 
-> 한국어 가이드: **GUIDE.md** (Korean is the primary, authoritative version) · Short intro: **README.en.md** · How to test: **TESTING.en.md**
-> This guide assumes you are **new to coding, AI, and even computers/phones**. Hard terms are explained, and you can follow it one **"click this now"** step at a time.
+> **SoDamHarness** is a **"seatbelt" that helps prevent big accidents when you code with AI (Claude Code).**
+> It's built so that someone new to development, AI, and even computers can **just follow along**.
+>
+> ⚠️ **Read this first (an honest promise):** This tool is a **"seatbelt" that blocks common dangers — not a "bulletproof shield."** "100% safe" **does not exist.** Still, a seatbelt greatly reduces harm.
 
 ---
 
-## 0. What is this? (1-minute idea)
+## 0. What is this? (understand in 1 minute)
 
-- **SoDamHarness** = a **"safety belt"** that prevents accidents when you let an AI do computer tasks.
-- It is a **one-click add-on (plugin)** for the AI coding tool **Claude Code**.
-- Like a car seatbelt, it stays **quiet** normally and only **stops, asks, and backs up first** at the **dangerous moment** when the AI is about to delete or overwrite files.
+When you tell an AI "do this," it creates, edits, and deletes files on your computer. Convenient — but if the **AI accidentally deletes an important file or folder**, it's hard to undo.
 
-> 💡 Terms: **plugin** = an add-on that gives a program extra features. **AI coding tool** = a program that does computer work when you ask in plain language.
+SoDamHarness acts as a **gatekeeper** in between.
+
+- 🛑 **Very dangerous actions** (deleting a whole folder, etc.) are **blocked outright.**
+- 💾 Before **hard-to-undo actions** (deleting/overwriting files), it **auto-backs up** and asks **"Really do this?"**
+- ↩️ If you make a mistake, you can **restore from backup.**
+- 🗣️ All guidance is in **plain, easy language.**
 
 ---
 
 ## 1. Prerequisites (programs you need)
 
-| Needed | What it is | Check / Install |
-|---|---|---|
-| **Claude Code** | The AI coding tool this belt attaches to | OK if you already use it |
-| **Node.js (18+)** | The "engine" that runs the safety features | See 1-1 |
-| **OS** | Windows or Mac | Both supported (verified on Windows; Mac uses the same code, real-device check pending) |
+Just **2 things**, both free.
 
-### 1-1. Install Node.js (only if missing)
-1. In a browser, go to **https://nodejs.org**.
-2. Of the two big buttons, click the one marked **"LTS"** to download.
-3. Double-click the downloaded installer → keep clicking **"Next"** to install.
-4. Verify: in Claude Code type `node --version` → if numbers like `v18...` appear, success.
+### (1) Node.js — the engine the seatbelt runs on
+- **Check:** In the black command window (see tip below), type `node --version`. If you see `v18` or higher (e.g., `v22.19.0`), it's already installed.
+- **If missing, install:**
+  1. In a web browser, go to **https://nodejs.org**.
+  2. Click the big **"LTS"** button to download the installer. (LTS = the stable version.)
+  3. Double-click the downloaded file → keep clicking **"Next"** to install → restart your computer/terminal.
 
-> ⚠️ Without Node.js the safety features **silently do not run.** Install it first.
+### (2) Claude Code — the AI coding tool (where this seatbelt attaches)
+- If you're reading this inside Claude Code, it's **already installed.**
+- Otherwise, follow the official guide (https://claude.com/claude-code).
 
----
-
-## 2. Download & Install (click by click)
-
-Installing is **4 steps: ① add marketplace → ② install plugin → ③ restart → ④ verify.** Pick whichever is easier.
-
-### Method A — via menu (mouse/arrow keys, easiest)
-1. **Open Claude Code.**
-2. Type **`/plugin`** and press Enter → the plugin management screen opens.
-3. Under **Add marketplace**, enter **`sodam-ai/SoDam-Harness-Eng`** to add it.
-4. From the plugin list, pick **`sodam-harness`** and **Install** it.
-
-### Method B — by command (precise)
-Prefix each line with **`!`** in the input box (or run without `!` in a terminal):
-1. `!claude plugin marketplace add sodam-ai/SoDam-Harness-Eng`
-2. `!claude plugin install sodam-harness@sodamharness-marketplace`
-
-### ③ Restart (required) — the belt arms only on start
-- Type **`/exit`** → Claude Code shuts down.
-- Then type **`claude`** in the terminal to start it again. (Or close and reopen the terminal window.)
-
-### ④ Verify
-- Type **`/sodam-harness-install`** → when "the safety belt is on ✅" appears, install is done.
-- If you don't see it, type just **`/sodam-harness`** → if 7 commands appear, it's working.
-
-> 🔒 **Private beta**: for now the repo (`sodam-ai/SoDam-Harness-Eng`) requires **access** to add. Once public, anyone can install with the steps above.
-> 🟡 On first run, Windows **SmartScreen** or Mac **Gatekeeper** may warn you. If from the **official source**, click "Run anyway". (If suspicious, stop.)
+> 💡 **What is the "black command window (terminal)"?** A window where you type commands to your computer.
+> **Open it (Windows):** press the **⊞ Windows key** → type `powershell` → click **Windows PowerShell**.
 
 ---
 
-## 3. Quick start (5 minutes)
+## 2. Installation (step by step)
 
-The easiest way is to **just ask the AI in plain language**.
+You only install **once**. Pick **one** of the two methods.
 
-1. Make a **throwaway empty practice folder** and open Claude Code inside it.
-2. Type: **"Make a simple intro page here."** → the AI creates files (safe action, not blocked).
-3. Try something risky: **"Delete this whole folder."** → the belt **blocks it**, saying **"Deleting a whole folder is blocked."**
-4. Delete one file: **"Delete the file I just made."** → it is **auto-backed-up** right before deletion.
-5. Undo: **`/sodam-harness-undo`** → **pick what you just lost** from the backup list to restore.
+### Method A — Install via the `/plugin` screen (recommended for beginners · point and click)
 
----
+1. In Claude Code, type **`/plugin`** and press Enter → the plugin manager opens.
+2. Choose **Add marketplace**, then enter one of:
+   - **If published (recommended):** `sodam-ai/SoDam-Harness-Eng`
+   - **From a folder on your computer (dev / sharing with friends):** the full folder path
+     (e.g., `D:\AI_Dev_Work\2026y\26y_06m_22d_SoDam-Harness-Eng`)
+3. Pick **`sodam-harness`** from the list and **Install**.
+4. **Fully quit and reopen Claude Code.** (Type `/exit`, then run `claude` again — or close the terminal window and open a new one.)
+5. Type **`/sodam-harness`** and if the **8 commands** (see section 6) appear, **install succeeded.**
 
-## 4. How to use / how it works
+### Method B — Install via commands (black command window)
 
-- **🗣️ Plain tone** — the AI explains in **easy words** instead of jargon. (If it gets hard, say **"Explain it simply".**)
-- **🛑 Block / confirm** — risky work stops **before** running.
-  - **Whole-folder / recursive deletion** (irreversible) is **blocked outright.**
-  - **File delete / overwrite** is **backed up first, then "Are you sure?" confirmed.**
-- **💾 Auto-backup** — right **before** a risky action, the target file is copied to the backup folder.
-- **↩️ Undo** — shows the **backup list** and lets you **pick what you just lost** to restore (so it never restores the wrong thing even when tasks are mixed).
-- **🩺 Self-check** — tells you the current state and "what to do next".
+Type these **one line at a time**:
 
-> ⚠️ **Important (auto-approve mode)**: if you run Claude Code in **"auto-approve" mode**, the "Are you sure?" prompt **may pass automatically.** Even so, **big risks like whole-folder deletion are still blocked.** To always see the prompt, use Claude Code's **default mode**.
-
-### Workflow
 ```
-Install → (ask the AI in plain language) → on risky action: stop, back up, confirm
-   → if an accident happens, /sodam-harness-undo to restore
-   → if stuck, /sodam-harness-status (state) · /sodam-harness-fix (troubleshoot)
+claude plugin marketplace add "D:\AI_Dev_Work\2026y\26y_06m_22d_SoDam-Harness-Eng"
+```
+```
+claude plugin install sodam-harness@sodamharness-marketplace
 ```
 
+Then **fully quit and reopen** Claude Code and verify with `/sodam-harness`.
+
+> 📌 **Important (current status):** If it isn't published to GitHub yet, **Method A's "if published" option won't work.**
+> For now, install via the **computer folder path** (Method A's second option / Method B). Once published, GitHub is the simplest.
+
 ---
 
-## 5. Commands
+## 3. Quick start (3 minutes)
 
-| Command | When to use | What happens |
-|---|---|---|
-| `/sodam-harness-install` | Right after install | Confirms install + getting-started guide |
-| `/sodam-harness-status` | When unsure it works | Health check + "what to do next" |
-| `/sodam-harness-fix` | When something breaks | Symptom-based help |
-| `/sodam-harness-undo` | After an accidental delete | Restore by **picking** from the backup list |
-| `/sodam-harness-trust` | To stop being asked for the same action | "Stop asking for this folder/action" — silence it for this session (hard blocks & backups still apply) |
-| `/sodam-harness-log` | When curious what just happened | Timeline of AI actions (names & time only; secrets masked) |
+1. (After install) **reopen** Claude Code fresh.
+2. Type **`/sodam-harness-install`** → you'll see "the seatbelt is on."
+3. In a **throwaway empty practice folder**, ask the AI to do things as usual.
+   - e.g., "create memo.txt" → it's created.
+   - e.g., "delete this whole folder" → **blocked** 🛑 (seatbelt works!)
+4. Curious? **`/sodam-harness-status`** (current state), **`/sodam-harness-log`** (what it just did).
 
-> 💡 All commands above are **Claude Code only**. To use it with Codex, see "(Optional) Using it with Codex" below.
+---
+
+## 4. How it works (when and how the seatbelt acts)
+
+Normally, just use the AI **as usual**. The seatbelt steps in only at risky moments.
+
+| What the AI tries to do | The seatbelt's response |
+|---|---|
+| **Create** a file, read, normal edits | Proceeds (not blocked) |
+| **Delete a whole folder**, dangerous system commands | 🛑 **Blocked** (not allowed) |
+| **Delete / overwrite a file** | 💾 **Auto-backup** first → asks **"Really do this?"** |
+| Deploy / send out / other hard-to-undo actions | ⚠️ Asks for **confirmation** |
+| Passwords / tokens / auth files | 🔒 **Not touched** (and not stored in backups) |
+
+- **Backups** auto-save to `~/.sodamharness/backups/` on your computer. (See section 7.)
+- If you deleted something by mistake, restore with **`/sodam-harness-undo`.**
+- ⚠️ If you turn on **auto-approve (YOLO) mode**, the "Really do this?" prompt may be skipped. **Backups still happen.** To always see the prompt, use the **default mode.**
+
+---
+
+## 5. Workflow (everyday use)
+
+```
+[As usual] Ask the AI to do work
+        │
+        ▼
+[Seatbelt auto-checks]
+        │
+        ├─ Safe action       → proceeds ✅
+        ├─ Risky action      → backup 💾 + "Really do this?" ⚠️
+        └─ Very risky action → blocked 🛑 (not done)
+        │
+        ▼
+[Made a mistake?] → /sodam-harness-undo to restore ↩️
+[What happened?]  → /sodam-harness-log to review 📜
+[Working OK?]     → /sodam-harness-status to check 🩺
+```
 
 ---
 
@@ -118,70 +131,115 @@ Install → (ask the AI in plain language) → on risky action: stop, back up, c
    - ⚠️ **Don't overwrite** existing config · **never touch `~/.codex/auth.json` (login token)** · apply it **yourself**.
    - Value names may differ by Codex version → official docs: https://developers.openai.com/codex/config-reference
 3. **Verify** — Restart Codex and, in a **throwaway empty folder**, ask for a risky action to confirm the **approval prompt appears**.
-
-> Need help? In Claude Code, just say **"help me set up Codex safety"** and I'll walk you through these steps.
+4. Detailed steps are also in **`codex/CODEX_SETUP.md`**. Stuck? In Claude Code, just say **"help me set up Codex safety."**
 
 ---
 
-## 6. File / document locations
+## 6. Commands (what to use when)
+
+Type **`/sodam-harness`** to see these in autocomplete. All are **Claude Code only.**
+
+### 6 commands
+
+| Command | When to use | What happens |
+|---|---|---|
+| `/sodam-harness-install` | Right after install | Confirms install + getting-started guide |
+| `/sodam-harness-status` | When unsure it works | Health check + "what to do next" |
+| `/sodam-harness-fix` | When something breaks | Symptom-based help |
+| `/sodam-harness-undo` | After an accidental delete | Restore by **picking** from the backup list |
+| `/sodam-harness-trust` | To stop being asked for the same action | "Stop asking for this folder/action" — silence it for this session (hard blocks & backups still apply) |
+| `/sodam-harness-log` | When curious what just happened | Timeline of AI actions (names & time only; secrets masked) |
+
+### 2 skills (auto-helpers)
+
+| Name | What it does |
+|---|---|
+| `/sodam-harness-beginner-tone` | Makes all guidance use **plain, easy language**. (Usually automatic — if it's hard, just say "explain it simply".) |
+| `/sodam-harness-self-check` | Makes the AI **verify it really works** (with evidence) before saying "done". |
+
+> 💡 All commands above are **Claude Code only**. To use it with Codex, see **"5-1. (Optional) Using it with Codex"** above.
+
+---
+
+## 7. File / document locations
 
 - **Backup folder (auto-created)** — inside your home folder, `.sodamharness/backups/`
   - Windows: `C:\Users\<name>\.sodamharness\backups\`
   - Mac: `/Users/<name>/.sodamharness/backups/`
   - This folder **never stores passwords/tokens.** Only backup files.
-- **Documents (in this project)**
+- **Activity log (auto)** — in the same `.sodamharness/` folder. View with `/sodam-harness-log`. (Names & time only; secrets masked.)
+- **Documents (in the plugin folder)**
   - `README.md` / `README.en.md` — short intro (KO/EN)
   - `GUIDE.md` / `GUIDE.en.md` — this detailed guide (KO/EN)
   - `TESTING.md` / `TESTING.en.md` — how to test/verify (KO/EN)
+  - `codex/config.toml.example`, `codex/CODEX_SETUP.md` — Codex setup materials
   - `LICENSE` / `NOTICE` — license & notices
+- Same content as **PDF**: `README.pdf` · `README.en.pdf` · `GUIDE.pdf` · `GUIDE.en.pdf`
 
 ---
 
-## 7. Troubleshooting (Symptom → Why → Do now)
+## 8. Troubleshooting (Symptom → Why → Do now)
 
 | Symptom | Why | Do now |
 |---|---|---|
-| Risky action wasn't stopped | Plugin off, or an unknown risk pattern | Restart Claude Code → `/sodam-harness-status` |
-| Installed but no effect | Didn't restart | **Fully close and reopen** Claude Code |
-| Asks too often | Safety-first (L1) default | Adjust strength once used to it (coming later) |
-| "Node.js missing" | The safety hook runs on Node | Install LTS from https://nodejs.org, then restart |
+| `/sodam-harness-...` commands **don't appear** | **Didn't restart** after install, or not installed | **Fully close and reopen** Claude Code → check `/sodam-harness`. If still missing, redo section 2 |
+| Risky action **wasn't stopped** | Plugin off, or an unknown risk pattern | Restart Claude Code → `/sodam-harness-status` |
+| Asks **too often** | Safety-first default | For the same action, use `/sodam-harness-trust` to stop asking this session |
+| **"Node.js missing"** | The safety hook runs on Node | Install **LTS** from https://nodejs.org, then restart (section 1) |
 | Run-block warning (SmartScreen/Gatekeeper) | OS asks once for a new program | If from the official source, "Run anyway" |
-| Want to undo | — | `/sodam-harness-undo` (pick from the list) |
+| Deleted something **by mistake** | — | `/sodam-harness-undo` (pick from the list) |
 | Backup folder error (permission/space) | Disk full / permissions | Free space and retry (if backup fails, the risky action is auto-stopped) |
 | Garbled Korean | Encoding | Usually fine (Node.js); otherwise `/sodam-harness-fix` |
 | Explanations too hard (tone) | The easy tone is via a Skill and **may not always auto-activate** | Tell the AI **"Explain it simply"** |
+| Old names (`/install`, etc.) / duplicates appear | Leftover from an old install | Fully restart Claude Code. If still there, reinstall |
+
+> For deeper diagnosis, type **`/sodam-harness-fix`**.
 
 ---
 
-## 8. Uninstall
+## 9. Uninstall
 
-1. In Claude Code, **`/plugin`** → **Uninstall SoDamHarness**. Or type `!claude plugin uninstall sodam-harness@sodamharness-marketplace`.
+1. In Claude Code, **`/plugin`** → **Uninstall SoDamHarness**.
+   - Or type `claude plugin uninstall sodam-harness@sodamharness-marketplace`.
 2. To delete backups too, remove the **`.sodamharness/` folder** in your home directory. (Leave it to keep your backups.)
-
----
-
-## 9. License · Copyright · Commercial use (strict notice)
-
-> ⚖️ **This is not legal advice.** The following is guidance for safe use/distribution.
-
-- **License: Apache License 2.0** · **Copyright: © 2026 SoDam AI Studio.**
-- **You may (Apache-2.0)**: modify · copy · fork · redistribute · **commercial use · sell · run as a service · educational material · company/client delivery** · patent use.
-- **Obligations**: **keep the license & copyright notices** · **state your changes** · **include the NOTICE file** (if present).
-- **Not provided**: **no warranty (AS-IS)** · **no trademark rights granted.**
-- **Third-party trademarks**: "Claude Code", "Codex", "Anthropic", "OpenAI", etc. belong to their owners. This product is **not affiliated with or endorsed by** them; names are used only **nominatively** to state compatibility.
-- **Liability / disclaimer**: provided "as is"; the user is **responsible** for outcomes of use. "100% accident prevention" or "legally 100% safe" is **not guaranteed.**
-- **Check separately**: **AI model terms (Anthropic/OpenAI)** · **API pricing** · **third-party service terms** · (if used) font/image/icon licenses. These are **outside this license**.
-- **External assets caution**: when adding external code/images/fonts/samples, **verify the rights first**, and **do not borrow incompatible licenses such as AGPL/GPL.**
-- Full text: **[LICENSE](./LICENSE)**, notices: **[NOTICE](./NOTICE)**.
 
 ---
 
 ## 10. FAQ
 
-- **Q. Is it truly safe?** — It blocks common risks but **cannot block 100% of all cases.** It is a "seatbelt", not a "bulletproof shield".
-- **Q. Does it see my passwords/tokens?** — **No.** It doesn't access tokens/auth files and doesn't send data out.
+- **Q. Is it truly safe?** — It blocks common risks but **cannot block 100% of all cases.** It's a "seatbelt", not a "bulletproof shield".
+- **Q. Does it see my passwords/tokens?** — **No.** It doesn't access tokens/auth files and doesn't send data out. Secret files are **excluded** from backups.
 - **Q. Do I need the internet?** — Only to install. The safety features run locally on your computer.
 - **Q. I accidentally deleted a folder.** — Folders can't be backed up wholesale, so **folder deletion itself is blocked.** Files can be restored with `/sodam-harness-undo`.
+- **Q. Does it work on Mac?** — It's built to run with the same code, but it's currently **verified on Windows only** (Mac untested). Let us know if you try it on Mac.
+- **Q. Same protection in Codex?** — **No.** Block/backup/undo are **Claude Code only**. Codex relies on its own approval & sandbox (see 5-1).
 
 ---
-*SoDamHarness — © 2026 SoDam AI Studio · Apache-2.0 · Phase 1 (MVP)*
+
+## 11. License · Copyright · Commercial use (strict notice)
+
+> ⚖️ **This is not legal advice.** The following is guidance for safe use/distribution. Final judgment is your responsibility; consult a professional if needed.
+
+- **License: Apache License 2.0** · **Copyright: © 2026 SoDam AI Studio.**
+- **You may (Apache-2.0)**: modify · copy · fork · redistribute · **commercial use · sell · run as a service · educational material · company/client delivery** · patent use.
+- **Obligations**: **keep the license & copyright notices** · **state your changes** · **include the NOTICE file** (if present).
+- **Not provided**: **no warranty (AS-IS)** · **no trademark rights granted.**
+- **Third-party trademarks**: "Claude", "Claude Code", "Codex", "Anthropic", "OpenAI", "Node.js", etc. belong to their owners. This product is **not affiliated with or endorsed by** them; names are used only **nominatively** to state compatibility.
+- **Liability / disclaimer**: provided **"as is"**; the user is **responsible for all outcomes** of use. **"100% accident prevention" or "legally 100% safe" is not guaranteed.**
+- **Data/backup disclaimer**: backup/undo are **auxiliary aids**. Backups **may fail** due to disk failure, lack of space, or permission issues; data-loss responsibility lies with the user. **Keep separate backups** of important material.
+- **Check separately**: **AI model terms (Anthropic/OpenAI, etc.)** · **API pricing** · **third-party service terms** · (if used) font/image/icon licenses. These are **outside this license**.
+- **External assets caution**: when adding external code/images/fonts/samples, **verify the rights first**, and **do not borrow incompatible licenses such as AGPL/GPL.**
+- Full text: **[LICENSE](./LICENSE)**, notices: **[NOTICE](./NOTICE)**.
+
+---
+
+## 12. Safety & limits (honest notice)
+
+- This is an **auxiliary safety aid** that reduces common risks. **It is not perfect.**
+- **New or clever risk patterns can be missed.** Always think twice before risky actions.
+- **Verified on Windows; Mac untested.**
+- For truly important data, **don't rely on this tool alone** — keep separate backups.
+
+---
+
+*This document (GUIDE.en.md) and its PDF (GUIDE.en.pdf) have identical content. Korean: README.md / GUIDE.md.*
