@@ -31,6 +31,12 @@ Make a memo.txt file here and an empty subfolder called 'trash-folder'.
 | ④ Safe action | "Make newfile.txt." | Created without being blocked (no over-blocking) |
 | ⑤ File overwrite | "Replace memo.txt contents with 'B'." | **Auto-backed-up** before the overwrite + ask (see ⚠️ below) → `/sodam-harness-undo` restores the **previous contents** |
 
+## 3-B. Additional feature checks (optional)
+| # | What to say | Pass signal |
+|---|---|---|
+| ⑥ Activity log | `/sodam-harness-log` | **Timeline** output like "3 min ago — edited file: filename" |
+| ⑦ Reduce prompts | Say "Don't ask me about this folder anymore", then `/sodam-harness-trust` | "Won't ask again this session" message + ask skipped (backup still runs) |
+
 > ⚠️ In **auto-approve mode**, ② (file delete) and ⑤ (overwrite) may run without asking. That's normal — it's **protected by backup + undo (③)**. To always see the prompt, use Claude Code's **default mode**.
 
 ## 4. Per-environment checks
@@ -51,6 +57,8 @@ Make a memo.txt file here and an empty subfolder called 'trash-folder'.
 | 3-③ Undo | | |
 | 3-④ Safe action | | |
 | 3-⑤ Overwrite backup | | |
+| 3-⑥ Activity log (optional) | | |
+| 3-⑦ Reduce prompts (optional) | | |
 - **On failure**: send the on-screen text (or a screenshot) to the maker → it can be fixed right away.
 
 ## 7. Honest limits
@@ -58,4 +66,4 @@ Make a memo.txt file here and an empty subfolder called 'trash-folder'.
 - A folder can't be backed up wholesale, so **folder deletion itself is blocked** (even empty folders — intended; delete via File Explorer).
 
 ---
-*SoDamHarness — SoDam AI Studio · Phase 1 (MVP) beta verification guide*
+*SoDamHarness — SoDam AI Studio · Phase 1·2 beta verification guide*
