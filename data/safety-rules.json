@@ -1,0 +1,44 @@
+{
+  "_note": "【참고용 전용 — guard.mjs가 이 파일을 읽지 않습니다】 guard.mjs 코드 내 하드코딩 패턴의 데이터 복사본. 사용자 추가 규칙은 hooks/safety-rules.json 에 넣으세요.",
+  "catastrophic": [
+    "rm\\s+-rf\\s+[~\\/]",
+    "rm\\s+-rf\\s+\\.",
+    "Remove-Item\\s+-Recurse\\s+-Force\\s+[A-Za-z]:\\\\",
+    "Remove-Item\\s+-Recurse\\s+\\.",
+    "rmdir\\s+/s\\s+/q\\s+[A-Za-z]:\\\\",
+    "format\\s+[A-Za-z]:",
+    "dd\\s+if=",
+    "mkfs\\.",
+    "shutil\\.rmtree\\(['\"][\\/~]",
+    "fs\\.rm.*recursive.*force",
+    "\\[IO.Directory\\]::Delete",
+    "Add-Type.*VisualBasic.*Delete",
+    "git\\s+push\\s+.*--force.*origin\\s+main",
+    "git\\s+push\\s+.*--force.*origin\\s+master"
+  ],
+  "risky": [
+    "rm\\s+-[rf]+",
+    "del\\s+/[sf]",
+    "Remove-Item",
+    "rmdir",
+    "git\\s+push\\s+.*--force",
+    "git\\s+reset\\s+--hard",
+    "git\\s+checkout\\s+--\\s+\\.",
+    "git\\s+clean\\s+-[fd]",
+    "deploy",
+    "vercel\\b",
+    "netlify\\b",
+    "firebase\\s+deploy",
+    "curl\\s+.*-[xXdD].*http",
+    "wget\\s+.*--post",
+    "scp\\s+",
+    "rsync\\s+.*--delete",
+    ">\\s*[^\\s]+\\.(js|ts|json|md|html|css|py|go|rs|java)",
+    "fs\\.writeFile.*Sync",
+    "overwrite",
+    "truncate"
+  ],
+  "plugins": {
+    "_note": "형제 플러그인은 여기에 plugins.<이름> 키를 추가하세요. Harness가 자동 병합합니다."
+  }
+}

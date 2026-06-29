@@ -1,0 +1,45 @@
+name: Security Audit
+
+on:
+  schedule:
+    - cron: '0 9 1 * *'   # 매월 1일 09:00 UTC 자동 실행
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: npm audit (고위험 차단)
+        run: npm audit --audit-level=high
+
+      - name: 외부 의존성 0 검증 (dependencies 비어있어야 함)
+        run: |
+          DEPS=$(node -e "const p=require('./package.json'); console.log(Object.keys(p.dependencies||{}).length)")
+          if [ "$DEPS" != "0" ]; then
+            echo "오류: dependencies에 외부 패키지가 있습니다 (PRD §8.6 위반)"
+            exit 1
+          fi
+
+      - name: 금지 패턴 스캔 (eval·exec·fetch·child_process)
+        run: |
+          if grep -rn "\beval\b\|\bexec\b\|\bfetch\b\|\brequire('child_process')\b\|require(\"child_process\")" hooks/ --include="*.mjs" \
+            | grep -v "^Binary\|#\|//\|_selftest"; then
+            echo "오류: hooks/ 에 금지 패턴이 발견됐습니다"
+            exit 1
+          fi
+
+      - name: 비밀값 하드코딩 스캔
+        run: |
+          if grep -rn "token\s*=\s*['\"][A-Za-z0-9]\|password\s*=\s*['\"][A-Za-z0-9]\|api_key\s*=\s*['\"]" hooks/ --include="*.mjs"; then
+            echo "오류: 하드코딩된 비밀값 패턴이 발견됐습니다"
+            exit 1
+          fi
