@@ -19,8 +19,48 @@
 
 ## 사전 준비물 (무료, 2가지)
 
-1. **Node.js** (v18 이상) — 없으면 https://nodejs.org 에서 **LTS** 설치.
+1. **Node.js** (v18 이상) — 없으면 `https://nodejs.org` 에서 **LTS** 설치.
 2. **Claude Code** — 이 글을 Claude Code에서 보고 있다면 이미 있는 것.
+
+---
+
+## 다운로드 방법
+
+SoDamHarness 파일을 내 컴퓨터에 가져오는 방법입니다.
+
+- **GitHub ZIP 내려받기 (공개 후 / 권장):**
+  `https://github.com/sodam-ai/SoDam-Harness-Eng` → 초록색 **"Code"** 버튼 → **"Download ZIP"** → 압축 해제.
+  > ⚠️ 현재 GitHub 공개 전 — 아래 폴더 방식을 쓰세요.
+
+- **폴더 경로로 설치 (현재 방법):**
+  개발자에게 받은 폴더를 내 컴퓨터에 복사한 뒤, 아래 설치 단계에서 그 경로를 입력합니다.
+  - 폴더 경로 예시: `D:\SoDam-Harness-Eng\`
+  - 경로에 한글이 없는 곳을 추천합니다.
+  - 전체 경로 확인: 탐색기 주소창 클릭 → 경로 복사.
+
+> 더 자세한 다운로드 방법(Git clone, 압축 해제 방법 등)은 **[GUIDE.md 1-1장](./GUIDE.md)** 참고.
+
+---
+
+## 내부 구조 (한눈에)
+
+SoDamHarness는 3개의 핵심 파일이 팀으로 움직입니다.
+
+| 파일 | 별명 | 하는 일 |
+|---|---|---|
+| `hooks/guard.mjs` | 경비원 | AI가 도구를 쓰기 **전에** 실행돼서 위험도를 판단하고 막거나 허용 |
+| `hooks/backup.mjs` | 백업 담당 | 위험한 작업 전 파일을 `~/.sodamharness/backups/`에 자동 저장 |
+| `hooks/activity.mjs` | 일지 기록원 | AI가 한 일을 `activity.log`에 기록 (파일명·시각만, 비밀은 가림) |
+
+**3등급 분류:**
+
+| 등급 | 어떤 일 | 안전벨트 반응 |
+|---|---|---|
+| safe (안전) | 파일 만들기·읽기·일반 편집 | 그냥 실행 ✅ |
+| risky (위험) | 파일 삭제·덮어쓰기·배포 | 백업 💾 + 확인 요청 ⚠️ |
+| catastrophic (재앙) | 폴더 통째 삭제, 시스템 폴더 삭제, `rm -rf` | 즉시 차단 🛑 |
+
+> 구조 상세 설명·데이터 흐름 다이어그램은 **[GUIDE.md 0-1장 / 5-1장](./GUIDE.md)** 참고.
 
 ---
 
@@ -48,9 +88,9 @@
 | `/sodam-harness-trust` | "이 폴더 이 작업 안 물어봐도 돼" — 이번 세션 동안 그만 묻기 (완전 차단·백업은 유지) |
 | `/sodam-harness-log` | "방금 뭐 했어?" — AI가 한 일 타임라인 (파일명·시각만, 비밀은 가림) |
 
-**스킬 2개(자동):** `/sodam-harness-beginner-tone`(쉬운 말투) · `/sodam-harness-self-check`(완료 전 자가검증).
+**스킬 2개(자동):** `sodam-harness-beginner-tone`(쉬운 말투) · `sodam-harness-self-check`(완료 전 자가검증).
 
-> 💡 명령은 모두 **Claude Code 전용**입니다. **Codex(코덱스)에서 쓰는 법**은 [GUIDE](./GUIDE.md)의 "(선택) Codex에서도 쓰기"를 참고하세요.
+> 💡 명령은 모두 **Claude Code 전용**입니다. **Codex(코덱스)에서 쓰는 법**은 [GUIDE.md](./GUIDE.md)의 "5-2. (선택) Codex에서도 쓰기"를 참고하세요.
 
 ---
 
@@ -71,9 +111,9 @@
 ## 문제가 생기면
 
 - 명령이 안 떠요 → Claude Code **완전히 껐다 켜기** (플러그인은 켤 때 로드).
-- "Node.js 없음" → https://nodejs.org 에서 **LTS** 설치 후 재시작.
+- "Node.js 없음" → `https://nodejs.org` 에서 **LTS** 설치 후 재시작.
 - 실수로 지웠어요 → **`/sodam-harness-undo`**.
-- 더 자세히 → **`/sodam-harness-fix`** 또는 **[GUIDE.md](./GUIDE.md) 8장**.
+- 더 자세히 → **`/sodam-harness-fix`** 또는 **[GUIDE.md 8장](./GUIDE.md)**.
 
 ---
 
@@ -85,7 +125,7 @@
 - **미제공**: **보증 없음(AS-IS)** · **상표권 미부여.**
 - **타사 상표**: "Claude", "Claude Code", "Codex", "Anthropic", "OpenAI" 등은 각 소유자 상표 — 본 제품은 **공식 제휴·보증 관계 없음**(명목적 표시).
 - **면책**: "있는 그대로" 제공, **사용 결과 책임은 사용자**. **"100% 안전"·"법적 100% 안전" 보장 안 함.** 중요한 자료는 별도 백업 권장.
-- 전문: **[LICENSE](./LICENSE)** · 고지: **[NOTICE](./NOTICE)** · 상세: **[GUIDE.md](./GUIDE.md) 11장**.
+- 전문: **[LICENSE](./LICENSE)** · 고지: **[NOTICE](./NOTICE)** · 상세: **[GUIDE.md 11장](./GUIDE.md)**.
 
 ---
 

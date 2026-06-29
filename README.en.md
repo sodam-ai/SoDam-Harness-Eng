@@ -3,7 +3,7 @@
 > **A "seatbelt" that helps prevent big accidents when you code with AI (Claude Code).**
 > Even if development, AI, and computers are all new to you, **just follow along.**
 >
-> ⚠️ **Honest promise:** It's a **"seatbelt"** that blocks common dangers — **not a "bulletproof shield."** There is no "100% safe."
+> ⚠️ **Honest promise:** It is a **"seatbelt"** that blocks common dangers — **not a "bulletproof shield."** There is no "100% safe."
 
 ---
 
@@ -24,6 +24,27 @@
 
 ---
 
+## How to download SoDamHarness
+
+**Current method — install from a folder on your computer:**
+
+1. You should have received the SoDamHarness folder from the developer (or downloaded it via a direct link).
+2. Copy that folder to a permanent location: your **Documents** folder or **Desktop** is a good choice.
+3. Note the full path to the folder — you will need it during installation.
+   - **Windows tip:** In File Explorer, click the address bar at the top of the window to see and copy the full path.
+   - **Mac tip:** Right-click the folder, hold **Option**, and choose "Copy [folder name] as Pathname."
+
+**When publicly released on GitHub (not yet available):**
+
+1. Go to: `https://github.com/sodam-ai/SoDam-Harness-Eng`
+2. Click the green **`<> Code`** button → **"Download ZIP"**
+3. Extract the ZIP file (right-click → "Extract All..." on Windows; double-click on Mac)
+4. Use the extracted folder path during installation
+
+> 📌 Full download instructions with step-by-step screenshots descriptions: **[GUIDE.en.md](./GUIDE.en.md) §1-1**
+
+---
+
 ## Quick install (once)
 
 1. In Claude Code, type **`/plugin`** → **Add marketplace**.
@@ -34,6 +55,34 @@
 4. Type **`/sodam-harness`** → if commands appear, success. Then run **`/sodam-harness-install`**.
 
 > 📌 If not yet published to GitHub, **install via the folder path.** (Full steps & troubleshooting: **[GUIDE.en.md](./GUIDE.en.md)**)
+
+---
+
+## Internal structure (at a glance)
+
+Every AI action passes through SoDamHarness before it executes:
+
+```
+[You] → [Claude Code] → [SoDamHarness checks] → [Action runs or is stopped]
+```
+
+**The three components:**
+
+| Component | File | Role |
+|-----------|------|------|
+| **Guard** | `hooks/guard.mjs` | Checks every AI action before it runs. Decides: block, backup+ask, or allow. |
+| **Backup Keeper** | `hooks/backup.mjs` | Makes a safe copy of a file before any risky action happens. |
+| **Logger** | `hooks/activity.mjs` | Records what the AI did (filename + time only — never content or secrets). |
+
+**3-tier risk classification:**
+
+| Tier | Name | What happens | Examples |
+|------|------|--------------|---------|
+| 🟢 **Safe** | Passes through | Runs immediately, no interruption | Creating files, reading, normal edits |
+| 🟡 **Risky** | Backup + Confirmation | Backup made → "Really do this?" prompt | File deletion, overwrite, deploy |
+| 🔴 **Catastrophic** | Immediately blocked | Refused entirely, never executed | `rm -rf`, deleting whole folders, system folder deletion |
+
+> 📌 Full architecture diagram with data flow: **[GUIDE.en.md](./GUIDE.en.md) §0-1**
 
 ---
 
@@ -65,6 +114,7 @@
 
 - Backups: `~/.sodamharness/backups/` · on mistakes, `/sodam-harness-undo`.
 - ⚠️ In "auto-approve" mode the prompt may be skipped (backups still happen).
+- No data is ever sent outside your computer. All features run locally.
 
 ---
 
@@ -83,7 +133,7 @@
 - **Allowed**: modify · copy · fork · redistribute · **commercial use · sell · run as a service · client delivery** · patent use.
 - **Obligations**: **keep** license & copyright notices · **state** changes · include NOTICE (if present).
 - **Not provided**: **no warranty (AS-IS)** · **no trademark rights.**
-- **Third-party trademarks**: "Claude", "Claude Code", "Codex", "Anthropic", "OpenAI", etc. belong to their owners — this product is **not affiliated with or endorsed by** them (nominative use only).
+- **Third-party trademarks**: "Claude", "Claude Code", "Codex", "Anthropic", "OpenAI", "Node.js", etc. belong to their owners — this product is **not affiliated with or endorsed by** them (nominative use only).
 - **Disclaimer**: provided "as is"; **the user is responsible for outcomes.** **"100% safe" / "legally 100% safe" is NOT guaranteed.** Keep separate backups of important data.
 - Full text: **[LICENSE](./LICENSE)** · notices: **[NOTICE](./NOTICE)** · details: **[GUIDE.en.md](./GUIDE.en.md) §11**.
 
