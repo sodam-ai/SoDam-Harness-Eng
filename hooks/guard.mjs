@@ -177,13 +177,27 @@ function isSensitiveRaw(absInput) {
     return true; // 판정 불가 → 안전하게 민감으로 간주
   }
   const a = toComparable(abs);
+
+  // Context 처방 예외 — ~/.claude/CLAUDE.md · AGENTS.md 는 Context가 처방하는 대상 파일.
+  // settings.json 등 나머지 .claude/* 는 여전히 차단 (C1 보안 원칙).
+  if (
+    a === toComparable(path.join(homedir(), ".claude", "CLAUDE.md")) ||
+    a === toComparable(path.join(homedir(), ".claude", "AGENTS.md"))
+  ) return false;
+
   const home = toComparable(homedir());
 
   if (a === home) return true; // 홈 루트 자체
   // 홈 아래 자격증명/민감 폴더
   const homeDirs = [".ssh", ".aws", ".codex", ".claude", ".gnupg", ".config"];
-  // %APPDATA%(=AppData\Roaming, 앱 설정·자격) 보호. %LOCALAPPDATA%(Local, Temp 포함)는 정상 작업공간이라 제외(C1).
-  if (WIN) homeDirs.push(path.join("AppData", "Roaming"));
+  // Windows: AppData\Roaming 전체 차단은 claude-code 등 앱 운영 폴더까지 막는 과잉차단(C1 버그 수정).
+  // 실제 자격증명 하위 폴더만 선별 보호. %LOCALAPPDATA%(Local\Temp)는 정상 작업공간이라 제외.
+  if (WIN) {
+    homeDirs.push(path.join("AppData", "Roaming", "Microsoft", "Credentials"));
+    homeDirs.push(path.join("AppData", "Roaming", "Microsoft", "Windows", "Credentials"));
+    homeDirs.push(path.join("AppData", "Roaming", "Microsoft", "Protect"));
+    homeDirs.push(path.join("AppData", "Roaming", "gnupg"));
+  }
   if (MAC) homeDirs.push("Library"); // ~/Library (키체인·앱 자격 등) (C1)
   homeDirs.push(...EXTRA.homeSubdirs); // 사용자 추가(safety-rules.json)
   for (const d of homeDirs) {
@@ -283,10 +297,40 @@ function loadExtraRules() {
     if (Array.isArray(sp.windows)) acc.sensWin.push(...sp.windows.map((x) => toComparable(String(x))));
     if (Array.isArray(sp.posix)) acc.sensPosix.push(...sp.posix.map((x) => toComparable(String(x))));
     if (Array.isArray(sp.homeSubdirs)) acc.homeSubdirs.push(...sp.homeSubdirs.map(String));
+    // plugins.* 네임스페이스 — 형제 플러그인이 자신 이름 키에 규칙을 주입
+    if (r.plugins && typeof r.plugins === "object") {
+      for (const [k, ns] of Object.entries(r.plugins)) {
+        if (!ns || typeof ns !== "object" || k.startsWith("_")) continue;
+        acc.catastrophic.push(...compileList(ns.catastrophic));
+        acc.risky.push(...compileList(ns.risky));
+        acc.recursiveDelete.push(...compileList(ns.recursiveDelete));
+      }
+    }
   }
   return acc;
 }
 const EXTRA = loadExtraRules(); // 모듈 로드 시 1회(매 훅 호출마다 새 프로세스라 사용자 편집을 바로 반영)
+
+// ── allowedTools 무결성 경고 (C1 방어 — 다른 플러그인이 위험 도구를 자동 허용 목록에 올렸는지 감지) ──
+// 차단하지 않음 — stderr 경고만. guard.mjs deny 는 allowedTools 설정과 무관하게 항상 유효.
+// 단, ask 판정은 bypassPermissions/acceptEdits 모드에서 자동 통과되므로 위험 도구가 목록에 있으면 알린다.
+function warnAllowlistIfRisky() {
+  try {
+    const settingsPath = path.join(homedir(), ".claude", "settings.json");
+    if (!existsSync(settingsPath)) return;
+    const s = JSON.parse(readFileSync(settingsPath, "utf8"));
+    const allowed = Array.isArray(s.allowedTools) ? s.allowedTools : [];
+    const risky = ["Bash", "Write", "Edit"];
+    const found = allowed.filter((t) => risky.includes(t));
+    if (found.length > 0) {
+      process.stderr.write(
+        `[SoDamHarness] allowedTools 에 위험 도구 발견: ${found.join(", ")}\n` +
+        `  → guard.mjs deny 는 여전히 유효하지만, ask 판정은 자동승인 모드에서 통과됩니다.\n` +
+        `  → 의도한 설정이면 무시하세요. 아니라면 ~/.claude/settings.json 의 allowedTools 를 확인해 주세요.\n`,
+      );
+    }
+  } catch { /* fail-closed — 경고 실패는 조용히 무시 */ }
+}
 
 // ── 위험 등급 (패턴은 초안 — §8.8 한계) ──
 // 치명: 되돌릴 수 없는 광역 파괴 → deny
@@ -393,6 +437,7 @@ function opClassOf(cmd, isOverwrite) {
 
 // ── 메인 ──
 function main() {
+  warnAllowlistIfRisky(); // C1: allowedTools 무결성 확인 (경고만, 차단 아님)
   const raw = readStdin();
   let input;
   try {
@@ -407,6 +452,13 @@ function main() {
   const ti = input.tool_input || {};
   const cwd = input.cwd || process.cwd();
   const sessionId = input.session_id; // 백업에 "어느 대화에서 한 일"인지 꼬리표로 기록(undo 정확도)
+
+  // D2: 자동승인 모드 감지 — ask 판정이 자동 통과되므로 사용자에게 알림
+  const permMode = input.permission_mode || "";
+  const isAutoApprove = permMode === "bypassPermissions" || permMode === "acceptEdits";
+  const BYPASS_WARN = isAutoApprove
+    ? " (⚠️ 자동승인 모드: 이 확인이 자동으로 통과됩니다. 완전 차단(deny)만 유효해요.)"
+    : "";
 
   const isWriteTool = ["Write", "Edit", "MultiEdit", "NotebookEdit"].includes(toolName);
   // 셸 계열: Bash/PowerShell 등 command 필드가 있는 도구 전부
@@ -495,7 +547,7 @@ function main() {
     recordPending(sessionId, cwd, opClass); // "안 물어봐도 돼" 하면 이 작업을 신뢰로 승격
     decide(
       "ask",
-      `되돌리기 어려운 작업이에요. 먼저 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 정말 진행할까요? 잘못되면 "되돌려 줘"라고 하면 복구할 수 있어요. (이 폴더에서 이런 작업을 계속 할 거면 "이 폴더는 안 물어봐도 돼"라고 하면 이번 세션 동안 안 물을게요.)`,
+      `되돌리기 어려운 작업이에요. 먼저 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 정말 진행할까요? 잘못되면 "되돌려 줘"라고 하면 복구할 수 있어요. (이 폴더에서 이런 작업을 계속 할 거면 "이 폴더는 안 물어봐도 돼"라고 하면 이번 세션 동안 안 물을게요.)${BYPASS_WARN}`,
     );
     return;
   }
@@ -535,7 +587,7 @@ function main() {
     recordPending(sessionId, cwd, opClass);
     decide(
       "ask",
-      `기존 파일을 바꾸기 전에 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 진행할까요? 잘못되면 "되돌려 줘"로 복구돼요. (이 폴더에서 이런 작업을 계속 할 거면 "이 폴더는 안 물어봐도 돼"라고 하면 이번 세션 동안 안 물을게요.)`,
+      `기존 파일을 바꾸기 전에 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 진행할까요? 잘못되면 "되돌려 줘"로 복구돼요. (이 폴더에서 이런 작업을 계속 할 거면 "이 폴더는 안 물어봐도 돼"라고 하면 이번 세션 동안 안 물을게요.)${BYPASS_WARN}`,
     );
     return;
   }

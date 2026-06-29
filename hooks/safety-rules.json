@@ -1,6 +1,37 @@
 {
-  "_help": "여기에 규칙을 '추가'하면 SoDamHarness가 더 막아줍니다(기본 보호는 코드에 내장돼 있어 이 파일이 비어 있어도 안전합니다). 개인용 추가는 홈폴더의 .sodamharness/safety-rules.json 에 둬도 됩니다(둘 다 합쳐서 적용). catastrophic/risky/recursiveDelete = 정규식 '문자열'(백슬래시는 \\\\ 로 이스케이프, 예: \"\\\\bshred\\\\b\"). sensitivePaths.windows/posix = 보호할 절대경로, homeSubdirs = 홈 아래 보호할 폴더 이름. 잘못된 줄은 무시되고, 파일이 깨져도 기본 보호는 그대로 작동합니다.",
-  "version": 1,
+  "_help": "여기에 규칙을 '추가'하면 SoDamHarness가 더 막아줍니다(기본 보호는 코드에 내장돼 있어 이 파일이 비어 있어도 안전합니다). 개인용 추가는 홈폴더의 .sodamharness/safety-rules.json 에 둬도 됩니다(둘 다 합쳐서 적용). catastrophic/risky/recursiveDelete = 정규식 '문자열'(백슬래시는 \\\\ 로 이스케이프, 예: \"\\\\bshred\\\\b\"). sensitivePaths.windows/posix = 보호할 절대경로, homeSubdirs = 홈 아래 보호할 폴더 이름. 잘못된 줄은 무시되고, 파일이 깨져도 기본 보호는 그대로 작동합니다. plugins.* = 형제 플러그인 전용 네임스페이스(각 플러그인이 자신 이름 키에 catastrophic/risky/recursiveDelete 배열을 추가).",
+  "version": 2,
+  "_defaults": {
+    "_note": "guard.mjs에 하드코딩된 기본 패턴 목록 (참고용 — 이 섹션은 코드에 영향 없음)",
+    "catastrophic": [
+      "rm -rf ~ / $HOME %USERPROFILE%",
+      "Remove-Item -Recurse $HOME",
+      "del /s <드라이브루트>",
+      "rmdir /s <드라이브루트>",
+      "format <드라이브>:",
+      "mkfs",
+      ":(){:};: (fork bomb)",
+      "dd of=/dev/sd|nvme|disk",
+      "> /dev/sd|nvme|disk"
+    ],
+    "risky": [
+      "rm / del / erase / rmdir / unlink / Remove-Item",
+      "git push --force",
+      "git reset --hard",
+      "git clean -f",
+      "vercel/netlify/firebase deploy",
+      "npm publish",
+      "git push",
+      "curl/wget --data/--upload-file (외부 업로드)",
+      "scp",
+      "chmod -R",
+      "Set-Content (PowerShell 덮어쓰기)",
+      "Add-Type VisualBasic (우회 삭제)",
+      "[System.IO.File/Directory]::Delete (.NET)",
+      "shutil.rmtree / os.remove / os.unlink / os.rmdir (Python)",
+      "fs.rm / fs.unlink / fs.rmdir (Node.js)"
+    ]
+  },
   "catastrophic": [],
   "risky": [],
   "recursiveDelete": [],
@@ -8,5 +39,32 @@
     "windows": [],
     "posix": [],
     "homeSubdirs": []
+  },
+  "plugins": {
+    "_note": "형제 플러그인 전용 네임스페이스. 각 플러그인이 자신 이름 키에 규칙을 추가한다. guard.mjs가 모든 plugins.* 섹션을 자동 병합함.",
+    "reverse": {
+      "_note": "SoDam-Reverse-Eng 전용. 역공학 안전 규칙 (RE 대상 파일 무결성·위험 패턴).",
+      "catastrophic": [],
+      "risky": [],
+      "recursiveDelete": []
+    },
+    "context": {
+      "_note": "SoDam-Context-Eng 전용. CLAUDE.md·AGENTS.md 건강검진 관련 패턴. re-inject-context.mjs로 주입.",
+      "catastrophic": [],
+      "risky": [],
+      "sensitivePaths": []
+    },
+    "loop": {
+      "_note": "SoDam-Loop-Eng 전용. 루프 폭주·무한반복 위험 패턴. Loop Phase 1a 구현 후 주입 스크립트 제공 예정.",
+      "catastrophic": [],
+      "risky": [],
+      "dangerPhrases": []
+    },
+    "agentic": {
+      "_note": "SoDam-Agentic-Eng 전용. 초보자 진입점 안전 관련 패턴. agentic-rules.json과 동기화.",
+      "catastrophic": [],
+      "risky": [],
+      "protectedPaths": []
+    }
   }
 }
