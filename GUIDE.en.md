@@ -876,7 +876,7 @@ A: Simply paste the message into Claude Code and say: "I see this message: [past
 
 **Q16. How long are my backups kept? Do they expire?**
 
-A: SoDamHarness does not automatically delete old backups. They remain in `~/.sodamharness/backups/` indefinitely until you manually delete them. If your disk starts getting full, you can open that folder, review the backup files, and delete ones you no longer need.
+A: Most of the time they are cleaned up **automatically**. Backups are kept for the **latest 100 files + 30 days**; anything older is pruned automatically whenever a new backup is made (up to 200 per run). If you want to reduce them further, open `~/.sodamharness/backups/`, review the backup files, and delete ones you no longer need. You can adjust the retention with `backupPolicy` (keepN · keepDays) in `~/.sodamharness/safety-rules.json`.
 
 ---
 
@@ -889,6 +889,28 @@ A: No. No data — not your files, not your filenames, not your activity log, no
 **Q18. Can I use this commercially — for client work, at a company, or in a product I sell?**
 
 A: Yes. The Apache License 2.0 allows commercial use. You may use it for client deliverables, internal company tools, products you sell, or services you run. You must keep the license and copyright notice, state your changes if you modify the code, and include the NOTICE file if present. See Section 11 for full details.
+
+---
+
+## 10-1. Update summary
+
+<details>
+<summary><b>📌 Changes by version (click to expand)</b></summary>
+
+### 2026-07-07 — Security hardening (stricter only, no relaxation)
+- **Install stability**: plugin manifest (`plugin.json`) paths updated to the current `./` format so install & `claude plugin validate` pass.
+- **Honest block messages**: system/config-file block messages changed from a "dead-end wall" to a "door" — the AI still can't edit them, but you are told how to change them yourself (the safety stays intact).
+- **4 gaps closed via adversarial audit**: `curl/wget` file uploads (private-key exfiltration), `find … -delete` (mass deletion), and `truncate -s 0` (file wipe) — previously slipped through, now blocked. The upload block had been dead due to a regex bug; it is now revived.
+- **All 98 self-tests pass** (92 existing + 6 new).
+
+### 2026-06-23 — v0.1.0 (Phase 1 + 2)
+- **Phase 1 (MVP)**: safety guardrails (3-tier block / auto-backup / undo), plain-language tone, install & self-check commands.
+- **Phase 2**: activity log (`/sodam-harness-log`), self-check skill, optional Codex setup.
+- **Precision tuning**: normal `git push` and in-repo edits skip the prompt (backup still made), folder-scoped whitelist (12h), automatic backup retention (latest 100 + 30 days).
+
+</details>
+
+> Full history: **[CHANGELOG.md](./CHANGELOG.md)**.
 
 ---
 
@@ -983,7 +1005,7 @@ We want to be fully honest about what SoDamHarness can and cannot do.
 - This tool is an **auxiliary safety aid** that reduces common risks. **It is not perfect.**
 - **New or unusual risk patterns** we have not encountered may not be caught. The danger pattern list is updated as new cases are found, but it cannot anticipate everything.
 - **Verified on Windows; Mac is untested.** The code is written to be cross-platform, but Mac behavior has not been formally verified. Please report any Mac-specific issues to the developer.
-- **72/72 self-tests passing** as of the current release — all known test cases pass.
+- **98/98 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts).
 - For truly important data, **do not rely on this tool alone.** Use a dedicated backup solution (Windows Backup, Time Machine, cloud storage, an external drive, etc.) in addition to SoDamHarness.
 - **Think before you act.** The best safety measure is a moment of careful thought before asking the AI to do something irreversible.
 

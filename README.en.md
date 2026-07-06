@@ -127,6 +127,28 @@ Every AI action passes through SoDamHarness before it executes:
 
 ---
 
+## Update summary
+
+<details>
+<summary><b>📌 Changes by version (click to expand)</b></summary>
+
+### 2026-07-07 — Security hardening (stricter only, no relaxation)
+- **Install stability**: plugin manifest (`plugin.json`) paths updated to the current `./` format so install & `claude plugin validate` pass.
+- **Honest block messages**: system/config-file block messages changed from a "dead-end wall" to a "door" — the AI still can't edit them, but you're told how to change them yourself (the safety stays intact).
+- **4 gaps closed via adversarial audit**: `curl/wget` file uploads (private-key exfiltration), `find … -delete` (mass deletion), and `truncate -s 0` (file wipe) — previously slipped through, now blocked. The upload block had been dead due to a regex bug; it is now revived.
+- **All 98 self-tests pass** (92 existing + 6 new).
+
+### 2026-06-23 — v0.1.0 (Phase 1 + 2)
+- **Phase 1 (MVP)**: safety guardrails (3-tier block / auto-backup / undo), plain-language tone, install & self-check commands.
+- **Phase 2**: activity log (`/sodam-harness-log`), self-check skill, optional Codex setup.
+- **Precision tuning**: normal `git push` and in-repo edits skip the prompt (backup still made), folder-scoped whitelist (12h), automatic backup retention (latest 100 + 30 days).
+
+</details>
+
+> Full history: **[CHANGELOG.md](./CHANGELOG.md)**.
+
+---
+
 ## License · Copyright · Commercial use (strict)
 
 - **Apache License 2.0** · **© 2026 SoDam AI Studio.**
