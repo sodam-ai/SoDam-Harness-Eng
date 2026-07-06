@@ -109,6 +109,11 @@ export function backupPaths(paths, cwd, sessionId) {
       ),
       "utf8",
     );
+    // [2026-07-03 U4] 백업 성공 직후 보수적 자동 정리 — 실패해도 백업 흐름에 영향 0(try/catch).
+    try {
+      const pol = readBackupPolicy();
+      cleanupBackups(pol.keepN, pol.keepDays, { maxRemove: 200 });
+    } catch {}
     return { ok: true, count, dir, skippedDirs, skippedSecrets };
   } catch (e) {
     return { ok: false, count: 0, error: e.message, skippedDirs: [], skippedSecrets: [] };
@@ -253,11 +258,16 @@ export function restore(dir) {
 }
 
 // 오래된 백업 정리(보수적): 최근 keepN개·keepDays일 이내는 무조건 보존, 그보다 오래된 것만 삭제.
-// 자동 실행하지 않는다(백업 자동삭제는 그 자체가 파괴적이라 사용자/진단이 명시 호출할 때만).
-export function cleanupBackups(keepN = 50, keepDays = 14) {
+// [2026-07-03 U4 변경] 원래 "자동 실행하지 않는다"였으나, 타깃 사용자(완전 초보자)는 CLI --cleanup을
+// 절대 돌리지 않아 12일 만에 3,542개 누적 실측 → 수동 전용 = 사실상 정리 없음. backupPaths 성공 직후
+// 보수적 기본값(최근 100개·30일 보존·회당 200개 상한)으로 자동 호출한다. 수동 CLI는 그대로 유지.
+// opts: { rootDir?: 테스트 격리용 루트, maxRemove?: 회당 삭제 상한 }
+export function cleanupBackups(keepN = 50, keepDays = 14, opts = {}) {
   try {
-    const root = backupsRoot();
+    const root = opts.rootDir || backupsRoot();
+    const maxRemove = Number.isFinite(opts.maxRemove) ? opts.maxRemove : Infinity;
     if (!existsSync(root)) return { ok: true, removed: 0, kept: 0 };
+    const rootAbs = path.resolve(root);
     const names = readdirSync(root)
       .filter((d) => {
         try {
@@ -271,25 +281,49 @@ export function cleanupBackups(keepN = 50, keepDays = 14) {
     const cutoffMs = Date.now() - keepDays * 24 * 60 * 60 * 1000;
     let removed = 0;
     let kept = 0;
-    names.forEach((name, idx) => {
-      const dir = path.join(root, name);
+    for (let idx = 0; idx < names.length; idx++) {
+      const dir = path.join(root, names[idx]);
+      // 격리 방어: 백업 루트 밖 경로는 절대 삭제하지 않는다(.. 등 비정상 이름 대비 이중 확인)
+      if (!path.resolve(dir).startsWith(rootAbs + path.sep)) {
+        kept++;
+        continue;
+      }
       let mtime = 0;
       try {
         mtime = statSync(dir).mtimeMs;
       } catch {}
-      // 최근 keepN개 이내 또는 keepDays일 이내 → 보존
-      if (idx < keepN || mtime >= cutoffMs) {
+      // 최근 keepN개 이내 또는 keepDays일 이내 → 보존. 상한 도달 시 나머지는 다음 기회에.
+      if (idx < keepN || mtime >= cutoffMs || removed >= maxRemove) {
         kept++;
-        return;
+        continue;
       }
       try {
         rmSync(dir, { recursive: true, force: true });
         removed++;
-      } catch {}
-    });
+      } catch {
+        kept++;
+      }
+    }
     return { ok: true, removed, kept };
   } catch (e) {
     return { ok: false, removed: 0, error: e.message };
+  }
+}
+
+// [2026-07-03 U4] 사용자 보존 정책(~/.sodamharness/safety-rules.json 의 backupPolicy) — 없거나 깨지면 보수적 기본값.
+// 최소 바닥(keepN≥10·keepDays≥7)을 강제해, 실수로 0을 넣어 백업이 전멸하는 사고를 막는다(fail-safe).
+function readBackupPolicy() {
+  const def = { keepN: 100, keepDays: 30 };
+  try {
+    const f = process.env.SODAM_RULES_FILE || path.join(baseDir(), "safety-rules.json");
+    if (!existsSync(f)) return def;
+    const p = (JSON.parse(readFileSync(f, "utf8")) || {}).backupPolicy || {};
+    return {
+      keepN: Number.isFinite(p.keepN) && p.keepN >= 10 ? p.keepN : def.keepN,
+      keepDays: Number.isFinite(p.keepDays) && p.keepDays >= 7 ? p.keepDays : def.keepDays,
+    };
+  } catch {
+    return def;
   }
 }
 

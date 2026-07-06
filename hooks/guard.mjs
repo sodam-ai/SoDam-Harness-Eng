@@ -16,10 +16,10 @@
 //
 // 정직한 한계: 위험 패턴은 "초안"이며 모든 위험을 100% 잡지 못한다(01_PRD §8.8).
 
-import { readFileSync, existsSync, lstatSync, statSync, realpathSync } from "node:fs";
+import { readFileSync, existsSync, lstatSync, statSync, realpathSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
-import { backupPaths } from "./backup.mjs";
+import { backupPaths, isSecretFile } from "./backup.mjs";
 import { isTrusted, recordPending } from "./whitelist.mjs"; // 세션 화이트리스트(D1)
 
 const WIN = process.platform === "win32";
@@ -254,6 +254,58 @@ function isSymlink(p) {
   }
 }
 
+// ── 글롭 백업 확장 (실행 0 — readdirSync만 사용) ──
+// [2026-07-03 정밀화 2차·U1] `rm *.txt`의 `*.txt`가 리터럴로 해석돼 백업에서 새던 갭을 닫는다.
+// 단순 글롭(경로 마지막 요소의 *·?)만 확장. 폴더는 넣지 않는다 — 비재귀 삭제는 폴더를 못 지우고,
+// `rm -r`은 이미 위에서 deny되므로, 폴더를 넣으면 `rm *`에 폴더-차단 오발동만 생긴다.
+// 확장 불가(dirname에 글롭 등)·실패 시 원본 토큰 유지 = 기존 동작(fail-safe).
+function expandGlobsForBackup(paths) {
+  const out = [];
+  for (const p of paths) {
+    const s = String(p);
+    const base = path.basename(s);
+    const dir = path.dirname(s);
+    if (!/[*?]/.test(base) || /[*?]/.test(dir)) {
+      out.push(s);
+      continue;
+    }
+    try {
+      const esc = base.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+      const re = new RegExp("^" + esc.replace(/\*/g, "[^\\\\/]*").replace(/\?/g, "[^\\\\/]") + "$", WIN ? "i" : "");
+      for (const name of readdirSync(dir)) {
+        if (!re.test(name)) continue;
+        const full = path.join(dir, name);
+        try {
+          if (statSync(full).isFile()) out.push(full);
+        } catch {}
+      }
+    } catch {
+      /* 확장 실패 → 아래에서 원본 유지(fail-safe) */
+    }
+    out.push(s); // 원본 토큰도 유지(존재하면 기존 로직대로, 글롭 문자열이면 백업 단계서 걸러짐)
+  }
+  return out;
+}
+
+// ── git 작업트리 판정 (실행 0 — .git 존재만 fs로 확인, 불변 규칙 "절대 실행 금지" 준수) ──
+// [2026-07-03 정밀화] 파일이 git 저장소 안이면 편집 전 상태를 git으로도 복구 가능 → 백업+git 이중 안전망.
+// 한계(정직): .git 존재 ≠ 그 파일이 추적(tracked)됨. 미추적 파일도 통과하지만, 그 경우에도
+// 우리 백업(backupPaths)이 방금 떠 있으므로 복구 경로는 항상 존재한다(비밀파일 제외 — 호출부에서 ask 유지).
+function findGitRoot(absFile) {
+  try {
+    let dir = path.dirname(path.resolve(absFile));
+    for (let i = 0; i < 60; i++) {
+      if (existsSync(path.join(dir, ".git"))) return dir;
+      const parent = path.dirname(dir);
+      if (parent === dir) break; // 드라이브/파일시스템 루트 도달
+      dir = parent;
+    }
+  } catch {
+    /* 판정 불가 → null(=완화 없음, 기존 ask 흐름) — fail-safe */
+  }
+  return null;
+}
+
 // ── 확장 규칙 로드 (safety-rules.json) — 08 §1: "이것도 막아줘"를 데이터 1줄로 ──
 // 원칙: 코드 기본 패턴에 '추가'만 한다(기본은 fail-safe로 코드에 남김). 파일 없음/깨짐/잘못된 줄은
 // 조용히 무시 → 기본 보호는 항상 유지(fail-safe). 정규식은 문자열로 저장(대소문자 무시).
@@ -353,12 +405,14 @@ const RISKY = [
   /\bunlink\b/i,
   /\bremove-item\b/i, // PowerShell
   /\b(ri|rd)\b\s/i, // PowerShell 별칭
-  /git\s+push\b[^|;&]*--force/i,
+  // [2026-07-03 정밀화] 일반 git push는 로컬 데이터를 잃지 않음(원격에 더하기) → risky 아님.
+  // 파괴적 변형만 잡는다: --force/-f(강제), --delete/-d·":refspec"(원격 브랜치 삭제), +refspec(강제 문법), --mirror/--prune.
+  // 근거: .PRD/09_CONSTRAINT_RELAXATION.md §1 E1 · 11_PRECISION_TUNING_LOG.md
+  /git\s+push\b[^|;&]*(--force|--mirror|--delete|--prune|\s-f\b|\s-d\b|\s+:\S+|\s\+\S+)/i,
   /git\s+reset\s+--hard\b/i,
   /git\s+clean\s+-[a-zA-Z]*f/i,
   /\b(vercel|netlify|firebase)\s+deploy\b/i,
   /\bnpm\s+publish\b/i,
-  /git\s+push\b/i,
   /\b(curl|wget)\b[^|;&]*\b(-d|--data|-T|--upload-file|-F|--form)\b/i, // 외부 업로드
   /\bscp\b/i,
   /\bchmod\s+-R\b/i,
@@ -522,8 +576,8 @@ function main() {
       return;
     }
 
-    // 백업 대상 = 위험명령 경로(삭제 등) + 덮어쓸 기존 파일 (중복 제거). 실패 시 fail-safe deny(H7)
-    const backupList = Array.from(new Set([...delPaths, ...owExisting]));
+    // 백업 대상 = 위험명령 경로(삭제 등, 글롭은 실파일로 확장·U1) + 덮어쓸 기존 파일 (중복 제거). 실패 시 fail-safe deny(H7)
+    const backupList = Array.from(new Set([...expandGlobsForBackup(delPaths), ...owExisting]));
     const res = backupPaths(backupList, cwd, sessionId);
     // 백업 대상에 실제 '폴더'가 있고 + 그게 '삭제' 명령일 때만 차단(빈 폴더 삭제 등).
     // 비삭제 위험명령이 폴더를 인자로 가진 경우(예: 자동커밋 `git add . && git push`)는 오차단하지 않는다.
@@ -538,6 +592,16 @@ function main() {
       );
       return;
     }
+    // [2026-07-03 정밀화 2차·U2] 안전 명령의 덮어쓰기(echo >·cp·mv 등)가 전부 (git 저장소 안 + 비밀 아님)이면
+    // 백업만 뜨고 확인 생략 — Write/Edit(P2)와 동일 논리. 위험명령(rm 등)은 대상 아님(level !== "safe").
+    if (
+      level === "safe" &&
+      owExisting.length > 0 &&
+      owExisting.every((ap) => !isSecretFile(ap) && !!findGitRoot(ap))
+    ) {
+      passThrough();
+      return;
+    }
     // 세션 화이트리스트(D1): 이 폴더·이 작업을 이미 신뢰했으면 백업만 하고 묻지 않는다(deny는 위에서 이미 끝남).
     const opClass = opClassOf(cmd, false);
     if (isTrusted(sessionId, cwd, opClass)) {
@@ -547,7 +611,7 @@ function main() {
     recordPending(sessionId, cwd, opClass); // "안 물어봐도 돼" 하면 이 작업을 신뢰로 승격
     decide(
       "ask",
-      `되돌리기 어려운 작업이에요. 먼저 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 정말 진행할까요? 잘못되면 "되돌려 줘"라고 하면 복구할 수 있어요. (이 폴더에서 이런 작업을 계속 할 거면 "이 폴더는 안 물어봐도 돼"라고 하면 이번 세션 동안 안 물을게요.)${BYPASS_WARN}`,
+      `되돌리기 어려운 작업이에요. 먼저 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 정말 진행할까요? 잘못되면 "되돌려 줘"라고 하면 복구할 수 있어요. (이 폴더에서 이런 작업을 계속 할 거면 "이 폴더는 안 물어봐도 돼"라고 하면 이 폴더에서는 12시간 동안 안 물을게요. 대화를 새로 시작해도 유지돼요.)${BYPASS_WARN}`,
     );
     return;
   }
@@ -579,6 +643,16 @@ function main() {
       decide("deny", `백업을 못 떠서 안전하게 멈췄어요. (사유: ${res.error})`);
       return;
     }
+    // [2026-07-03 정밀화] 전부 (git 저장소 안 + 비밀파일 아님)이면 확인 생략 — 방금 뜬 백업 + git 이중 복구 가능.
+    // 비밀파일은 백업이 안 뜨므로(A3) 반드시 ask 유지. 민감위치·심볼릭 링크 deny는 위에서 이미 끝남.
+    const allRecoverable = overwrites.every((t) => {
+      const abs = resolveLoose(cwd, t);
+      return !isSecretFile(abs) && !!findGitRoot(abs);
+    });
+    if (allRecoverable) {
+      passThrough();
+      return;
+    }
     const opClass = opClassOf("", true); // = "overwrite"
     if (isTrusted(sessionId, cwd, opClass)) {
       passThrough(); // 신뢰됨 — 백업은 이미 떴고, 안 물음
@@ -587,7 +661,7 @@ function main() {
     recordPending(sessionId, cwd, opClass);
     decide(
       "ask",
-      `기존 파일을 바꾸기 전에 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 진행할까요? 잘못되면 "되돌려 줘"로 복구돼요. (이 폴더에서 이런 작업을 계속 할 거면 "이 폴더는 안 물어봐도 돼"라고 하면 이번 세션 동안 안 물을게요.)${BYPASS_WARN}`,
+      `기존 파일을 바꾸기 전에 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 진행할까요? 잘못되면 "되돌려 줘"로 복구돼요. (이 폴더에서 이런 작업을 계속 할 거면 "이 폴더는 안 물어봐도 돼"라고 하면 이 폴더에서는 12시간 동안 안 물을게요. 대화를 새로 시작해도 유지돼요.)${BYPASS_WARN}`,
     );
     return;
   }

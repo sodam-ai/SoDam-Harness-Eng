@@ -85,7 +85,7 @@ SoDamHarness는 3개의 핵심 파일이 팀으로 움직입니다.
 | `/sodam-harness-status` | 지금 상태 + 다음에 할 일 (자가진단) |
 | `/sodam-harness-fix` | 문제가 생겼을 때 증상별 해결 안내 |
 | `/sodam-harness-undo` | 되돌리기 (백업 목록에서 **골라** 복구) |
-| `/sodam-harness-trust` | "이 폴더 이 작업 안 물어봐도 돼" — 이번 세션 동안 그만 묻기 (완전 차단·백업은 유지) |
+| `/sodam-harness-trust` | "이 폴더 이 작업 안 물어봐도 돼" — 12시간 동안 그만 묻기, 세션 바뀌어도 유지 (완전 차단·백업은 유지) |
 | `/sodam-harness-log` | "방금 뭐 했어?" — AI가 한 일 타임라인 (파일명·시각만, 비밀은 가림) |
 
 **스킬 2개(자동):** `sodam-harness-beginner-tone`(쉬운 말투) · `sodam-harness-self-check`(완료 전 자가검증).
