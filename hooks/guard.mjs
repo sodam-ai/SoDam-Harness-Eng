@@ -413,8 +413,10 @@ const RISKY = [
   /git\s+clean\s+-[a-zA-Z]*f/i,
   /\b(vercel|netlify|firebase)\s+deploy\b/i,
   /\bnpm\s+publish\b/i,
-  /\b(curl|wget)\b[^|;&]*\b(-d|--data|-T|--upload-file|-F|--form)\b/i, // 외부 업로드
+  /\b(curl|wget)\b[^|;&]*(?:^|\s)(-d|--data|-T|--upload-file|-F|--form)\b/i, // 외부 업로드 (2026-07-07 앵커 버그 수정: \b→(?:^|\s), 공백 뒤 플래그가 매칭 안 되던 잠복 버그 — 감사로 발견)
   /\bscp\b/i,
+  /\bfind\b[^|;&]*(-delete\b|-exec[^|;&]*\brm\b)/i, // find -delete / -exec rm (대량 삭제 — 2026-07-07 감사)
+  /\btruncate\b[^|;&]*(-s|--size)[=\s]*0\b/i, // truncate -s 0 (파일 0-초기화 — 2026-07-07 감사)
   /\bchmod\s+-R\b/i,
   /\bset-content\b/i, // PowerShell 덮어쓰기
   // 우회 삭제 방법들 (실측 2026-06-21: 1차 차단 시 AI가 다른 방법 시도 — 흔한 것은 잡는다, §8.8 한계 유지)
