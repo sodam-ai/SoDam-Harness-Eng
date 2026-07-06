@@ -621,7 +621,7 @@ function main() {
   for (const t of targets) {
     const abs = resolveLoose(cwd, t);
     if (isSensitive(abs)) {
-      decide("deny", "시스템·홈 등 민감한 위치의 파일이라 안전을 위해 막았어요.");
+      decide("deny", "이 파일엔 시스템·안전장치 설정이 들어 있어 AI가 직접 못 바꿔요. 꼭 바꿔야 하면 파일을 직접 열어 확실한 부분만 바꾸세요 — 안전장치는 그대로 유지돼요.");
       return;
     }
     if (isSymlink(abs)) {
