@@ -7,6 +7,30 @@
 
 ---
 
+## Table of Contents
+
+- [0. What is this? (Understand in 1 minute)](#what-is-this-understand-in-1-minute)
+- [0-1. How does it work? (Internal structure / architecture)](#how-does-it-work-internal-structure-architecture)
+- [1. Prerequisites (Programs you need)](#prerequisites-programs-you-need)
+- [1-1. How to download SoDamHarness](#how-to-download-sodamharness)
+- [1-2. How to install Claude Code](#how-to-install-claude-code)
+- [2. Installation (Step by step)](#installation-step-by-step)
+- [3. Quick start (3 minutes)](#quick-start-3-minutes)
+- [4. How it works](#how-it-works-when-and-how-the-seatbelt-acts)
+- [5. Workflow (Everyday use)](#workflow-everyday-use)
+- [5-1. Security & data flow](#security-data-flow-how-your-data-is-protected)
+- [5-2. (Optional) Using it with Codex](#optional-using-it-with-codex)
+- [6. Commands](#commands-what-to-use-and-when)
+- [7. File and document locations](#file-and-document-locations)
+- [8. Troubleshooting](#troubleshooting-symptom-why-what-to-do)
+- [9. Uninstall](#uninstall-how-to-remove-sodamharness)
+- [10. FAQ](#faq-frequently-asked-questions)
+- [10-1. Update summary](#update-summary)
+- [11. License · Copyright · Commercial use](#license-copyright-commercial-use-strict-notice)
+- [12. Safety & limits](#safety-limits-honest-notice)
+
+---
+
 ## 0. What is this? (Understand in 1 minute)
 
 ### If you are brand new to all of this — start here

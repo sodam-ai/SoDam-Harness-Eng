@@ -7,6 +7,13 @@
 
 ---
 
+## Table of Contents
+- [What it does for you](#what-it-does-for-you) · [Prerequisites](#prerequisites-free-2-things) · [Download](#how-to-download-sodamharness) · [Structure](#internal-structure-at-a-glance) · [Quick install](#quick-install-once) · [Commands](#commands) · [Safety behavior](#safety-behavior-at-a-glance) · [If something goes wrong](#if-something-goes-wrong) · [Update summary](#update-summary) · [License](#license-copyright-commercial-use-strict) · [Honest limits](#honest-limits)
+
+> For detailed steps, architecture, and FAQ, see **[GUIDE.en.md](./GUIDE.en.md)** (includes a table of contents).
+
+---
+
 ## What it does for you
 
 - 🛑 **Very dangerous actions** (deleting a whole folder, etc.) are **blocked.**

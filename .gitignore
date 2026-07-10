@@ -28,3 +28,8 @@ Thumbs.db
 
 # PDF 생성 중간 파일 (pandoc → Chrome 헤드리스 변환 시 자동 생성)
 *.html
+# 단, 아래 4개는 README·GUIDE의 정식 HTML 산출물(2026-07-11, MD와 동일 내용) — 추적함
+!/README.html
+!/README.en.html
+!/GUIDE.html
+!/GUIDE.en.html
