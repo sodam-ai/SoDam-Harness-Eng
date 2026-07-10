@@ -447,6 +447,15 @@ if (MAC) {
   d = dec('echo "`rm -rf ~`"');                    check('E2 echo "`rm -rf ~`" → deny(백틱 치환)', d === 'deny', String(d));
   d = dec("echo '$(rm -rf ~)'");                   check("E2 echo '$(rm -rf ~)' → 통과(단일따옴표 리터럴)", d === null, String(d));
 }
+// 37) [크로스플랫폼·CI] 경로 속 리터럴 ~ (예: Windows 단축명 C:\Users\RUNNER~1)는 홈(~)이 아님 →
+//     catastrophic 오탐 없이 폴더삭제(deny)로 처리. 진짜 홈 ~ 재귀삭제는 catastrophic deny 유지.
+{
+  const tildePath = WIN ? "C:\\Users\\RUNNER~1\\proj\\folder1" : "/home/user~1/proj/folder1";
+  const rt = run("PowerShell", { command: `Remove-Item -Recurse -Force ${tildePath}` }, work);
+  check("경로 속 ~ → 폴더삭제 deny(홈 오탐 아님)", rt.decision === "deny" && String(rt.reason).includes("폴더"), JSON.stringify(rt));
+  const rh = run("PowerShell", { command: "Remove-Item -Recurse -Force ~" }, work);
+  check("Remove-Item -Recurse ~ → deny(홈 catastrophic 유지)", rh.decision === "deny", JSON.stringify(rh));
+}
 
 // ── backup.mjs 엔진 직접 테스트 (undo 신뢰성 수정) ──
 const bwork = mkdtempSync(path.join(tmpdir(), "sdh-bk-"));

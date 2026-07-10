@@ -388,7 +388,7 @@ function warnAllowlistIfRisky() {
 // 치명: 되돌릴 수 없는 광역 파괴 → deny
 const CATASTROPHIC = [
   /\brm\s+-[a-zA-Z]*\s*(~|\/|\$\{?HOME\}?|%USERPROFILE%)\s*(\/\*)?\s*($|[;&|])/i, // rm -rf ~ , /
-  /\bremove-item\b[^|;&]*-recurse[^|;&]*(~|\$HOME|%USERPROFILE%|[A-Za-z]:\\?\s*$)/i, // PS 광역 삭제
+  /\bremove-item\b[^|;&]*-recurse[^|;&]*((?<!\w)~(?!\w)|\$HOME|%USERPROFILE%|[A-Za-z]:\\?\s*$)/i, // PS 광역 삭제 (~ 는 홈 참조만 — 경로 속 리터럴 ~ 예: RUNNER~1 제외)
   /\b(del|erase)\s+\/s\b[^|;&]*[A-Za-z]:\\?\s*$/i,
   /\b(rmdir|rd)\s+\/s\b[^|;&]*[A-Za-z]:\\?\s*$/i,
   /\bformat\s+[A-Za-z]:/i,
