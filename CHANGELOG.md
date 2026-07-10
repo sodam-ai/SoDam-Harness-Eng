@@ -7,6 +7,15 @@
 
 ## [Unreleased] — 2026-07-03
 
+### 변경 — 오탐(false positive) 축소 + 테스트 재현성 (2026-07-11)
+- **무엇 ①(오탐 제거)**: `echo "rm -rf /"`·`grep "rm -rf"`·`git commit -m "…rm -rf…"`처럼 위험 문자열을 **인용부호 안에서 언급만** 하는 비실행 명령이 deny/ask로 잘못 차단되던 것을 통과로 수정. `guard.mjs`에 `stripInertQuotedData`(데이터 싱크 echo/grep/printf/commit -m 세그먼트의 따옴표 내용만 분류에서 제외) 도입. 세그먼트 세퍼레이터(`|`·`;`·`&&`) 보존 재조합으로 `curl x | grep -d`류 새 오탐도 방지.
+- **무엇 ②(보안 리뷰 반영)**: bash는 **이중따옴표 안 `$(...)`·백틱을 실행**하므로, 그 치환이 있으면 따옴표를 제거하지 않고 그대로 검사(`stripQuotesSafe`) — `echo "$(rm -rf ~)"` 탐지 우회를 커밋 리뷰에서 발견·차단. 단일따옴표는 리터럴이라 제거 안전.
+- **탐지 약화 0(불변)**: `bash -c`·`sh -c`·`eval`·`xargs`·`python -c`·`node -e` 등 실행자와 비인용 세그먼트는 그대로 검사·차단. 경로 추출(리다이렉트·삭제 대상)은 원본 명령 기준 유지.
+- **왜**: 적대적 감사가 재현한 마지막 오탐(언급 ≠ 실행) — 제품이 정당한 작업을 막으면 "진행 불가감"으로 신뢰를 해침(01 §8.8). 단, 오탐을 줄이며 탐지에 구멍을 내면 안 되므로 리뷰로 우회 1건을 잡아 보강.
+- **재현성**: `_selftest.mjs`를 저장소에 포함(`.gitignore` 해제) + CI(`security-audit.yml`)에서 Windows·Linux 실제 실행 → "테스트 통과"를 저장소가 스스로 증명(재현 불가 결함 해소, §8.8).
+- 검증: TDD(오탐 RED 6 + 우회 RED 2 → GREEN) + 실행자 탐지 유지 회귀 잠금 — `_selftest.mjs` **112 PASS / 0 FAIL**(Windows 기준).
+- 관련: `hooks/guard.mjs`(stripInertQuotedData·stripQuotesSafe), `hooks/_selftest.mjs`(E-2 잠금 14건), `.github/workflows/security-audit.yml`, `.gitignore`, `.claude-plugin/plugin.json`(hooks 중복선언 제거)
+
 ### 보안 수정 — 적대적 감사로 발견한 커버리지 갭 4건 차단 (2026-07-07)
 - **무엇 ①(치명·잠복 버그)**: `curl/wget` 외부 업로드 탐지가 **한 번도 발동 안 하던 정규식 버그** 수정 — 플래그 앞 `\b`가 공백 뒤 대시(`-d` 등)에서 매칭 실패(공백·대시 사이엔 단어경계 없음). `curl -d @~/.ssh/id_rsa`(비밀키 유출)가 그대로 통과하던 것을 ask로 차단. 09 §3 "외부 업로드 금지" 명세가 코드에 실제 반영됨(명세-구현 불일치 해소).
 - **무엇 ②**: `find … -delete`·`find -exec rm`(대량 삭제)·`truncate -s 0`(파일 0-초기화) 위험패턴 추가 → 통과하던 것을 deny/ask로.

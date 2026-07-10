@@ -897,6 +897,11 @@ A: Yes. The Apache License 2.0 allows commercial use. You may use it for client 
 <details>
 <summary><b>📌 Changes by version (click to expand)</b></summary>
 
+### 2026-07-11 — Fewer false blocks + reproducibility (safety unchanged)
+- **Merely *mentioning* danger passes**: commands that only put a risky string in quotes — `echo "rm -rf /"`, `grep "rm -rf"`, `git commit -m "…rm -rf…"` — were wrongly blocked and now pass. Commands that actually *execute* the content (`bash -c`, `eval`, or `$(...)`/backtick command substitution inside double quotes) are still blocked (safety unchanged).
+- **The repo proves its own tests**: self-tests are now committed and run in CI on Windows and Linux.
+- **All 112 self-tests pass** (0 FAIL).
+
 ### 2026-07-07 — Security hardening (stricter only, no relaxation)
 - **Install stability**: plugin manifest (`plugin.json`) paths updated to the current `./` format so install & `claude plugin validate` pass.
 - **Honest block messages**: system/config-file block messages changed from a "dead-end wall" to a "door" — the AI still can't edit them, but you are told how to change them yourself (the safety stays intact).
@@ -1005,7 +1010,7 @@ We want to be fully honest about what SoDamHarness can and cannot do.
 - This tool is an **auxiliary safety aid** that reduces common risks. **It is not perfect.**
 - **New or unusual risk patterns** we have not encountered may not be caught. The danger pattern list is updated as new cases are found, but it cannot anticipate everything.
 - **Verified on Windows; Mac is untested.** The code is written to be cross-platform, but Mac behavior has not been formally verified. Please report any Mac-specific issues to the developer.
-- **98/98 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts).
+- **112/112 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts).
 - For truly important data, **do not rely on this tool alone.** Use a dedicated backup solution (Windows Backup, Time Machine, cloud storage, an external drive, etc.) in addition to SoDamHarness.
 - **Think before you act.** The best safety measure is a moment of careful thought before asking the AI to do something irreversible.
 
