@@ -4,9 +4,9 @@ on:
   schedule:
     - cron: '0 9 1 * *'   # 매월 1일 09:00 UTC 자동 실행
   push:
-    branches: [main]
+    branches: [main, feat/phase1-mvp]
   pull_request:
-    branches: [main]
+    branches: [main, feat/phase1-mvp]
 
 jobs:
   audit:
@@ -43,3 +43,21 @@ jobs:
             echo "오류: 하드코딩된 비밀값 패턴이 발견됐습니다"
             exit 1
           fi
+
+  # 저장소가 "테스트 통과"를 스스로 증명 (E-1 재현성): _selftest.mjs를 실제 실행해 0 FAIL 확인.
+  # 개수는 플랫폼 의존(Windows 기준 98) → CI는 숫자가 아닌 exit 0(0 FAIL)로만 검증. Windows·Linux 양쪽 실측.
+  selftest:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: guard 자가 테스트 (node hooks/_selftest.mjs → 0 FAIL)
+        run: node hooks/_selftest.mjs

@@ -15,7 +15,6 @@ node_modules/
 .plugin-config/
 
 # 테스트 임시 산출물
-_selftest.mjs
 *.tmp
 
 # OS·에디터 부산물
