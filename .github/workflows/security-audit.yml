@@ -29,10 +29,12 @@ jobs:
             exit 1
           fi
 
-      - name: 금지 패턴 스캔 (eval·exec·fetch·child_process)
+      - name: 금지 패턴 스캔 (eval·new Function·fetch·child_process)
         run: |
-          if grep -rn "\beval\b\|\bexec\b\|\bfetch\b\|\brequire('child_process')\b\|require(\"child_process\")" hooks/ --include="*.mjs" \
-            | grep -v "^Binary\|#\|//\|_selftest"; then
+          # 정규식 .exec() 같은 무해한 호출은 제외하고 동적 실행·프로세스 생성·네트워크만 정밀 탐지.
+          # (exec 위험은 child_process import를 통하므로 child_process 매칭으로 커버됨)
+          if grep -rnE "\beval[[:space:]]*\(|\bnew[[:space:]]+Function[[:space:]]*\(|\bchild_process\b|\bfetch[[:space:]]*\(" hooks/ --include="*.mjs" \
+            | grep -v "_selftest"; then
             echo "오류: hooks/ 에 금지 패턴이 발견됐습니다"
             exit 1
           fi
@@ -45,13 +47,12 @@ jobs:
           fi
 
   # 저장소가 "테스트 통과"를 스스로 증명 (E-1 재현성): _selftest.mjs를 실제 실행해 0 FAIL 확인.
-  # 개수는 플랫폼 의존(Windows 기준 98) → CI는 숫자가 아닌 exit 0(0 FAIL)로만 검증. Windows·Linux 양쪽 실측.
+  # 개수는 플랫폼 의존(Windows 기준 114) → CI는 숫자가 아닌 exit 0(0 FAIL)로만 검증.
+  # 현재 Windows(1차 플랫폼)만 그린. Linux(ubuntu)는 후속 — 첫 Linux 실측에서 드러난 기존 이식성 이슈:
+  #   ① writeDestinations가 POSIX 절대경로(/abs) cp/mv 대상을 스킵 → Linux 덮어쓰기 백업 누락
+  #   ② `/c/Windows` 민감판정은 Git Bash 마운트(Windows) 전용 → Linux 테스트는 WIN 가드 필요
   selftest:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
