@@ -734,7 +734,7 @@ These files are in the SoDamHarness plugin folder:
 | `LICENSE` | Full Apache License 2.0 text |
 | `NOTICE` | Third-party notices and attributions |
 
-**PDF versions** with identical content: `README.pdf` · `README.en.pdf` · `GUIDE.pdf` · `GUIDE.en.pdf`
+**HTML versions** with identical content: `README.html` · `README.en.html` · `GUIDE.html` · `GUIDE.en.html`
 
 ---
 
@@ -1048,4 +1048,4 @@ We want to be fully honest about what SoDamHarness can and cannot do.
 
 ---
 
-*This document (GUIDE.en.md) and its PDF (GUIDE.en.pdf) have identical content. Korean: README.md / GUIDE.md*
+*This document (GUIDE.en.md) and its HTML (GUIDE.en.html) have identical content. Korean: README.md / GUIDE.md*

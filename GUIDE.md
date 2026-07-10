@@ -662,7 +662,7 @@ C:\Users\내이름\.sodamharness\
 | `LICENSE` | Apache 2.0 라이선스 전문 |
 | `NOTICE` | 저작권·상표 고지 |
 
-**같은 내용의 PDF:** `README.pdf` · `README.en.pdf` · `GUIDE.pdf` · `GUIDE.en.pdf`
+**같은 내용의 HTML:** `README.html` · `README.en.html` · `GUIDE.html` · `GUIDE.en.html`
 
 ---
 
@@ -936,4 +936,4 @@ Apache 2.0은 매우 허용적인 라이선스입니다. 아래를 모두 허용
 
 ---
 
-*이 문서(GUIDE.md)와 PDF(GUIDE.pdf)는 내용이 동일합니다. 영문판: README.en.md / GUIDE.en.md*
+*이 문서(GUIDE.md)와 HTML(GUIDE.html)은 내용이 동일합니다. 영문판: README.en.md / GUIDE.en.md*

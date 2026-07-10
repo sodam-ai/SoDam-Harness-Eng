@@ -179,4 +179,4 @@ Every AI action passes through SoDamHarness before it executes:
 - **Verified on Windows · Mac untested.**
 - For truly important data, don't rely on this tool alone — **keep separate backups.**
 
-*Korean: [README.md](./README.md) · Same content as PDF: README.en.pdf / GUIDE.en.pdf*
+*Korean: [README.md](./README.md) · Same content as HTML: README.en.html / GUIDE.en.html*

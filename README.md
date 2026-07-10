@@ -169,4 +169,4 @@ SoDamHarness는 3개의 핵심 파일이 팀으로 움직입니다.
 - **윈도우 검증 완료 · 맥 미검증.**
 - 진짜 중요한 자료는 이 도구만 믿지 말고 **따로 백업**하세요.
 
-*English: [README.en.md](./README.en.md) · 같은 내용 PDF: README.pdf / GUIDE.pdf*
+*English: [README.en.md](./README.en.md) · 같은 내용 HTML: README.html / GUIDE.html*
