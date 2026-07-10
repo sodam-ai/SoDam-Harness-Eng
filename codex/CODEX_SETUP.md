@@ -1,7 +1,6 @@
----
-name: sodam-harness-codex
-description: Codex(코덱스)에서도 같은 쉬운 말투 + 보수적 안전 설정을 쓰도록 안내 (Phase 2).
----
+# Codex 설정 안내 (Phase 2)
+
+> 참고: 예전 `/sodam-harness-codex` 슬래시 명령을 쓰던 시절의 안내문입니다(명령은 UX 정리로 제거됨, 2026-06-23). 필요하면 아래 내용을 참고해 안내하세요.
 
 사용자가 Codex(코덱스)에서도 SoDamHarness처럼 안전하게 쓰고 싶어 합니다. **쉬운 한국어로** 아래를 안내하세요.
 
