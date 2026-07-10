@@ -424,6 +424,26 @@ if (MAC) {
   check("Context 예외 후 settings.json 여전히 deny", r3.decision === "deny", JSON.stringify(r3));
 }
 
+// 36) [E-2] 비실행 인용 데이터 오탐 제거 — echo/grep/printf/commit -m 안의 위험 문자열은 "언급"이라 통과,
+//     단 인용 내용을 실제 실행하는 명령(bash -c·sh -c·eval·xargs 등)은 여전히 차단(탐지 약화 0).
+{
+  const dec = (c, tool = "Bash") => run(tool, { command: c }, work).decision;
+  let d;
+  // (a) 오탐 제거: 데이터 싱크 명령의 따옴표 안 위험문자열 → 통과(null)
+  d = dec('echo "rm -rf /"');                     check('E2 echo "rm -rf /" → 통과(오탐 제거)', d === null, String(d));
+  d = dec('echo "rm -rf ~"');                     check('E2 echo "rm -rf ~" → 통과', d === null, String(d));
+  d = dec(`grep "rm -rf" "${aFile}"`);            check('E2 grep "rm -rf" 파일 → 통과', d === null, String(d));
+  d = dec("grep -rn 'rm -rf' .");                 check("E2 grep -rn 'rm -rf' . → 통과", d === null, String(d));
+  d = dec('git commit -m "refactor rm -rf now"'); check('E2 git commit -m "..rm -rf.." → 통과', d === null, String(d));
+  d = dec('printf "rm -rf /"');                    check('E2 printf "rm -rf /" → 통과', d === null, String(d));
+  // (b) 탐지 유지(안전 바닥): 인용 내용을 실행하는 명령·비인용 세그먼트는 여전히 차단 — 깨지면 탐지 구멍
+  d = dec('bash -c "rm -rf ~"');                   check('E2 bash -c "rm -rf ~" → deny(실행자 유지)', d === 'deny', String(d));
+  d = dec('sh -c "rm -rf /"');                     check('E2 sh -c "rm -rf /" → deny', d === 'deny', String(d));
+  d = dec('eval "rm -rf ~"');                      check('E2 eval "rm -rf ~" → deny', d === 'deny', String(d));
+  d = dec('echo x && rm -rf ~');                   check('E2 echo x && rm -rf ~ → deny(비인용 세그먼트)', d === 'deny', String(d));
+  d = dec('echo f | xargs rm -rf');                check('E2 echo | xargs rm -rf → 차단(파일삭제 유지)', d === 'ask' || d === 'deny', String(d));
+}
+
 // ── backup.mjs 엔진 직접 테스트 (undo 신뢰성 수정) ──
 const bwork = mkdtempSync(path.join(tmpdir(), "sdh-bk-"));
 const bfile = path.join(bwork, "doc.txt");

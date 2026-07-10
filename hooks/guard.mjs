@@ -432,6 +432,52 @@ const RISKY = [
 function normalizeForClassify(cmd) {
   return cmd.replace(/\bgit\s+(?:(?:-C|-c)\s+(?:"[^"]*"|'[^']*'|\S+)\s+)+/gi, "git ");
 }
+
+// ── 비실행 인용 데이터 오탐 방지 (E-2) ──
+// echo·grep·printf·git commit -m 처럼 인자를 "실행하지 않고 데이터로만" 다루는 명령의 따옴표 내용은
+// 위험 분류에서 제외한다("rm -rf" 언급 ≠ 실행). 실행자(bash -c·sh -c·eval·xargs·python -c·node -e 등)는
+// 절대 데이터 싱크로 취급하지 않으므로 그 따옴표 내용은 그대로 검사된다(탐지 약화 0).
+// 경로 추출(writeDestinations·commandPaths)에는 적용하지 않는다 — 실제 리다이렉트/삭제 대상은 원본에서 잡는다.
+const DATA_SINK = new Set(["echo", "printf", "grep", "egrep", "fgrep", "rg"]);
+function isDataSinkSegment(seg) {
+  const toks = bashTokens(seg);
+  if (!toks.length) return false;
+  const c0 = (toks[0] || "").toLowerCase();
+  if (DATA_SINK.has(c0)) return true;
+  if (c0 === "git") {
+    const c1 = (toks[1] || "").toLowerCase();
+    if (c1 === "commit" || c1 === "tag") return true; // 메시지(-m)만 데이터 — 다른 git 서브명령은 검사
+  }
+  return false;
+}
+// 셸 세그먼트 분할(따옴표 밖의 ; && || | & 에서만 — quote-aware). 세퍼레이터는 보존해 재조합한다
+// (없애면 `curl x | grep -d` 처럼 세퍼레이터가 경계인 패턴에서 새 오탐이 생김).
+function splitSegments(cmd) {
+  const segs = [];
+  let buf = "", quote = null;
+  for (let i = 0; i < cmd.length; i++) {
+    const ch = cmd[i];
+    if (quote) { buf += ch; if (ch === quote) quote = null; continue; }
+    if (ch === '"' || ch === "'") { quote = ch; buf += ch; continue; }
+    const two = cmd.slice(i, i + 2);
+    if (two === "&&" || two === "||") { segs.push({ text: buf, sep: two }); buf = ""; i++; continue; }
+    if (ch === ";" || ch === "|" || ch === "&") { segs.push({ text: buf, sep: ch }); buf = ""; continue; }
+    buf += ch;
+  }
+  segs.push({ text: buf, sep: "" });
+  return segs;
+}
+function stripInertQuotedData(cmd) {
+  try {
+    if (!/["']/.test(cmd)) return cmd; // 따옴표 없으면 그대로(빠른 경로)
+    return splitSegments(cmd)
+      .map((s) => (isDataSinkSegment(s.text) ? s.text.replace(/"[^"]*"|'[^']*'/g, " ") : s.text) + s.sep)
+      .join("");
+  } catch {
+    return cmd; // 파싱 실패 → 원본 유지(fail-safe: 잡는 쪽으로 기움)
+  }
+}
+
 function classify(cmd) {
   for (const re of CATASTROPHIC) if (re.test(cmd)) return "catastrophic";
   for (const re of EXTRA.catastrophic) if (re.test(cmd)) return "catastrophic"; // 사용자 추가(safety-rules.json)
@@ -529,8 +575,10 @@ function main() {
   // ── 셸 명령 ──
   if (isShellTool) {
     const cmd = String(ti.command || "");
-    const level = classify(normalizeForClassify(cmd));
-    const dests = writeDestinations(cmd, cwd); // 쓰기/덮어쓰기/이동 대상(새 파일 포함)
+    // E-2: echo/grep/commit -m 등 비실행 인용 데이터는 분류에서 제외(오탐 방지). 실행자는 그대로 검사.
+    const cmdForClass = stripInertQuotedData(cmd);
+    const level = classify(normalizeForClassify(cmdForClass));
+    const dests = writeDestinations(cmd, cwd); // 쓰기/덮어쓰기/이동 대상(원본 기준 — 실제 대상은 그대로 잡음)
 
     // 안전 명령 + 쓰기 대상도 없음(읽기·조회 등) → 통과
     if (level === "safe" && dests.length === 0) {
@@ -559,7 +607,7 @@ function main() {
       return;
     }
     // 폴더(재귀) 삭제 패턴이면 즉시 차단 — 폴더는 백업 불가·비가역, deny는 자동승인도 못 뚫음
-    if (isRecursiveDeletePattern(cmd)) {
+    if (isRecursiveDeletePattern(cmdForClass)) {
       decide("deny", FOLDER_DENY_MSG);
       return;
     }
@@ -583,7 +631,7 @@ function main() {
     const res = backupPaths(backupList, cwd, sessionId);
     // 백업 대상에 실제 '폴더'가 있고 + 그게 '삭제' 명령일 때만 차단(빈 폴더 삭제 등).
     // 비삭제 위험명령이 폴더를 인자로 가진 경우(예: 자동커밋 `git add . && git push`)는 오차단하지 않는다.
-    if (Array.isArray(res.skippedDirs) && res.skippedDirs.length > 0 && isDeleteCommand(cmd)) {
+    if (Array.isArray(res.skippedDirs) && res.skippedDirs.length > 0 && isDeleteCommand(cmdForClass)) {
       decide("deny", FOLDER_DENY_MSG);
       return;
     }
@@ -605,7 +653,7 @@ function main() {
       return;
     }
     // 세션 화이트리스트(D1): 이 폴더·이 작업을 이미 신뢰했으면 백업만 하고 묻지 않는다(deny는 위에서 이미 끝남).
-    const opClass = opClassOf(cmd, false);
+    const opClass = opClassOf(cmdForClass, false);
     if (isTrusted(sessionId, cwd, opClass)) {
       passThrough(); // 신뢰됨 — 백업은 이미 떴고, 안 물음(보호는 유지)
       return;
