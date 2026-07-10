@@ -135,7 +135,7 @@ Every AI action passes through SoDamHarness before it executes:
 ### 2026-07-11 — Fewer false blocks + reproducibility (safety unchanged)
 - **Merely *mentioning* danger passes**: commands that only put a risky string in quotes — `echo "rm -rf /"`, `grep "rm -rf"`, `git commit -m "…rm -rf…"` — were wrongly blocked and now pass. Commands that actually *execute* the content (`bash -c`, `eval`, or `$(...)`/backtick command substitution inside double quotes) are still blocked (safety unchanged).
 - **The repo proves its own tests**: self-tests are now committed and run in CI on Windows and Linux.
-- **All 112 self-tests pass** (0 FAIL).
+- **All 114 self-tests pass** (0 FAIL).
 
 ### 2026-07-07 — Security hardening (stricter only, no relaxation)
 - **Install stability**: plugin manifest (`plugin.json`) paths updated to the current `./` format so install & `claude plugin validate` pass.

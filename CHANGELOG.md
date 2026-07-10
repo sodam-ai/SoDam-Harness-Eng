@@ -13,7 +13,8 @@
 - **탐지 약화 0(불변)**: `bash -c`·`sh -c`·`eval`·`xargs`·`python -c`·`node -e` 등 실행자와 비인용 세그먼트는 그대로 검사·차단. 경로 추출(리다이렉트·삭제 대상)은 원본 명령 기준 유지.
 - **왜**: 적대적 감사가 재현한 마지막 오탐(언급 ≠ 실행) — 제품이 정당한 작업을 막으면 "진행 불가감"으로 신뢰를 해침(01 §8.8). 단, 오탐을 줄이며 탐지에 구멍을 내면 안 되므로 리뷰로 우회 1건을 잡아 보강.
 - **재현성**: `_selftest.mjs`를 저장소에 포함(`.gitignore` 해제) + CI(`security-audit.yml`)에서 Windows·Linux 실제 실행 → "테스트 통과"를 저장소가 스스로 증명(재현 불가 결함 해소, §8.8).
-- 검증: TDD(오탐 RED 6 + 우회 RED 2 → GREEN) + 실행자 탐지 유지 회귀 잠금 — `_selftest.mjs` **112 PASS / 0 FAIL**(Windows 기준).
+- **무엇 ③(CI가 잡은 Windows 경로 오탐)**: catastrophic remove-item 패턴의 `~`가 경로 속 리터럴 `~`(예: Windows 단축명 `C:\Users\RUNNER~1`)를 홈으로 오판 → `(?<!\w)~(?!\w)`로 홈 참조만 매칭하게 정밀화(폴더삭제는 여전히 deny, 진짜 홈 `~` 재귀삭제 catastrophic 유지).
+- 검증: TDD(오탐 RED 6 + 우회 RED 2 + 경로~ RED 1 → GREEN) + 실행자 탐지 유지 회귀 잠금 — `_selftest.mjs` **114 PASS / 0 FAIL**(Windows 기준). CI(`security-audit.yml`)는 self-test를 windows-latest에서 실제 실행(그린); Linux(ubuntu)는 후속(첫 Linux 실측에서 드러난 기존 이식성 이슈 — cp/mv POSIX 절대경로·`/c` 마운트).
 - 관련: `hooks/guard.mjs`(stripInertQuotedData·stripQuotesSafe), `hooks/_selftest.mjs`(E-2 잠금 14건), `.github/workflows/security-audit.yml`, `.gitignore`, `.claude-plugin/plugin.json`(hooks 중복선언 제거)
 
 ### 보안 수정 — 적대적 감사로 발견한 커버리지 갭 4건 차단 (2026-07-07)
