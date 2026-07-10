@@ -510,6 +510,14 @@ SoDamHarness maintains an automatic exclusion list. The following types of files
 - The activity log on your computer contains only filenames and timestamps — never file contents.
 - You can delete the activity log and the backup folder at any time without affecting the tool's function.
 
+### Backup folder access permissions (Windows)
+- The backup folder (`~/.sodamharness/backups/`) is not separately locked down — it relies on **the default per-account folder permissions Windows already sets**. Normally, other user accounts on the same computer cannot see inside your user folder (default Windows behavior).
+- If multiple people **share the same account** on one computer, be aware that everyone using that account can also see the backup folder.
+
+### Be cautious of unofficial "AI safety" tools
+- **Be especially careful of unofficial tools that claim to make AI "safe" but ask for your login token or password.** Real-world incidents have involved exactly this — tools that stole login credentials this way.
+- SoDamHarness **never asks for or stores any token or password.** Be suspicious of any tool that asks for your login information.
+
 ---
 
 ## 5-2. (Optional) Using it with Codex
