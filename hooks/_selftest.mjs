@@ -442,6 +442,10 @@ if (MAC) {
   d = dec('eval "rm -rf ~"');                      check('E2 eval "rm -rf ~" → deny', d === 'deny', String(d));
   d = dec('echo x && rm -rf ~');                   check('E2 echo x && rm -rf ~ → deny(비인용 세그먼트)', d === 'deny', String(d));
   d = dec('echo f | xargs rm -rf');                check('E2 echo | xargs rm -rf → 차단(파일삭제 유지)', d === 'ask' || d === 'deny', String(d));
+  // (c) [보안 리뷰] 이중따옴표 안 명령 치환($()·백틱)은 bash가 실행 → 우회 차단 유지 / 단일따옴표는 리터럴이라 통과
+  d = dec('echo "$(rm -rf ~)"');                   check('E2 echo "$(rm -rf ~)" → deny(명령치환 실행)', d === 'deny', String(d));
+  d = dec('echo "`rm -rf ~`"');                    check('E2 echo "`rm -rf ~`" → deny(백틱 치환)', d === 'deny', String(d));
+  d = dec("echo '$(rm -rf ~)'");                   check("E2 echo '$(rm -rf ~)' → 통과(단일따옴표 리터럴)", d === null, String(d));
 }
 
 // ── backup.mjs 엔진 직접 테스트 (undo 신뢰성 수정) ──

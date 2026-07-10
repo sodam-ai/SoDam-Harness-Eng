@@ -467,11 +467,21 @@ function splitSegments(cmd) {
   segs.push({ text: buf, sep: "" });
   return segs;
 }
+// 데이터 싱크 세그먼트의 따옴표를 제거하되, bash가 이중따옴표 안에서 "실행"하는 명령 치환($(...)·백틱)은
+// 남긴다 — 안 그러면 `echo "$(rm -rf ~)"` 같은 탐지 우회가 생긴다(보안 리뷰 반영).
+// 단일따옴표는 bash에서 리터럴($()·백틱 실행 안 함)이라 항상 제거 안전.
+function stripQuotesSafe(seg) {
+  return seg.replace(/"[^"]*"|'[^']*'/g, (m) => {
+    if (m[0] === "'") return " "; // 단일따옴표 = 리터럴 → 안전하게 제거
+    if (m.includes("$(") || m.includes("`")) return m; // 이중따옴표 안 명령 치환 → 그대로 검사(우회 차단)
+    return " "; // 치환 없는 순수 데이터 → 제거
+  });
+}
 function stripInertQuotedData(cmd) {
   try {
     if (!/["']/.test(cmd)) return cmd; // 따옴표 없으면 그대로(빠른 경로)
     return splitSegments(cmd)
-      .map((s) => (isDataSinkSegment(s.text) ? s.text.replace(/"[^"]*"|'[^']*'/g, " ") : s.text) + s.sep)
+      .map((s) => (isDataSinkSegment(s.text) ? stripQuotesSafe(s.text) : s.text) + s.sep)
       .join("");
   } catch {
     return cmd; // 파싱 실패 → 원본 유지(fail-safe: 잡는 쪽으로 기움)
