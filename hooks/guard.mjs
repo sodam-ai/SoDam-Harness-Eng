@@ -111,7 +111,9 @@ function writeDestinations(cmd, cwd) {
   if (/^(cp|mv|copy|move)$/.test(c0)) {
     for (let i = toks.length - 1; i >= 1; i--) {
       const t = toks[i];
-      if (!t || t.startsWith("-") || t.startsWith("/") || SHELL_OPS.has(t)) continue;
+      if (!t || t.startsWith("-") || SHELL_OPS.has(t)) continue;
+      // posix 절대경로(/home·/Users..)는 덮어쓰기 대상, windows 단일 플래그(/s 등)만 제외 (commandPaths와 동일 규칙)
+      if (t.startsWith("/") && WIN && !/[\\/].+/.test(t.slice(1))) continue;
       cand.add(clean(t));
       break;
     }
