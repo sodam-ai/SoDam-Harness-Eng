@@ -48,11 +48,15 @@ jobs:
 
   # 저장소가 "테스트 통과"를 스스로 증명 (E-1 재현성): _selftest.mjs를 실제 실행해 0 FAIL 확인.
   # 개수는 플랫폼 의존(Windows 기준 114) → CI는 숫자가 아닌 exit 0(0 FAIL)로만 검증.
-  # 현재 Windows(1차 플랫폼)만 그린. Linux(ubuntu)는 후속 — 첫 Linux 실측에서 드러난 기존 이식성 이슈:
-  #   ① writeDestinations가 POSIX 절대경로(/abs) cp/mv 대상을 스킵 → Linux 덮어쓰기 백업 누락
-  #   ② `/c/Windows` 민감판정은 Git Bash 마운트(Windows) 전용 → Linux 테스트는 WIN 가드 필요
+  # Windows·Linux(ubuntu) 양쪽 실행 (fix/posix-backup-portability에서 이식성 버그 2건 수정 후 ubuntu 추가):
+  #   ① writeDestinations가 POSIX 절대경로(/abs) cp/mv 대상을 스킵하던 문제 → guard.mjs를 WIN 인지 규칙으로 수정
+  #   ② `/c/Windows` 민감판정(Git Bash 마운트·Windows 전용) → _selftest.mjs를 플랫폼별 경로(posix=/etc)로 수정
   selftest:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 

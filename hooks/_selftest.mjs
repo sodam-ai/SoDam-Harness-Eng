@@ -271,8 +271,9 @@ if (MAC) {
   check("OW echo > 새파일 → 통과", D("Bash", `echo hi > "${owNew}"`) === null, "");
   check("OW cp → 새파일 → 통과", D("Bash", `cp "${aFile}" "${owNew}"`) === null, "");
   check("OW echo >> 기존(append) → 통과", D("Bash", `echo hi >> "${owT}"`) === null, "");
-  // 민감위치 쓰기는 새 파일이어도 → deny (C1 우회 차단)
-  check("OW echo > 민감위치 → deny", D("Bash", "echo x > /c/Windows/sdh_ow.ini") === "deny", "");
+  // 민감위치 쓰기는 새 파일이어도 → deny (C1 우회 차단). 민감경로는 플랫폼별(윈도우=/c/Windows, posix=/etc)
+  const owSens = WIN ? "/c/Windows/sdh_ow.ini" : "/etc/sdh_ow.ini";
+  check("OW echo > 민감위치 → deny", D("Bash", `echo x > ${owSens}`) === "deny", "");
   // [회귀] 읽기(cat)는 통과
   check("OW [회귀] cat 기존 → 통과", D("Bash", `cat "${owT}"`) === null, "");
 }
