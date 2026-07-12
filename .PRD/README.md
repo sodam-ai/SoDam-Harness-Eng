@@ -16,6 +16,17 @@
 | [RESEARCH_SOURCES_Add.md](./RESEARCH_SOURCES_Add.md) | 하네스 엔지니어링 전체 지형(참고 지도) | 확장 방향 참고 |
 | [05_HAND_SIMULATION.md](./05_HAND_SIMULATION.md) | Phase -1 종이 점검(초보자 시나리오·발견 H1~H7) | 구현 전 구멍 확인 |
 | [06_CORE_DRAFTS.md](./06_CORE_DRAFTS.md) | MVP 핵심 산출물 초안(AGENTS.md 본문·guard.mjs 명세·되돌리기·commands) | Phase 1 만들기 직전 |
+| [07_AUDIT_AND_DECISIONS.md](./07_AUDIT_AND_DECISIONS.md) | 감사 + 결정(모순·누락·위험 A1~E1) | 구현 중 우선순위 판단 |
+| [08_EXTENSIBILITY_AND_UPGRADE.md](./08_EXTENSIBILITY_AND_UPGRADE.md) | 확장·업그레이드 설계 + 백로그 | 규칙 추가·업그레이드할 때 |
+| [09_CONSTRAINT_RELAXATION.md](./09_CONSTRAINT_RELAXATION.md) | 과잉 제약 완화 설계(2층 분리·완화 금지목록·relax 메커니즘) | 완화 작업 시 10 다음 |
+| [10_AI_COLLABORATION_FRICTION.md](./10_AI_COLLABORATION_FRICTION.md) | AI 협업 마찰 7레이어 증거 + 경계 규율(오조준 방지) | **완화 작업 시 가장 먼저** |
+| [11_PRECISION_TUNING_LOG.md](./11_PRECISION_TUNING_LOG.md) | 정밀화 구현 기록 + 개선/고도화 백로그(U1~U6) | 정밀화 이어서 작업할 때 |
+| [12_CONFIG_FILE_DENY_AND_SELF_PROTECTION.md](./12_CONFIG_FILE_DENY_AND_SELF_PROTECTION.md) | settings.json 차단 사례 분석 + **자기보호 축**(안전장치 스스로 못 끄게) 신설 · 개선 후보 A~D | 설정 파일 차단 마찰·자기보호 판단할 때 |
+| [08_IMPLEMENTATION_PREP.md](./08_IMPLEMENTATION_PREP.md) | SoDam 패밀리 구현 준비 종합(빌딩블록·제약·미지수, 코드 0) | 패밀리·Phase 2 착수 전 |
+| [CHECKPOINT.md](./CHECKPOINT.md) | 구현 체크포인트(PRD 적합성 검증 + 전체 구현 로드맵 단일 추적) | 진행 상태 확인·재개할 때 |
+| [SODAM_FAMILY_COEXIST.md](./SODAM_FAMILY_COEXIST.md) | SoDam 6형제 공존 계약(Harness 관점 메모 — 정본은 Agentic의 family-synergy.md) | 형제 플러그인 빌드 전 |
+
+> 🔧 **완화(정밀화) 작업 진입 순서**: [10](./10_AI_COLLABORATION_FRICTION.md) 레이어 판별 → [09](./09_CONSTRAINT_RELAXATION.md) 2층 분리·금지목록 → [11](./11_PRECISION_TUNING_LOG.md) 백로그·이어가기 절차.
 
 ## 핵심 결정 한눈에 (v2)
 
