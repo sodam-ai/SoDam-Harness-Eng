@@ -8,7 +8,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync
 import { tmpdir, homedir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { backupPaths, listBackups, restorePlan, restore, isSecretFile, relativeAgo, cleanupBackups } from "./backup.mjs";
+import { backupPaths, listBackups, restorePlan, restore, isSecretFile, relativeAgo, cleanupBackups, backupsRoot } from "./backup.mjs";
 import { summarize } from "./activity.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -560,15 +560,21 @@ let backupDir1 = null;
   writeFileSync(targetFile, "target-content");
   const targetRes = backupPaths([targetFile], targetWork, "sess-target");
 
-  // 다른 프로젝트인 척 10건을 뒤이어 백업(기본 limit=8보다 많게 → 순수 최신순에서 밀려나게 함)
-  const noiseWork = mkdtempSync(path.join(tmpdir(), "sdh-noise-"));
-  const noiseFile = path.join(noiseWork, "unrelated.txt");
-  writeFileSync(noiseFile, "noise");
+  // 다른 프로젝트인 척 10건을 뒤이어 백업(기본 limit=8보다 많게 → 순수 최신순에서 밀려나게 함).
+  // [2026-07-12 CI 실패로 발견·수정] 폴더명이 "초 단위 시각+난수"라, 빠른 환경(CI)에서는 target과
+  // 노이즈가 같은 1초 안에 만들어져 정렬이 난수(random suffix) 순서가 돼버려 재현이 흔들렸다
+  // (로컬에선 우연히 실행 간격이 벌어져 통과). 실제 시각과 무관하게 "확실히 최신"으로 정렬되도록
+  // 이름을 직접 구성해(사전순으로 어떤 실제 타임스탬프보다도 큰 값) 결정적으로 만든다.
+  const root = backupsRoot();
   const noiseDirs = [];
   for (let i = 0; i < 10; i++) {
-    writeFileSync(noiseFile, `noise-${i}`);
-    const r = backupPaths([noiseFile], noiseWork, `sess-noise-${i}`);
-    if (r.ok) noiseDirs.push(r.dir);
+    const dir = path.join(root, `99999999-999999-noise${i}`);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      path.join(dir, "manifest.json"),
+      JSON.stringify({ created_at: `99999999-999999-noise${i}`, cwd: null, session_id: `sess-noise-${i}`, files: [] }),
+    );
+    noiseDirs.push(dir);
   }
 
   const plainList = listBackups(8);
@@ -609,7 +615,6 @@ let backupDir1 = null;
     try { rmSync(d, { recursive: true, force: true }); } catch {}
   }
   try { rmSync(targetWork, { recursive: true, force: true }); } catch {}
-  try { rmSync(noiseWork, { recursive: true, force: true }); } catch {}
 }
 // 35) [정밀화 2차·U4] cleanupBackups 보존 정책 — 격리 루트(rootDir 주입)에서 검증, 실제 사용자 백업 무접촉
 {
