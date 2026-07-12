@@ -247,7 +247,7 @@ details { border-color: #3a3f47; }
 </tbody>
 </table>
 <p><strong>스킬 2개(자동):</strong>
-<code>sodam-harness-beginner-tone</code>(쉬운 말투) ·
+<code>beginner-tone</code>(쉬운 말투) ·
 <code>sodam-harness-self-check</code>(완료 전 자가검증).</p>
 <blockquote>
 <p>💡 명령은 모두 <strong>Claude Code 전용</strong>입니다.
@@ -305,6 +305,21 @@ details { border-color: #3a3f47; }
 <summary>
 <b>📌 버전별 변경 요약 (클릭해서 펼치기)</b>
 </summary>
+<h3 id="되돌리기undo-버그-수정-linuxmac-백업-누락-수정">2026-07-12 —
+되돌리기(undo) 버그 수정 + Linux/Mac 백업 누락 수정</h3>
+<ul>
+<li><strong>되돌리기가 백업을 못 찾던 버그 수정</strong>: 여러 프로젝트가
+동시에 백업을 만드는 환경에서 방금 만든 백업이 “최근 8개” 목록 밖으로
+밀려나 <code>/sodam-harness-undo</code>가 “없다”고 잘못 말하던 버그를
+실사용 중 발견·수정. (백업 자체는 정상 생성돼 있었음 — 목록/검색
+로직만의 문제, 데이터 손실 없음)</li>
+<li><strong>Linux/Mac 백업 누락 수정</strong>:
+<code>cp</code>/<code>mv</code>로 기존 파일을 덮어쓸 때 POSIX
+절대경로를 잘못 인식해 백업이 빠지던 버그 수정(Windows는 원래
+정상).</li>
+<li><strong>자가검증 117개 전부 통과</strong> (기존 114 + 신규 3, 회귀
+0).</li>
+</ul>
 <h3 id="오탐잘못된-차단-축소-재현성-안전-방향-유지">2026-07-11 —
 오탐(잘못된 차단) 축소 + 재현성 (안전 방향 유지)</h3>
 <ul>

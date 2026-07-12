@@ -5,6 +5,24 @@
 
 ---
 
+## [Unreleased] — 2026-07-12
+
+### 수정 — 되돌리기(undo)가 다른 작업에 밀려 백업을 못 찾던 버그
+- **무엇**: 이 컴퓨터처럼 여러 프로젝트가 동시에 백업을 만드는 환경에서, `/sodam-harness-undo`가 방금 만든 백업을 "최근 8개" 목록 밖으로 밀려났다는 이유로 "없다"고 잘못 보고하던 버그를 실사용 중 발견. 백업 자체는 정상 생성돼 있었고, **목록에서 찾는 로직**만 문제였음(데이터 손실 없음).
+- **왜**: 되돌리기는 01_PRD가 정한 핵심 안전 약속인데, 이게 실패하면 사용자가 "복구가 안 된다"고 오인해 더 위험한 자체 시도를 할 수 있음.
+- **수정**: `hooks/backup.mjs`의 `listBackups(limit, opts)`에 `opts.pathPrefix` 추가(옵션 미지정 시 기존 동작과 100% 동일) — 폴더를 지정하면 더 넓은 범위(최근 300개)에서 찾음. `commands/sodam-harness-undo.md`에 "목록에 안 보이면 폴더 지정 재검색" 안내 추가.
+- 관련: `hooks/backup.mjs`, `commands/sodam-harness-undo.md`, `hooks/_selftest.mjs`(회귀 테스트 3건 추가)
+
+### 수정 — Linux/Mac 계열 cp·mv 덮어쓰기 백업 누락 (POSIX 이식성)
+- **무엇**: `writeDestinations`(guard.mjs)가 POSIX 절대경로(`/home/...`, `/Users/...`)를 Windows 전용 플래그(예: `/s`)로 잘못 인식해, Linux·Mac에서 `cp`/`mv`로 기존 파일을 덮어쓸 때 백업이 조용히 빠지던 버그. Windows는 원래부터 정상이었음.
+- **왜**: 01_PRD가 "Windows·Mac 둘 다 백업이 깨지지 않는다"고 명시한 약속을 정면 위반.
+- **수정**: POSIX 절대경로와 Windows 플래그를 구분하는 판정을 정밀화. CI에 ubuntu 매트릭스 추가해 Linux에서도 실제 실행·검증.
+
+### 검증
+- 자가검증 **117개 전부 통과** (기존 114 + 신규 3, 회귀 0). CI(Windows·Ubuntu·audit) 전부 그린.
+
+---
+
 ## [Unreleased] — 2026-07-03
 
 ### 추가 — 문서: 백업폴더 권한·비공식 도구 주의 안내 (2026-07-11)

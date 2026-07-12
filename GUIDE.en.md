@@ -678,7 +678,7 @@ Skills are helper behaviors that run alongside SoDamHarness to improve your expe
 
 | Skill | What it does | How to activate |
 |---|---|---|
-| `/sodam-harness-beginner-tone` | Makes all AI guidance use plain, simple, jargon-free language. Explains technical terms when they appear. | Usually activates automatically. If explanations feel too technical, say "Explain it simply" or type this skill name. |
+| `beginner-tone` | Makes all AI guidance use plain, simple, jargon-free language. Explains technical terms when they appear. | Activates automatically — it is not a slash command. If explanations feel too technical, just say "Explain it simply". |
 | `/sodam-harness-self-check` | Before the AI says "Done!", it verifies the task actually worked — by running the code, checking the file, etc. — rather than just claiming it is done. | Activates automatically. Especially useful for important tasks. |
 
 ---
@@ -753,7 +753,7 @@ These files are in the SoDamHarness plugin folder:
 | **Accidentally deleted a file** | — | Run **`/sodam-harness-undo`** and pick the backup from the list. |
 | **Backup folder error** ("permission denied" or "disk full") | Disk is full or the folder has restricted permissions | Free up disk space and retry. If backup fails, the risky action is **automatically cancelled** — nothing is lost. |
 | **Garbled text / strange characters** in terminal | Character encoding issue | This is uncommon with Node.js. If it persists, run `/sodam-harness-fix`. |
-| **Explanations are too technical** | Beginner-tone skill may not have activated | Say **"Explain this in simple, plain language"** or run `/sodam-harness-beginner-tone`. |
+| **Explanations are too technical** | Beginner-tone skill may not have activated | Say **"Explain this in simple, plain language"**. |
 | **Old command names appear** (like `/install` without the prefix) | Leftover data from a previous or different version | Fully restart Claude Code. If they persist, uninstall (Section 9) and reinstall (Section 2). |
 | **Duplicate commands** in the list | Two plugin versions may be installed | Restart → if duplicates persist, uninstall and reinstall. |
 | **"claude" command not recognized** in terminal | Claude Code is not installed or not on the PATH | Install Claude Code (Section 1-2). Restart terminal after. |
@@ -929,6 +929,11 @@ A: Yes. The Apache License 2.0 allows commercial use. You may use it for client 
 <details>
 <summary><b>📌 Changes by version (click to expand)</b></summary>
 
+### 2026-07-12 — Undo bug fix + Linux/Mac backup-loss fix
+- **Fixed: undo couldn't find backups**: on a machine where several projects create backups at the same time, a just-made backup could get pushed out of the "most recent 8" list, so `/sodam-harness-undo` wrongly reported "no backup found." Found during real-world use — the backup itself was always created correctly; only the lookup logic was at fault (no data was ever lost).
+- **Fixed: missing backups on Linux/Mac**: overwriting an existing file via `cp`/`mv` on Linux/Mac could skip the backup step due to a POSIX-absolute-path detection bug (Windows was always correct).
+- **All 117 self-tests pass** (114 existing + 3 new, zero regressions).
+
 ### 2026-07-11 — Fewer false blocks + reproducibility (safety unchanged)
 - **Merely *mentioning* danger passes**: commands that only put a risky string in quotes — `echo "rm -rf /"`, `grep "rm -rf"`, `git commit -m "…rm -rf…"` — were wrongly blocked and now pass. Commands that actually *execute* the content (`bash -c`, `eval`, or `$(...)`/backtick command substitution inside double quotes) are still blocked (safety unchanged).
 - **The repo proves its own tests**: self-tests are now committed and run in CI on Windows and Linux.
@@ -1042,7 +1047,7 @@ We want to be fully honest about what SoDamHarness can and cannot do.
 - This tool is an **auxiliary safety aid** that reduces common risks. **It is not perfect.**
 - **New or unusual risk patterns** we have not encountered may not be caught. The danger pattern list is updated as new cases are found, but it cannot anticipate everything.
 - **Verified on Windows; Mac is untested.** The code is written to be cross-platform, but Mac behavior has not been formally verified. Please report any Mac-specific issues to the developer.
-- **114/114 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts).
+- **117/117 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts).
 - For truly important data, **do not rely on this tool alone.** Use a dedicated backup solution (Windows Backup, Time Machine, cloud storage, an external drive, etc.) in addition to SoDamHarness.
 - **Think before you act.** The best safety measure is a moment of careful thought before asking the AI to do something irreversible.
 

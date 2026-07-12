@@ -104,7 +104,7 @@ Every AI action passes through SoDamHarness before it executes:
 | `/sodam-harness-trust` | "Stop asking for this folder/action" — silence it for this session (hard blocks & backups still apply) |
 | `/sodam-harness-log` | "What did you just do?" — timeline of AI actions (names & time only; secrets masked) |
 
-**2 skills (auto):** `/sodam-harness-beginner-tone` (easy tone) · `/sodam-harness-self-check` (verify before "done").
+**2 skills (auto):** `beginner-tone` (easy tone) · `sodam-harness-self-check` (verify before "done").
 
 > 💡 All commands are **Claude Code only**. To use it with **Codex**, see "(Optional) Using it with Codex" in the [GUIDE](./GUIDE.en.md).
 
@@ -138,6 +138,11 @@ Every AI action passes through SoDamHarness before it executes:
 
 <details>
 <summary><b>📌 Changes by version (click to expand)</b></summary>
+
+### 2026-07-12 — Undo bug fix + Linux/Mac backup-loss fix
+- **Fixed: undo couldn't find backups**: on a machine where several projects create backups at the same time, a just-made backup could get pushed out of the "most recent 8" list, so `/sodam-harness-undo` wrongly reported "no backup found." Found during real-world use — the backup itself was always created correctly; only the lookup logic was at fault (no data was ever lost).
+- **Fixed: missing backups on Linux/Mac**: overwriting an existing file via `cp`/`mv` on Linux/Mac could skip the backup step due to a POSIX-absolute-path detection bug (Windows was always correct).
+- **All 117 self-tests pass** (114 existing + 3 new, zero regressions).
 
 ### 2026-07-11 — Fewer false blocks + reproducibility (safety unchanged)
 - **Merely *mentioning* danger passes**: commands that only put a risky string in quotes — `echo "rm -rf /"`, `grep "rm -rf"`, `git commit -m "…rm -rf…"` — were wrongly blocked and now pass. Commands that actually *execute* the content (`bash -c`, `eval`, or `$(...)`/backtick command substitution inside double quotes) are still blocked (safety unchanged).

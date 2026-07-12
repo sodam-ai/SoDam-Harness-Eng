@@ -273,8 +273,8 @@ only; secrets masked)</td>
 </tbody>
 </table>
 <p><strong>2 skills (auto):</strong>
-<code>/sodam-harness-beginner-tone</code> (easy tone) ·
-<code>/sodam-harness-self-check</code> (verify before “done”).</p>
+<code>beginner-tone</code> (easy tone) ·
+<code>sodam-harness-self-check</code> (verify before “done”).</p>
 <blockquote>
 <p>💡 All commands are <strong>Claude Code only</strong>. To use it with
 <strong>Codex</strong>, see “(Optional) Using it with Codex” in the <a href="./GUIDE.en.md">GUIDE</a>.</p>
@@ -333,6 +333,23 @@ https://nodejs.org, then restart.</li>
 <summary>
 <b>📌 Changes by version (click to expand)</b>
 </summary>
+<h3 id="undo-bug-fix-linuxmac-backup-loss-fix">2026-07-12 — Undo bug
+fix + Linux/Mac backup-loss fix</h3>
+<ul>
+<li><strong>Fixed: undo couldn’t find backups</strong>: on a machine
+where several projects create backups at the same time, a just-made
+backup could get pushed out of the “most recent 8” list, so
+<code>/sodam-harness-undo</code> wrongly reported “no backup found.”
+Found during real-world use — the backup itself was always created
+correctly; only the lookup logic was at fault (no data was ever
+lost).</li>
+<li><strong>Fixed: missing backups on Linux/Mac</strong>: overwriting
+an existing file via <code>cp</code>/<code>mv</code> on Linux/Mac
+could skip the backup step due to a POSIX-absolute-path detection bug
+(Windows was always correct).</li>
+<li><strong>All 117 self-tests pass</strong> (114 existing + 3 new,
+zero regressions).</li>
+</ul>
 <h3 id="fewer-false-blocks-reproducibility-safety-unchanged">2026-07-11
 — Fewer false blocks + reproducibility (safety unchanged)</h3>
 <ul>

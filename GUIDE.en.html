@@ -1092,11 +1092,11 @@ improve your experience.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>/sodam-harness-beginner-tone</code></td>
+<td><code>beginner-tone</code></td>
 <td>Makes all AI guidance use plain, simple, jargon-free language.
 Explains technical terms when they appear.</td>
-<td>Usually activates automatically. If explanations feel too technical,
-say “Explain it simply” or type this skill name.</td>
+<td>Activates automatically — it is not a slash command. If
+explanations feel too technical, just say “Explain it simply”.</td>
 </tr>
 <tr>
 <td><code>/sodam-harness-self-check</code></td>
@@ -1286,8 +1286,7 @@ full”)</td>
 <tr>
 <td><strong>Explanations are too technical</strong></td>
 <td>Beginner-tone skill may not have activated</td>
-<td>Say <strong>“Explain this in simple, plain language”</strong> or run
-<code>/sodam-harness-beginner-tone</code>.</td>
+<td>Say <strong>“Explain this in simple, plain language”</strong>.</td>
 </tr>
 <tr>
 <td><strong>Old command names appear</strong> (like
@@ -1541,6 +1540,23 @@ present. See Section 11 for full details.</p>
 <summary>
 <b>📌 Changes by version (click to expand)</b>
 </summary>
+<h3 id="undo-bug-fix-linuxmac-backup-loss-fix-2">2026-07-12 — Undo bug
+fix + Linux/Mac backup-loss fix</h3>
+<ul>
+<li><strong>Fixed: undo couldn’t find backups</strong>: on a machine
+where several projects create backups at the same time, a just-made
+backup could get pushed out of the “most recent 8” list, so
+<code>/sodam-harness-undo</code> wrongly reported “no backup found.”
+Found during real-world use — the backup itself was always created
+correctly; only the lookup logic was at fault (no data was ever
+lost).</li>
+<li><strong>Fixed: missing backups on Linux/Mac</strong>: overwriting
+an existing file via <code>cp</code>/<code>mv</code> on Linux/Mac
+could skip the backup step due to a POSIX-absolute-path detection bug
+(Windows was always correct).</li>
+<li><strong>All 117 self-tests pass</strong> (114 existing + 3 new,
+zero regressions).</li>
+</ul>
 <h3 id="fewer-false-blocks-reproducibility-safety-unchanged">2026-07-11
 — Fewer false blocks + reproducibility (safety unchanged)</h3>
 <ul>
@@ -1785,7 +1801,7 @@ cases are found, but it cannot anticipate everything.</li>
 <li><strong>Verified on Windows; Mac is untested.</strong> The code is
 written to be cross-platform, but Mac behavior has not been formally
 verified. Please report any Mac-specific issues to the developer.</li>
-<li><strong>114/114 self-tests passing</strong> as of the current
+<li><strong>117/117 self-tests passing</strong> as of the current
 release — all known test cases pass (including adversarial bypass
 attempts).</li>
 <li>For truly important data, <strong>do not rely on this tool
