@@ -163,7 +163,13 @@ export function relativeAgo(ms) {
 
 // 최근 백업 목록(최신순) — undo/status가 "골라서 되돌리기"·현황 표시에 사용.
 // 각 항목: { dir, created_at, ago, cwd, session_id, files:[원본경로...] }
-export function listBackups(limit = 8) {
+//
+// opts.pathPrefix(선택): 이 폴더(하위 포함) 파일을 백업한 항목만 찾는다.
+// [2026-07-12 버그 수정] 이 PC처럼 여러 프로젝트가 동시에 백업을 만드는 환경에서는
+// 사용자가 방금 만든 백업이 "최근 limit개" 창 밖으로 몇 분 안에 밀려나 undo가 "없다"고
+// 잘못 보고하는 사고가 실사용 중 실제로 재현됨(되돌리기라는 핵심 약속 위반).
+// pathPrefix 미지정 시엔 기존 동작과 100% 동일(회귀 0) — 이 옵션을 쓰는 호출자만 영향받는다.
+export function listBackups(limit = 8, opts = {}) {
   try {
     const root = backupsRoot();
     if (!existsSync(root)) return [];
@@ -177,8 +183,14 @@ export function listBackups(limit = 8) {
       })
       .sort()
       .reverse(); // 최신순
+
+    const prefixLower = opts.pathPrefix ? path.resolve(String(opts.pathPrefix)).toLowerCase() : null;
+    // pathPrefix 검색 시엔 다른 프로젝트 활동에 밀려도 찾도록 더 넓은 창을 본다(그래도 무제한은 아님 — 성능 보호).
+    const SCAN_WINDOW = 300;
+    const scanNames = prefixLower ? dirs.slice(0, SCAN_WINDOW) : dirs.slice(0, Math.max(1, limit));
+
     const out = [];
-    for (const name of dirs.slice(0, Math.max(1, limit))) {
+    for (const name of scanNames) {
       const dir = path.join(root, name);
       let mtime = 0;
       try { mtime = statSync(dir).mtimeMs; } catch {}
@@ -198,7 +210,16 @@ export function listBackups(limit = 8) {
           };
         } catch {}
       }
+      if (prefixLower) {
+        // startsWith 문자열 비교는 test1 vs test10 같은 오탐이 생겨 path.relative로 폴더 경계를 정확히 확인한다.
+        const under = info.files.some((f) => {
+          const rel = path.relative(prefixLower, String(f).toLowerCase());
+          return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
+        });
+        if (!under) continue;
+      }
       out.push(info);
+      if (out.length >= limit) break;
     }
     return out;
   } catch {
@@ -327,15 +348,19 @@ function readBackupPolicy() {
   }
 }
 
-// CLI 직접 실행 지원: --list [N] | --plan <폴더> | --restore <폴더> | --cleanup [keepN] [keepDays]
+// CLI 직접 실행 지원: --list [N] [폴더] | --plan <폴더> | --restore <폴더> | --cleanup [keepN] [keepDays]
 // (안전: --restore는 반드시 폴더 지정. 옛 "맹목 최근 복구"는 폐기됨)
+// --list에 [폴더]를 추가로 주면 그 폴더(하위 포함) 파일을 백업한 항목만 넓은 창에서 찾는다
+// (다른 프로젝트 활동에 밀려 안 보이는 문제의 대응책 — 사용법: --list 8 "<폴더>").
 const invokedDirect =
   typeof process.argv[1] === "string" && process.argv[1].endsWith("backup.mjs");
 if (invokedDirect) {
   const arg = process.argv[2];
   if (arg === "--list") {
     const n = parseInt(process.argv[3], 10);
-    console.log(JSON.stringify(listBackups(Number.isFinite(n) ? n : 8), null, 2));
+    const folder = process.argv[4];
+    const opts = folder ? { pathPrefix: folder } : {};
+    console.log(JSON.stringify(listBackups(Number.isFinite(n) ? n : 8, opts), null, 2));
   } else if (arg === "--latest") {
     console.log(JSON.stringify(latestBackup(), null, 2));
   } else if (arg === "--plan") {
@@ -368,7 +393,7 @@ if (invokedDirect) {
     );
   } else {
     console.log(
-      "사용법: node backup.mjs --list [N] | --plan <백업폴더> | --restore <백업폴더> | --cleanup [keepN] [keepDays]",
+      "사용법: node backup.mjs --list [N] [폴더] | --plan <백업폴더> | --restore <백업폴더> | --cleanup [keepN] [keepDays]",
     );
   }
 }

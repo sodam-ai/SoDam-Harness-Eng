@@ -553,6 +553,64 @@ let backupDir1 = null;
   check("A3 isSecretFile 비밀 인식", yes.every((n) => isSecretFile(n)), yes.filter((n) => !isSecretFile(n)).join(","));
   check("A3 isSecretFile 일반파일 오탐 0", no.every((n) => !isSecretFile(n)), no.filter((n) => isSecretFile(n)).join(","));
 }
+// 27) [신규·2026-07-12 실사용 발견] listBackups — 다른 프로젝트 활동에 밀려도 pathPrefix로 찾음
+{
+  const targetWork = mkdtempSync(path.join(tmpdir(), "sdh-target-"));
+  const targetFile = path.join(targetWork, "index.html");
+  writeFileSync(targetFile, "target-content");
+  const targetRes = backupPaths([targetFile], targetWork, "sess-target");
+
+  // 다른 프로젝트인 척 10건을 뒤이어 백업(기본 limit=8보다 많게 → 순수 최신순에서 밀려나게 함)
+  const noiseWork = mkdtempSync(path.join(tmpdir(), "sdh-noise-"));
+  const noiseFile = path.join(noiseWork, "unrelated.txt");
+  writeFileSync(noiseFile, "noise");
+  const noiseDirs = [];
+  for (let i = 0; i < 10; i++) {
+    writeFileSync(noiseFile, `noise-${i}`);
+    const r = backupPaths([noiseFile], noiseWork, `sess-noise-${i}`);
+    if (r.ok) noiseDirs.push(r.dir);
+  }
+
+  const plainList = listBackups(8);
+  const foundPlain = plainList.some((b) => b.dir === targetRes.dir);
+  check(
+    "다른 활동 10건에 밀리면 기본 목록(8개)엔 안 보임(버그 재현)",
+    targetRes.ok && !foundPlain,
+    JSON.stringify({ targetDir: targetRes.dir, plainCount: plainList.length }),
+  );
+
+  const filtered = listBackups(8, { pathPrefix: targetWork });
+  const foundFiltered = filtered.some((b) => b.dir === targetRes.dir);
+  check(
+    "pathPrefix 지정 시 밀려난 백업도 찾음(수정 확인)",
+    foundFiltered,
+    JSON.stringify(filtered.map((b) => b.dir)),
+  );
+
+  // 폴더명 접두 오탐 방지: test1 검색이 test10을 잘못 포함하면 안 됨
+  const test1Dir = path.join(targetWork, "test1");
+  const test10Dir = path.join(targetWork, "test10");
+  mkdirSync(test1Dir, { recursive: true });
+  mkdirSync(test10Dir, { recursive: true });
+  const f1 = path.join(test1Dir, "a.txt");
+  const f10 = path.join(test10Dir, "b.txt");
+  writeFileSync(f1, "one");
+  writeFileSync(f10, "ten");
+  const r1 = backupPaths([f1], test1Dir, "sess-t1");
+  const r10 = backupPaths([f10], test10Dir, "sess-t10");
+  const scoped = listBackups(8, { pathPrefix: test1Dir });
+  check(
+    "폴더 접두 오탐 방지 — test1 검색이 test10을 포함하지 않음",
+    scoped.some((b) => b.dir === r1.dir) && !scoped.some((b) => b.dir === r10.dir),
+    JSON.stringify(scoped.map((b) => b.dir)),
+  );
+
+  for (const d of [targetRes.dir, ...noiseDirs, r1.dir, r10.dir]) {
+    try { rmSync(d, { recursive: true, force: true }); } catch {}
+  }
+  try { rmSync(targetWork, { recursive: true, force: true }); } catch {}
+  try { rmSync(noiseWork, { recursive: true, force: true }); } catch {}
+}
 // 35) [정밀화 2차·U4] cleanupBackups 보존 정책 — 격리 루트(rootDir 주입)에서 검증, 실제 사용자 백업 무접촉
 {
   const proot = mkdtempSync(path.join(tmpdir(), "sdh-prune-"));
