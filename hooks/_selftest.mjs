@@ -640,6 +640,119 @@ let backupDir1 = null;
   check("U4 회당 삭제 상한(maxRemove)", res3.ok === true && res3.removed === 1 && (existsSync(oldD) !== existsSync(oldE)), JSON.stringify(res3));
   try { rmSync(proot, { recursive: true, force: true }); } catch {}
 }
+// 38) [신규·맞춤 마법사] profile.mjs CLI — 기본값·설정·잘못된값·손상파일 fail-safe·reset
+{
+  const PROFILE = path.join(here, "profile.mjs");
+  const pf = path.join(work, "cli-profile.json");
+  const envP = { ...process.env, SODAM_PROFILE_FILE: pf };
+  const rGet0 = spawnSync(process.execPath, [PROFILE, "--get"], { encoding: "utf8", env: envP });
+  let get0 = null; try { get0 = JSON.parse(rGet0.stdout).autonomy_level; } catch {}
+  check("마법사 profile.mjs 기본값(파일없음)=L1", get0 === "L1", rGet0.stdout);
+
+  spawnSync(process.execPath, [PROFILE, "--set", "L2"], { encoding: "utf8", env: envP });
+  const rGet1 = spawnSync(process.execPath, [PROFILE, "--get"], { encoding: "utf8", env: envP });
+  let get1 = null; try { get1 = JSON.parse(rGet1.stdout).autonomy_level; } catch {}
+  check("마법사 profile.mjs --set L2 후 --get=L2", get1 === "L2", rGet1.stdout);
+
+  const rBad = spawnSync(process.execPath, [PROFILE, "--set", "L9"], { encoding: "utf8", env: envP });
+  let bad = null; try { bad = JSON.parse(rBad.stdout); } catch {}
+  check("마법사 profile.mjs --set L9(잘못된값) 거부", bad && bad.ok === false, rBad.stdout);
+
+  writeFileSync(pf, "{ broken json");
+  const rGet2 = spawnSync(process.execPath, [PROFILE, "--get"], { encoding: "utf8", env: envP });
+  let get2 = null; try { get2 = JSON.parse(rGet2.stdout).autonomy_level; } catch {}
+  check("마법사 profile.mjs 손상파일 → fail-safe L1", get2 === "L1", rGet2.stdout);
+
+  writeFileSync(pf, JSON.stringify({ autonomy_level: "L3" }));
+  spawnSync(process.execPath, [PROFILE, "--reset"], { encoding: "utf8", env: envP });
+  const rGet3 = spawnSync(process.execPath, [PROFILE, "--get"], { encoding: "utf8", env: envP });
+  let get3 = null; try { get3 = JSON.parse(rGet3.stdout).autonomy_level; } catch {}
+  check("마법사 profile.mjs --reset → L1", get3 === "L1", rGet3.stdout);
+}
+// 39) [신규·맞춤 마법사] guard.mjs L1 회귀 — profile 미설정(기존 117개 전제)과 100% 동일해야 함
+{
+  const l1f = path.join(work, "l1-regress.txt");
+  writeFileSync(l1f, "x");
+  const r = run("Bash", { command: `rm "${l1f}"` }, work);
+  check("마법사 L1(기본, profile 없음) → 기존과 동일하게 ask", r.decision === "ask", JSON.stringify(r));
+}
+// 40) [신규·맞춤 마법사] guard.mjs L2 — 화이트리스트 TTL 24h 연장(12h~24h 사이는 L2만 유효)
+{
+  const wl2 = path.join(work, "wl-L2.json");
+  const pend2 = path.join(work, "pend-L2.json");
+  const prof2 = path.join(work, "profile-L2.json");
+  const nowFixed = Date.now();
+  const twentyHoursAgo = nowFixed - 20 * 3600 * 1000;
+  writeFileSync(wl2, JSON.stringify([{ session_id: null, folder: work, opClass: "delete", created_at: twentyHoursAgo }]));
+  writeFileSync(prof2, JSON.stringify({ autonomy_level: "L2" }));
+  const f2b = path.join(work, "l2-target.txt");
+  writeFileSync(f2b, "x");
+  const envL2 = { ...process.env, SODAM_WHITELIST_FILE: wl2, SODAM_PENDING_FILE: pend2, SODAM_PROFILE_FILE: prof2, SODAM_NOW_MS: String(nowFixed) };
+  const rL2 = spawnSync(process.execPath, [GUARD], {
+    input: JSON.stringify({ tool_name: "Bash", tool_input: { command: `rm "${f2b}"` }, cwd: work, session_id: "S-L2" }),
+    encoding: "utf8", env: envL2,
+  });
+  check("마법사 L2: 20시간 경과 신뢰 → 24h TTL이라 여전히 통과", (rL2.stdout || "").trim() === "", rL2.stdout);
+
+  const wl1cmp = path.join(work, "wl-L1cmp.json");
+  const pend1cmp = path.join(work, "pend-L1cmp.json");
+  writeFileSync(wl1cmp, JSON.stringify([{ session_id: null, folder: work, opClass: "delete", created_at: twentyHoursAgo }]));
+  const f1cmp = path.join(work, "l1cmp-target.txt");
+  writeFileSync(f1cmp, "y");
+  const envL1cmp = { ...process.env, SODAM_WHITELIST_FILE: wl1cmp, SODAM_PENDING_FILE: pend1cmp, SODAM_NOW_MS: String(nowFixed) }; // profile 미지정=L1 기본
+  const rL1cmp = spawnSync(process.execPath, [GUARD], {
+    input: JSON.stringify({ tool_name: "Bash", tool_input: { command: `rm "${f1cmp}"` }, cwd: work, session_id: "S-L1" }),
+    encoding: "utf8", env: envL1cmp,
+  });
+  let decL1cmp = null; try { decL1cmp = JSON.parse((rL1cmp.stdout || "").trim()).hookSpecificOutput.permissionDecision; } catch {}
+  check("비교: L1(기본)은 같은 20시간 경과 신뢰가 12h 만료 → 다시 ask", decL1cmp === "ask", JSON.stringify(decL1cmp));
+}
+// 41) [신규·맞춤 마법사] guard.mjs L3 — 백업 성공한 risky는 ask 생략, 단 비밀파일은 여전히 ask
+{
+  const prof3 = path.join(work, "profile-L3.json");
+  writeFileSync(prof3, JSON.stringify({ autonomy_level: "L3" }));
+  const envL3 = { ...process.env, SODAM_PROFILE_FILE: prof3 };
+  const f3 = path.join(work, "l3-target.txt");
+  writeFileSync(f3, "x");
+  const r3 = spawnSync(process.execPath, [GUARD], {
+    input: JSON.stringify({ tool_name: "Bash", tool_input: { command: `rm "${f3}"` }, cwd: work, session_id: "S-L3" }),
+    encoding: "utf8", env: envL3,
+  });
+  check("마법사 L3: 백업성공 risky(rm) → ask 생략(통과)", (r3.stdout || "").trim() === "", r3.stdout);
+
+  const l3dir = path.join(work, "l3secretdir");
+  mkdirSync(l3dir, { recursive: true });
+  const envSecret = path.join(l3dir, ".env");
+  writeFileSync(envSecret, "SECRET=1");
+  const r3b = spawnSync(process.execPath, [GUARD], {
+    input: JSON.stringify({ tool_name: "Bash", tool_input: { command: `rm "${envSecret}"` }, cwd: l3dir, session_id: "S-L3b" }),
+    encoding: "utf8", env: envL3,
+  });
+  let dec3b = null; try { dec3b = JSON.parse((r3b.stdout || "").trim()).hookSpecificOutput.permissionDecision; } catch {}
+  check("마법사 L3이어도 .env 삭제는 여전히 ask(비밀파일 예외가 레벨을 이김)", dec3b === "ask", JSON.stringify(dec3b));
+}
+// 42) [신규·맞춤 마법사·안전바닥] L3이어도 치명·폴더재귀삭제는 무조건 deny — 09_CONSTRAINT_RELAXATION §8 done-when
+{
+  const prof3s = path.join(work, "profile-L3-safety.json");
+  writeFileSync(prof3s, JSON.stringify({ autonomy_level: "L3" }));
+  const envL3s = { ...process.env, SODAM_PROFILE_FILE: prof3s };
+  const rCata = spawnSync(process.execPath, [GUARD], {
+    input: JSON.stringify({ tool_name: "Bash", tool_input: { command: "rm -rf ~" }, cwd: work }),
+    encoding: "utf8", env: envL3s,
+  });
+  let decCata = null; try { decCata = JSON.parse((rCata.stdout || "").trim()).hookSpecificOutput.permissionDecision; } catch {}
+  check("안전바닥 불변: L3이어도 치명(rm -rf ~) → 여전히 deny", decCata === "deny", JSON.stringify(decCata));
+
+  const folderVictim = path.join(work, "l3-folder-victim");
+  mkdirSync(folderVictim, { recursive: true });
+  const rFolder = spawnSync(process.execPath, [GUARD], {
+    input: JSON.stringify({ tool_name: "PowerShell", tool_input: { command: `Remove-Item -Recurse -Force "${folderVictim}"` }, cwd: work }),
+    encoding: "utf8", env: envL3s,
+  });
+  let decFolder = null; try { decFolder = JSON.parse((rFolder.stdout || "").trim()).hookSpecificOutput.permissionDecision; } catch {}
+  check("안전바닥 불변: L3이어도 폴더 재귀삭제 → 여전히 deny", decFolder === "deny", JSON.stringify(decFolder));
+}
+
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)
 try { rmSync(bwork, { recursive: true, force: true }); } catch {}
 try { if (backupDir1) rmSync(backupDir1, { recursive: true, force: true }); } catch {}

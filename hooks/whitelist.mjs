@@ -72,19 +72,22 @@ export function trustLast() {
 }
 
 // guard가 ask 전 확인: 이 (폴더·작업)이 신뢰돼 있나? (만료만 확인, 세션은 무관)
-export function isTrusted(session_id, folder, opClass) {
+// ttlMs: 맞춤 마법사(profile.mjs autonomy_level L2/L3)가 신뢰 유지 기간을 늘릴 때 넘김.
+//   생략하면 기본 12시간(TTL_MS) 그대로 — 마법사를 안 쓴 기존 동작과 100% 동일.
+export function isTrusted(session_id, folder, opClass, ttlMs) {
   const list = readJson(wlFile());
   if (!Array.isArray(list)) return false;
   const now = nowMs();
   const f = String(folder || "");
   const oc = String(opClass || "");
+  const ttl = typeof ttlMs === "number" && ttlMs > 0 ? ttlMs : TTL_MS;
   return list.some(
     (e) =>
       e &&
       e.folder === f &&
       e.opClass === oc &&
       typeof e.created_at === "number" &&
-      now - e.created_at < TTL_MS,
+      now - e.created_at < ttl,
   );
 }
 

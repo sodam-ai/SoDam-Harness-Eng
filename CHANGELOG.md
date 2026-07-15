@@ -5,6 +5,29 @@
 
 ---
 
+## [Unreleased] — 2026-07-15
+
+### 추가 — 맞춤 마법사(안전강도 마법사): `/sodam-harness-wizard`
+- **무엇**: 확인창이 얼마나 자주 뜨는지를 사용자가 직접 고를 수 있는 신규 명령. 질문 하나(A/B/C)에 답하면
+  `~/.sodamharness/profile.json`에 `autonomy_level`(L1/L2/L3)을 저장하고, `guard.mjs`가 이를 읽어
+  **ask 빈도만** 조정한다.
+  - L1(기본, 마법사 안 쓰면 이 상태): 기존 동작과 100% 동일.
+  - L2: 폴더 신뢰(`/sodam-harness-trust`)의 유지 기간을 12시간 → 24시간으로 연장.
+  - L3: 위험(risky) 작업 중 백업이 온전히 성공한 것(비밀파일 아님)은 확인 없이 통과.
+- **왜**: `03_PHASES.md` Phase 3 "맞춤 마법사" 요구사항. 사용자가 GitHub private 저장소로 본인 전용 사용을
+  확정(`CHECKPOINT.md` O섹션)하면서, 외부 공개용 게이트(베타·법무·이름확인)는 불필요하지만 이 기능 자체는
+  명시적으로 요청함.
+- **불변(코드로 강제, 레벨과 무관)**: 치명 명령(`rm -rf ~` 등) → 항상 deny. 폴더 통째/재귀 삭제 → 항상 deny.
+  민감 위치 → 항상 deny. 백업 실패 시 → 항상 deny(fail-closed). **비밀파일(.env 등)은 어떤 레벨이어도
+  항상 ask 유지**(백업이 안 뜨는 대상이라 되돌릴 수 없음).
+- 관련: `hooks/profile.mjs`(신규), `hooks/guard.mjs`(AUTONOMY 로드·L2 TTL 연장·L3 ask생략 분기),
+  `hooks/whitelist.mjs`(`isTrusted`에 선택적 `ttlMs` 파라미터 추가, 하위호환),
+  `commands/sodam-harness-wizard.md`(신규), `commands/sodam-harness-fix.md`(옛 "추후" 참조 정정),
+  `hooks/_selftest.mjs`(신규 회귀·안전바닥 잠금 테스트 12건 추가).
+- 검증: 자가검증 **129개 전부 통과**(기존 117 + 신규 12, 회귀 0). `guard.mjs --selfcheck` 정상.
+
+---
+
 ## [Unreleased] — 2026-07-12
 
 ### 수정 — 되돌리기(undo)가 다른 작업에 밀려 백업을 못 찾던 버그

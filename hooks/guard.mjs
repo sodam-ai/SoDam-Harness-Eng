@@ -21,6 +21,7 @@ import { homedir } from "node:os";
 import path from "node:path";
 import { backupPaths, isSecretFile } from "./backup.mjs";
 import { isTrusted, recordPending } from "./whitelist.mjs"; // 세션 화이트리스트(D1)
+import { getAutonomyLevel } from "./profile.mjs"; // 맞춤 마법사 — ask 빈도만 조정(deny·백업은 불변)
 
 const WIN = process.platform === "win32";
 const MAC = process.platform === "darwin";
@@ -365,6 +366,15 @@ function loadExtraRules() {
 }
 const EXTRA = loadExtraRules(); // 모듈 로드 시 1회(매 훅 호출마다 새 프로세스라 사용자 편집을 바로 반영)
 
+// ── 맞춤 마법사 설정 로드 (기본 L1=현재 동작과 100% 동일) ──
+// 불변: 이 값은 ask 빈도만 바꾼다. deny(치명·민감위치·폴더재귀삭제)·백업은 레벨과 무관하게 항상 그대로.
+const AUTONOMY = getAutonomyLevel();
+const TRUST_TTL_MS = AUTONOMY === "L1" ? undefined : 24 * 60 * 60 * 1000; // L2/L3=24h, L1=whitelist.mjs 기본(12h)
+// L3 전용: 백업이 실제로(비밀파일 제외 없이) 성공했으면 risky 작업의 ask를 생략한다.
+function fullyBackedUp(res) {
+  return !!res && res.ok && res.count > 0 && (!Array.isArray(res.skippedSecrets) || res.skippedSecrets.length === 0);
+}
+
 // ── allowedTools 무결성 경고 (C1 방어 — 다른 플러그인이 위험 도구를 자동 허용 목록에 올렸는지 감지) ──
 // 차단하지 않음 — stderr 경고만. guard.mjs deny 는 allowedTools 설정과 무관하게 항상 유효.
 // 단, ask 판정은 bypassPermissions/acceptEdits 모드에서 자동 통과되므로 위험 도구가 목록에 있으면 알린다.
@@ -664,9 +674,15 @@ function main() {
       passThrough();
       return;
     }
+    // 맞춤 마법사 L3: 백업이 온전히 성공한 risky 작업은 ask 생략(비밀파일이 껴 있으면 위 backupPaths에서
+    // res.skippedSecrets에 잡히므로 fullyBackedUp이 false가 되어 이 분기를 안 타고 아래 ask로 그대로 이어짐.
+    if (AUTONOMY === "L3" && level !== "safe" && fullyBackedUp(res)) {
+      passThrough();
+      return;
+    }
     // 세션 화이트리스트(D1): 이 폴더·이 작업을 이미 신뢰했으면 백업만 하고 묻지 않는다(deny는 위에서 이미 끝남).
     const opClass = opClassOf(cmdForClass, false);
-    if (isTrusted(sessionId, cwd, opClass)) {
+    if (isTrusted(sessionId, cwd, opClass, TRUST_TTL_MS)) {
       passThrough(); // 신뢰됨 — 백업은 이미 떴고, 안 물음(보호는 유지)
       return;
     }
@@ -715,8 +731,13 @@ function main() {
       passThrough();
       return;
     }
+    // 맞춤 마법사 L3: 백업이 온전히 성공했으면(비밀파일 없음) ask 생략
+    if (AUTONOMY === "L3" && fullyBackedUp(res)) {
+      passThrough();
+      return;
+    }
     const opClass = opClassOf("", true); // = "overwrite"
-    if (isTrusted(sessionId, cwd, opClass)) {
+    if (isTrusted(sessionId, cwd, opClass, TRUST_TTL_MS)) {
       passThrough(); // 신뢰됨 — 백업은 이미 떴고, 안 물음
       return;
     }
