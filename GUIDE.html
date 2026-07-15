@@ -1,51 +1,197 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>SoDamHarness GUIDE</title>
   <style>
-code{white-space: pre-wrap;}
-span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
-div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-
-ul.task-list[class]{list-style: none;}
-ul.task-list li input[type="checkbox"] {
-font-size: inherit;
-width: 0.8em;
-margin: 0 0.8em 0.2em -1.6em;
-vertical-align: middle;
-}
-.display.math{display: block; text-align: center; margin: 0.5rem auto;}
-</style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
   <style type="text/css">body { font-family: -apple-system, "Malgun Gothic", "Segoe UI", sans-serif; max-width: 820px; margin: 0 auto; padding: 2rem 1.2rem; line-height: 1.7; color: #1a1a1a; background: #fff; }
-h1 { border-bottom: 3px solid #2563eb; padding-bottom: .4rem; }
-h2 { border-bottom: 1px solid #ddd; padding-bottom: .3rem; margin-top: 2.2rem; }
-h3 { margin-top: 1.6rem; }
-code { background: #f1f3f5; padding: .15rem .4rem; border-radius: 4px; font-size: .92em; }
-pre { background: #f6f8fa; padding: 1rem; border-radius: 6px; overflow-x: auto; }
-pre code { background: none; padding: 0; }
-blockquote { border-left: 4px solid #2563eb; margin: 1rem 0; padding: .3rem 1rem; background: #f0f6ff; }
-table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
-th, td { border: 1px solid #ddd; padding: .5rem .7rem; text-align: left; }
-th { background: #f1f3f5; }
-a { color: #2563eb; }
-details { border: 1px solid #ddd; border-radius: 6px; padding: .6rem 1rem; margin: 1rem 0; }
-summary { cursor: pointer; font-weight: 600; }
-hr { border: none; border-top: 1px solid #ddd; margin: 2rem 0; }
-@media (prefers-color-scheme: dark) {
-body { background: #16181d; color: #e6e6e6; }
-code { background: #24272e; }
-pre { background: #1d2025; }
-blockquote { background: #1a2233; }
-th { background: #24272e; }
-th, td { border-color: #3a3f47; }
-details { border-color: #3a3f47; }
-}
-</style>
+  h1 { border-bottom: 3px solid #2563eb; padding-bottom: .4rem; }
+  h2 { border-bottom: 1px solid #ddd; padding-bottom: .3rem; margin-top: 2.2rem; }
+  h3 { margin-top: 1.6rem; }
+  code { background: #f1f3f5; padding: .15rem .4rem; border-radius: 4px; font-size: .92em; }
+  pre { background: #f6f8fa; padding: 1rem; border-radius: 6px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  blockquote { border-left: 4px solid #2563eb; margin: 1rem 0; padding: .3rem 1rem; background: #f0f6ff; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th, td { border: 1px solid #ddd; padding: .5rem .7rem; text-align: left; }
+  th { background: #f1f3f5; }
+  a { color: #2563eb; }
+  details { border: 1px solid #ddd; border-radius: 6px; padding: .6rem 1rem; margin: 1rem 0; }
+  summary { cursor: pointer; font-weight: 600; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 2rem 0; }
+  @media (prefers-color-scheme: dark) {
+  body { background: #16181d; color: #e6e6e6; }
+  code { background: #24272e; }
+  pre { background: #1d2025; }
+  blockquote { background: #1a2233; }
+  th { background: #24272e; }
+  th, td { border-color: #3a3f47; }
+  details { border-color: #3a3f47; }
+  }
+  </style>
 </head>
 <body>
 <header id="title-block-header">
@@ -229,9 +375,17 @@ Windows/Program Files 삭제</td>
 <td>위험 패턴 목록 (guard.mjs가 이 파일을 읽어서 판단)</td>
 </tr>
 <tr>
+<td><code>hooks/profile.mjs</code></td>
+<td>맞춤 설정 담당</td>
+<td><code>/sodam-harness-wizard</code>가 고른 확인 빈도(L1/L2/L3)를
+<code>~/.sodamharness/profile.json</code>에 저장 — guard.mjs가 이 값을
+읽어 <strong>ask 빈도만</strong> 조정(차단·백업은 무관하게 항상
+그대로)</td>
+</tr>
+<tr>
 <td><code>commands/</code></td>
 <td>명령 모음</td>
-<td>사용자가 <code>/sodam-harness-...</code>를 치면 실행되는 6개
+<td>사용자가 <code>/sodam-harness-...</code>를 치면 실행되는 7개
 명령</td>
 </tr>
 </tbody>
@@ -239,8 +393,9 @@ Windows/Program Files 삭제</td>
 <blockquote>
 <p><strong>비유로 이해하기:</strong> guard.mjs는 건물 앞 경비원,
 backup.mjs는 금고 담당 직원, whitelist.mjs는 VIP 명단, activity.mjs는
-방문자 출입 기록부입니다. safety-rules.json은 경비원이 들고 다니는 “위험
-목록 수첩”입니다.</p>
+방문자 출입 기록부, profile.mjs는 “이 손님은 얼마나 자주 신분 확인을
+하길 원하는지” 적어 둔 손님 카드입니다. safety-rules.json은 경비원이
+들고 다니는 “위험 목록 수첩”입니다.</p>
 </blockquote>
 <hr />
 <h2 id="사전-준비물-필요한-프로그램">1. 사전 준비물 (필요한
@@ -260,7 +415,7 @@ backup.mjs는 금고 담당 직원, whitelist.mjs는 VIP 명단, activity.mjs는
 <pre><code>node --version</code></pre></li>
 <li><p><code>v18.19.0</code> 처럼 <strong>v18 이상</strong> 숫자가
 나오면 이미 설치됨 (예: <code>v22.19.0</code>).
-<code>&#39;node&#39;은(는) 내부 또는 외부 명령...</code> 이라고 나오면 없는
+<code>'node'은(는) 내부 또는 외부 명령...</code> 이라고 나오면 없는
 것.</p></li>
 </ol>
 <p><strong>없으면 설치하는 방법 (윈도우):</strong></p>
@@ -321,7 +476,8 @@ Claude Code: Anthropic에서 제공. <strong>무료 플랜</strong>과
 <p>SoDamHarness 파일을 내 컴퓨터에 가져오는 방법 3가지입니다.
 <strong>지금 상황에 맞는 방법 하나</strong>를 선택하세요.</p>
 <hr />
-<h3 id="방법-a-github에서-zip으로-내려받기-공개-후-일반-사용자-추천">방법 A
+<h3
+id="방법-a-github에서-zip으로-내려받기-공개-후-일반-사용자-추천">방법 A
 — GitHub에서 ZIP으로 내려받기 (공개 후 / 일반 사용자 추천)</h3>
 <blockquote>
 <p>⚠️ <strong>현재 기준:</strong> 아직 GitHub에 공개되지 않아 이 방법은
@@ -635,7 +791,8 @@ Enter)</p></li>
 [실수했다?] → /sodam-harness-undo 로 되살리기 ↩️
 [뭐 했지?]  → /sodam-harness-log 로 확인 📜
 [잘 되나?]  → /sodam-harness-status 로 점검 🩺
-[이 작업 그만 묻게] → /sodam-harness-trust 로 12시간 동안 안 묻기</code></pre>
+[이 작업 그만 묻게] → /sodam-harness-trust 로 12시간 동안 안 묻기
+[확인창 빈도 자체를 바꾸고 싶다] → /sodam-harness-wizard 로 나에게 맞는 빈도 고르기</code></pre>
 <hr />
 <h2 id="보안데이터-흐름">5-1. 보안·데이터 흐름</h2>
 <blockquote>
@@ -800,7 +957,8 @@ Enter)</p></li>
 아래가 자동완성으로 뜹니다. 모두 <strong>Claude Code
 전용</strong>입니다.</p>
 <hr />
-<h3 id="sodam-harness-install-설치-확인-시작-안내"><code>/sodam-harness-install</code>
+<h3
+id="sodam-harness-install-설치-확인-시작-안내"><code>/sodam-harness-install</code>
 — 설치 확인 + 시작 안내</h3>
 <p><strong>언제 쓰나:</strong> 처음 설치한 직후, 또는 “잘 설치됐나?”
 확인할 때.</p>
@@ -810,21 +968,24 @@ Enter)</p></li>
 <pre><code>✅ SoDamHarness 안전벨트가 켜져 있습니다.
 💡 빠른 시작: 버려도 되는 폴더에서 AI에게 파일 삭제를 시켜 보세요.</code></pre>
 <hr />
-<h3 id="sodam-harness-status-현재-상태-자가진단"><code>/sodam-harness-status</code>
+<h3
+id="sodam-harness-status-현재-상태-자가진단"><code>/sodam-harness-status</code>
 — 현재 상태 + 자가진단</h3>
 <p><strong>언제 쓰나:</strong> “안전벨트가 지금 잘 작동하나?” 확인하고
 싶을 때.</p>
 <p><strong>무슨 일이 일어나나:</strong> - 훅(경비원)이 켜져 있는지 점검
 - 백업 폴더 상태 확인 - “다음에 할 일” 안내</p>
 <hr />
-<h3 id="sodam-harness-fix-문제-해결-안내"><code>/sodam-harness-fix</code> —
+<h3
+id="sodam-harness-fix-문제-해결-안내"><code>/sodam-harness-fix</code> —
 문제 해결 안내</h3>
 <p><strong>언제 쓰나:</strong> 뭔가 이상할 때, 명령이 안 먹힐 때,
 안전벨트가 안 작동하는 것 같을 때.</p>
 <p><strong>무슨 일이 일어나나:</strong> - 증상을 물어봄 → 원인과 해결
 방법 안내 - 재설치·재시작 안내도 포함</p>
 <hr />
-<h3 id="sodam-harness-undo-실수-되돌리기"><code>/sodam-harness-undo</code> —
+<h3
+id="sodam-harness-undo-실수-되돌리기"><code>/sodam-harness-undo</code> —
 실수 되돌리기</h3>
 <p><strong>언제 쓰나:</strong> AI가 파일을 잘못 지웠거나, 내용이 잘못
 바뀌었을 때.</p>
@@ -847,7 +1008,8 @@ Enter)</p></li>
 <code>backupPolicy</code>)</p>
 </blockquote>
 <hr />
-<h3 id="sodam-harness-trust-12시간-동안-안-묻기"><code>/sodam-harness-trust</code>
+<h3
+id="sodam-harness-trust-12시간-동안-안-묻기"><code>/sodam-harness-trust</code>
 — 12시간 동안 안 묻기</h3>
 <p><strong>언제 쓰나:</strong> 같은 작업에 매번 “정말 할까요?”가 떠서
 귀찮을 때.</p>
@@ -861,7 +1023,70 @@ Enter)</p></li>
 백업을 없애는 게 아닙니다.</p>
 </blockquote>
 <hr />
-<h3 id="sodam-harness-log-ai가-한-일-타임라인"><code>/sodam-harness-log</code>
+<h3
+id="sodam-harness-wizard-확인창-빈도-맞춤-설정"><code>/sodam-harness-wizard</code>
+— 확인창 빈도 맞춤 설정</h3>
+<p><strong>언제 쓰나:</strong> 확인창(“정말 할까요?”)이 너무 자주
+뜨거나, 반대로 지금 설정이 어떤지 바꾸고 싶을 때.</p>
+<p><strong>무슨 일이 일어나나:</strong> - 질문 하나를 물어봅니다:
+“확인창이 얼마나 자주 뜨길 원하세요?” (A/B/C 중 선택) - 답변에 따라
+<code>~/.sodamharness/profile.json</code>에 설정을 저장합니다.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>선택</th>
+<th>등급</th>
+<th>실제 동작</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A) 항상 확인</td>
+<td>L1 (기본값)</td>
+<td>지금까지와 <strong>100% 동일</strong> — 아무것도 안 바뀜</td>
+</tr>
+<tr>
+<td>B) 같은 폴더 반복 작업은 하루 동안 안 물어봄</td>
+<td>L2</td>
+<td><code>/sodam-harness-trust</code>의 신뢰 유지 기간이 12시간 →
+<strong>24시간</strong>으로 늘어남</td>
+</tr>
+<tr>
+<td>C) 되돌리기 가능한 작업(백업됨)은 최대한 안 물어봄</td>
+<td>L3</td>
+<td>위험(risky) 작업 중 <strong>백업이 실제로 성공한 것</strong>은 확인
+없이 통과(백업은 계속 뜸)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>🔒 <strong>어떤 설정을 골라도 절대 안 바뀌는 것(안전 바닥)</strong>:
+폴더 통째 삭제·시스템 삭제·<code>rm -rf</code> 같은 <strong>치명 작업은
+항상 차단</strong>됩니다. <code>.env</code>·인증서 같은 <strong>비밀
+파일은 항상 다시 확인</strong>합니다(백업이 안 되는 대상이라 되돌릴 수
+없기 때문). 백업이 실패하면 <strong>항상 차단</strong>됩니다. 이
+마법사는 오직 “확인창이 뜨는 빈도”만 조정하며, 안전장치 자체를 약하게
+만들 수 없습니다.</p>
+</blockquote>
+<p><strong>예시 출력:</strong></p>
+<pre><code>확인창이 얼마나 자주 뜨길 원하세요?
+A) 항상 확인 (지금 기본이에요)
+B) 같은 폴더 반복 작업은 하루 동안 안 물어봄
+C) 되돌리기 가능한 작업(백업됨)은 최대한 안 물어봄</code></pre>
+<p>답변 후: <code>{"ok":true,"autonomy_level":"L2"}</code> 같은 결과가
+나오면 성공입니다.</p>
+<blockquote>
+<p>💡 언제든 <code>/sodam-harness-wizard</code>를 다시 실행하면 설정을
+바꿀 수 있습니다.</p>
+</blockquote>
+<hr />
+<h3
+id="sodam-harness-log-ai가-한-일-타임라인"><code>/sodam-harness-log</code>
 — AI가 한 일 타임라인</h3>
 <p><strong>언제 쓰나:</strong> “방금 AI가 뭘 했지?” 확인하고 싶을
 때.</p>
@@ -874,7 +1099,6 @@ Enter)</p></li>
 [2026-06-28 14:33] Bash → (차단됨: 위험 명령)
 [2026-06-28 14:32] Delete → old_file.txt (백업 완료)
 [2026-06-28 14:30] Read → index.js</code></pre>
-<hr />
 <h3 id="스킬-2개-자동으로-도와주는-기능">스킬 2개 (자동으로 도와주는
 기능)</h3>
 <p>스킬은 명령처럼 직접 입력하는 것이 아니라, AI의 동작 방식을 자동으로
@@ -918,11 +1142,13 @@ Codex에서 쓰는 법은 위 <strong>5-2번</strong> 섹션을 보세요.</p>
 <p><strong>윈도우:</strong></p>
 <pre><code>C:\Users\내이름\.sodamharness\
     ├── backups\        ← 자동 백업 파일들
-    └── activity.log   ← AI 활동 기록</code></pre>
+    ├── activity.log   ← AI 활동 기록
+    └── profile.json   ← /sodam-harness-wizard로 고른 확인 빈도(L1/L2/L3)</code></pre>
 <p><strong>맥:</strong></p>
 <pre><code>/Users/내이름/.sodamharness/
     ├── backups/        ← 자동 백업 파일들
-    └── activity.log   ← AI 활동 기록</code></pre>
+    ├── activity.log   ← AI 활동 기록
+    └── profile.json   ← /sodam-harness-wizard로 고른 확인 빈도(L1/L2/L3)</code></pre>
 <blockquote>
 <p>⚠️ <strong>중요:</strong> 이 폴더에 비밀번호·토큰·인증 파일은 절대
 저장되지 않습니다.</p>
@@ -1083,6 +1309,12 @@ Code 재설치 고려</td>
 <td><code>.sodamharness/backups/</code> 폴더에서 오래된 것을 수동으로
 삭제해도 됩니다</td>
 </tr>
+<tr>
+<td><strong>마법사로 설정한 게 이상하게 동작해요</strong></td>
+<td><code>profile.json</code>이 깨졌거나 손상됨</td>
+<td>자동으로 가장 안전한 기본값(L1, “항상 확인”)으로 되돌아갑니다.
+<code>/sodam-harness-wizard</code>를 다시 실행해 재설정하세요</td>
+</tr>
 </tbody>
 </table>
 <hr />
@@ -1213,29 +1445,59 @@ Code의 자동 승인(YOLO) 모드를 켜면 확인 창이 생략됩니다 (백�
 생략될 수 있습니다. <strong>그래도 백업은 됩니다.</strong> 위험한 작업이
 걱정된다면 자동 승인 모드를 끄는 것을 권장합니다.</p>
 <hr />
-<p><strong>Q17. “117개 셀프테스트 통과”가 무슨 뜻인가요?</strong></p>
-<p>A. SoDamHarness 개발 과정에서 117가지 테스트 케이스(위험
-차단·백업·되돌리기·경계 상황·적대적 우회 시도 등)를 직접 실행해서 모두
-통과했다는 의미입니다. “기본 기능이 의도대로 동작한다”는 것을 확인한
-것이지, “모든 상황에서 100% 완벽”하다는 의미는 아닙니다.</p>
+<p><strong>Q17. “129개 셀프테스트 통과”가 무슨 뜻인가요?</strong></p>
+<p>A. SoDamHarness 개발 과정에서 129가지 테스트 케이스(위험
+차단·백업·되돌리기·경계 상황·적대적 우회 시도·맞춤 마법사 레벨별 동작
+등)를 직접 실행해서 모두 통과했다는 의미입니다. “기본 기능이 의도대로
+동작한다”는 것을 확인한 것이지, “모든 상황에서 100% 완벽”하다는 의미는
+아닙니다.</p>
+<hr />
+<p><strong>Q18. <code>/sodam-harness-wizard</code>로 확인창을 줄이면 덜
+안전해지나요?</strong></p>
+<p>A. 아닙니다. 마법사는 <strong>오직 “정말 할까요?” 확인 질문이 뜨는
+빈도만</strong> 조정합니다. 폴더 통째 삭제·시스템 삭제 같은 <strong>치명
+작업 차단은 어떤 설정에서도 항상 그대로</strong>이고, 비밀번호·토큰 같은
+<strong>비밀 파일은 항상 다시 확인</strong>하며, 백업이 실패하면
+<strong>항상 차단</strong>됩니다. “확인을 덜 받는다”와 “덜 안전해진다”는
+다릅니다 — 안전장치 자체는 줄지 않습니다.</p>
 <hr />
 <h2 id="업데이트-내용-요약">10-1. 업데이트 내용 요약</h2>
 <details>
 <summary>
 <b>📌 버전별 변경 요약 (클릭해서 펼치기)</b>
 </summary>
+<h3 id="맞춤-마법사안전강도-마법사-sodam-harness-wizard">2026-07-15 —
+맞춤 마법사(안전강도 마법사): <code>/sodam-harness-wizard</code></h3>
+<ul>
+<li><strong>확인창 빈도를 직접 고를 수 있는 신규 명령</strong>: 질문
+하나(A/B/C)에 답하면 <code>hooks/profile.mjs</code>가
+<code>~/.sodamharness/profile.json</code>에 저장하고,
+<code>guard.mjs</code>가 이를 읽어 <strong>ask 빈도만</strong>
+조정합니다(위 6번 명령어 절 참고).
+<ul>
+<li>L1(기본, 안 쓰면 이 상태): 기존과 100% 동일.</li>
+<li>L2: 폴더 신뢰(<code>/sodam-harness-trust</code>) 유지 기간 12시간 →
+24시간.</li>
+<li>L3: 위험(risky) 작업 중 백업이 온전히 성공한 것(비밀파일 아님)은
+확인 없이 통과.</li>
+</ul></li>
+<li><strong>불변(레벨과 무관, 항상 그대로)</strong>: 치명 명령·폴더
+통째/재귀 삭제·민감 위치 → 항상 차단(deny). 비밀파일(<code>.env</code>
+등) → 항상 확인(ask). 백업 실패 시 → 항상 차단.</li>
+<li><strong>자가검증 129개 전부 통과</strong> (기존 117 + 신규 12, 회귀
+0).</li>
+</ul>
 <h3 id="되돌리기undo-버그-수정-linuxmac-백업-누락-수정">2026-07-12 —
 되돌리기(undo) 버그 수정 + Linux/Mac 백업 누락 수정</h3>
 <ul>
-<li><strong>되돌리기가 백업을 못 찾던 버그 수정</strong>: 여러 프로젝트가
-동시에 백업을 만드는 환경에서 방금 만든 백업이 “최근 8개” 목록 밖으로
-밀려나 <code>/sodam-harness-undo</code>가 “없다”고 잘못 말하던 버그를
-실사용 중 발견·수정. (백업 자체는 정상 생성돼 있었음 — 목록/검색
-로직만의 문제, 데이터 손실 없음)</li>
+<li><strong>되돌리기가 백업을 못 찾던 버그 수정</strong>: 여러
+프로젝트가 동시에 백업을 만드는 환경에서 방금 만든 백업이 “최근 8개”
+목록 밖으로 밀려나 <code>/sodam-harness-undo</code>가 “없다”고 잘못
+말하던 버그를 실사용 중 발견·수정. (백업 자체는 정상 생성돼 있었음 —
+목록/검색 로직만의 문제, 데이터 손실 없음)</li>
 <li><strong>Linux/Mac 백업 누락 수정</strong>:
-<code>cp</code>/<code>mv</code>로 기존 파일을 덮어쓸 때 POSIX
-절대경로를 잘못 인식해 백업이 빠지던 버그 수정(Windows는 원래
-정상).</li>
+<code>cp</code>/<code>mv</code>로 기존 파일을 덮어쓸 때 POSIX 절대경로를
+잘못 인식해 백업이 빠지던 버그 수정(Windows는 원래 정상).</li>
 <li><strong>자가검증 117개 전부 통과</strong> (기존 114 + 신규 3, 회귀
 0).</li>
 </ul>
@@ -1243,7 +1505,7 @@ Code의 자동 승인(YOLO) 모드를 켜면 확인 창이 생략됩니다 (백�
 오탐(잘못된 차단) 축소 + 재현성 (안전 방향 유지)</h3>
 <ul>
 <li><strong>말로만 언급한 위험은 통과</strong>:
-<code>echo &quot;rm -rf /&quot;</code>·<code>grep &quot;rm -rf&quot;</code>·<code>git commit -m &quot;…rm -rf…&quot;</code>처럼
+<code>echo "rm -rf /"</code>·<code>grep "rm -rf"</code>·<code>git commit -m "…rm -rf…"</code>처럼
 위험한 말을 <strong>따옴표 안에 적기만</strong> 한 명령이 잘못 막히던
 것을 통과시킴. 단, <code>bash -c</code>·<code>eval</code>처럼
 <strong>실제로 실행</strong>하거나 이중따옴표 안
@@ -1284,7 +1546,8 @@ Code의 자동 승인(YOLO) 모드를 켜면 확인 창이 생략됩니다 (백�
 </ul>
 </details>
 <blockquote>
-<p>전체 이력은 프로젝트 폴더의 <strong><a href="./CHANGELOG.md">CHANGELOG.md</a></strong> 에 있습니다.</p>
+<p>전체 이력은 프로젝트 폴더의 <strong><a
+href="./CHANGELOG.md">CHANGELOG.md</a></strong> 에 있습니다.</p>
 </blockquote>
 <hr />
 <h2 id="라이선스저작권상업적-사용-엄격-고지">11. 라이선스·저작권·상업적

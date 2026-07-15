@@ -1,57 +1,204 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>SoDamHarness GUIDE (English)</title>
   <style>
-code{white-space: pre-wrap;}
-span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
-div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-
-ul.task-list[class]{list-style: none;}
-ul.task-list li input[type="checkbox"] {
-font-size: inherit;
-width: 0.8em;
-margin: 0 0.8em 0.2em -1.6em;
-vertical-align: middle;
-}
-.display.math{display: block; text-align: center; margin: 0.5rem auto;}
-</style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
   <style type="text/css">body { font-family: -apple-system, "Malgun Gothic", "Segoe UI", sans-serif; max-width: 820px; margin: 0 auto; padding: 2rem 1.2rem; line-height: 1.7; color: #1a1a1a; background: #fff; }
-h1 { border-bottom: 3px solid #2563eb; padding-bottom: .4rem; }
-h2 { border-bottom: 1px solid #ddd; padding-bottom: .3rem; margin-top: 2.2rem; }
-h3 { margin-top: 1.6rem; }
-code { background: #f1f3f5; padding: .15rem .4rem; border-radius: 4px; font-size: .92em; }
-pre { background: #f6f8fa; padding: 1rem; border-radius: 6px; overflow-x: auto; }
-pre code { background: none; padding: 0; }
-blockquote { border-left: 4px solid #2563eb; margin: 1rem 0; padding: .3rem 1rem; background: #f0f6ff; }
-table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
-th, td { border: 1px solid #ddd; padding: .5rem .7rem; text-align: left; }
-th { background: #f1f3f5; }
-a { color: #2563eb; }
-details { border: 1px solid #ddd; border-radius: 6px; padding: .6rem 1rem; margin: 1rem 0; }
-summary { cursor: pointer; font-weight: 600; }
-hr { border: none; border-top: 1px solid #ddd; margin: 2rem 0; }
-@media (prefers-color-scheme: dark) {
-body { background: #16181d; color: #e6e6e6; }
-code { background: #24272e; }
-pre { background: #1d2025; }
-blockquote { background: #1a2233; }
-th { background: #24272e; }
-th, td { border-color: #3a3f47; }
-details { border-color: #3a3f47; }
-}
-</style>
+  h1 { border-bottom: 3px solid #2563eb; padding-bottom: .4rem; }
+  h2 { border-bottom: 1px solid #ddd; padding-bottom: .3rem; margin-top: 2.2rem; }
+  h3 { margin-top: 1.6rem; }
+  code { background: #f1f3f5; padding: .15rem .4rem; border-radius: 4px; font-size: .92em; }
+  pre { background: #f6f8fa; padding: 1rem; border-radius: 6px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  blockquote { border-left: 4px solid #2563eb; margin: 1rem 0; padding: .3rem 1rem; background: #f0f6ff; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th, td { border: 1px solid #ddd; padding: .5rem .7rem; text-align: left; }
+  th { background: #f1f3f5; }
+  a { color: #2563eb; }
+  details { border: 1px solid #ddd; border-radius: 6px; padding: .6rem 1rem; margin: 1rem 0; }
+  summary { cursor: pointer; font-weight: 600; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 2rem 0; }
+  @media (prefers-color-scheme: dark) {
+  body { background: #16181d; color: #e6e6e6; }
+  code { background: #24272e; }
+  pre { background: #1d2025; }
+  blockquote { background: #1a2233; }
+  th { background: #24272e; }
+  th, td { border-color: #3a3f47; }
+  details { border-color: #3a3f47; }
+  }
+  </style>
 </head>
 <body>
 <header id="title-block-header">
 <h1 class="title">SoDamHarness GUIDE (English)</h1>
 </header>
-<h1 id="sodamharness-user-guide-guide-for-absolute-beginners">SoDamHarness
+<h1
+id="sodamharness-user-guide-guide-for-absolute-beginners">SoDamHarness
 User Guide (GUIDE) — For Absolute Beginners</h1>
 <blockquote>
 <p><strong>SoDamHarness</strong> is a <strong>“seatbelt” that helps
@@ -256,6 +403,16 @@ checks against. Stored separately so rules can be updated without
 changing code.</td>
 <td>A printed list of banned items at airport security</td>
 </tr>
+<tr>
+<td><code>hooks/profile.mjs</code></td>
+<td>The Preference Card</td>
+<td>Stores the confirmation-frequency level (L1/L2/L3) you pick via
+<code>/sodam-harness-wizard</code>. The Guard reads it to adjust
+<strong>only how often it asks</strong> — never the blocking or backup
+rules.</td>
+<td>A guest card noting how often this particular visitor wants to be
+re-checked</td>
+</tr>
 </tbody>
 </table>
 <h3 id="internal-data-flow-diagram">Internal data flow diagram</h3>
@@ -332,7 +489,7 @@ above).</p></li>
 installed.</strong> The number just needs to be 18 or higher. You are
 done with this step.</li>
 <li>If you see <code>command not found</code> or
-<code>&#39;node&#39; is not recognized as an internal or external command</code>
+<code>'node' is not recognized as an internal or external command</code>
 — you need to install it. Follow Step 2 below.</li>
 </ul></li>
 </ol>
@@ -419,7 +576,8 @@ Node.js (from the step above) is always free.</p>
 SoDamHarness</h2>
 <p>You need to get the SoDamHarness files onto your computer before
 installing them. There are three ways to do this.</p>
-<h3 id="method-a-download-zip-from-github-when-the-project-is-publicly-released">Method
+<h3
+id="method-a-download-zip-from-github-when-the-project-is-publicly-released">Method
 A: Download ZIP from GitHub (when the project is publicly released)</h3>
 <blockquote>
 <p>⚠️ <strong>Current status:</strong> SoDamHarness is <strong>not yet
@@ -453,7 +611,8 @@ Double-click it. Mac automatically unzips it and creates a new folder
 right next to the zip file. 4. Note the full path to this folder — you
 will need it in Section 2.</p>
 <hr />
-<h3 id="method-b-install-from-a-folder-you-already-have-use-this-now">Method
+<h3
+id="method-b-install-from-a-folder-you-already-have-use-this-now">Method
 B: Install from a folder you already have (use this now)</h3>
 <p>If someone gave you the SoDamHarness folder directly — on a USB
 drive, in a shared folder, or downloaded from a direct link:</p>
@@ -564,7 +723,8 @@ time.</p>
 <h2 id="installation-step-by-step">2. Installation (Step by step)</h2>
 <p>You install SoDamHarness <strong>once</strong>. Choose
 <strong>one</strong> of the two methods below.</p>
-<h3 id="method-a-install-via-the-plugin-screen-recommended-for-beginners">Method
+<h3
+id="method-a-install-via-the-plugin-screen-recommended-for-beginners">Method
 A — Install via the <code>/plugin</code> screen (recommended for
 beginners)</h3>
 <p>This method uses menus inside Claude Code — no memorizing commands
@@ -647,12 +807,12 @@ Enter. → You will see a message confirming “the seatbelt is on.”</li>
 do not care about at all), ask the AI to do things:
 <ul>
 <li>Try:
-<code>&quot;Please create a file called test.txt with the words hello world inside.&quot;</code>
+<code>"Please create a file called test.txt with the words hello world inside."</code>
 → The file is created. ✅ (Safe action — no interruption.)</li>
-<li>Try: <code>&quot;Please delete this entire folder.&quot;</code> →
+<li>Try: <code>"Please delete this entire folder."</code> →
 <strong>Blocked!</strong> 🛑 (The seatbelt works — catastrophic action
 refused.)</li>
-<li>Try: <code>&quot;Please delete the file test.txt.&quot;</code> → Backup is
+<li>Try: <code>"Please delete the file test.txt."</code> → Backup is
 made automatically, then you are asked to confirm. 💾⚠️</li>
 </ul></li>
 <li>Curious about what just happened?
@@ -757,7 +917,9 @@ mode</strong> (not auto-approve). See FAQ Q10 for more.</li>
          ▼
 [Made a mistake?]  → /sodam-harness-undo to restore ↩️
 [What happened?]   → /sodam-harness-log to review   📜
-[Working OK?]      → /sodam-harness-status to check  🩺</code></pre>
+[Working OK?]      → /sodam-harness-status to check  🩺
+[Tired of this prompt?] → /sodam-harness-trust to silence it for this session
+[Want fewer prompts overall?] → /sodam-harness-wizard to pick your own frequency</code></pre>
 <p><strong>Day-to-day tip:</strong> For most work sessions, you do not
 need to think about SoDamHarness at all. It runs silently in the
 background. You only notice it when something risky is about to
@@ -979,7 +1141,7 @@ when)</h2>
 <strong><code>/sodam-harness</code></strong> in the Claude Code input
 area and press Tab or Enter. All commands are <strong>Claude Code
 only</strong> — they do not work in Codex or other tools.</p>
-<h3 id="the-6-commands-in-detail">The 6 commands in detail</h3>
+<h3 id="the-7-commands-in-detail">The 7 commands in detail</h3>
 <hr />
 <h4 id="sodam-harness-install"><code>/sodam-harness-install</code></h4>
 <p><strong>When to use:</strong> Right after you finish installing
@@ -1059,6 +1221,71 @@ auto-generated test log?” You know it is safe and run
 <code>/sodam-harness-trust</code>. It will stop asking for that action
 this session.</p>
 <hr />
+<h4 id="sodam-harness-wizard"><code>/sodam-harness-wizard</code></h4>
+<p><strong>When to use:</strong> When confirmation prompts (“Really do
+this?”) appear too often, or you want to change your current
+setting.</p>
+<p><strong>What it does:</strong> Asks you one question — “How often
+would you like confirmation prompts to appear?” — with three choices,
+then saves your answer to <code>~/.sodamharness/profile.json</code>.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Choice</th>
+<th>Level</th>
+<th>What actually happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A) Always confirm</td>
+<td>L1 (default)</td>
+<td><strong>100% identical</strong> to current behavior — nothing
+changes</td>
+</tr>
+<tr>
+<td>B) Don’t re-ask for repeated actions in the same folder for a
+day</td>
+<td>L2</td>
+<td>Folder-trust (<code>/sodam-harness-trust</code>) duration extends
+from 12 hours to <strong>24 hours</strong></td>
+</tr>
+<tr>
+<td>C) Skip confirmation for undoable (backed-up) actions as much as
+possible</td>
+<td>L3</td>
+<td>Risky actions whose <strong>backup actually succeeded</strong> skip
+the prompt (the backup still happens)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>🔒 <strong>What never changes, no matter which option you pick (the
+safety floor):</strong> Catastrophic actions — deleting whole folders,
+system deletion, <code>rm -rf</code> — are <strong>always
+blocked</strong>. Secret files (<code>.env</code>, certificates, etc.)
+<strong>always prompt again</strong> (they cannot be backed up, so they
+cannot be undone). A failed backup <strong>always blocks</strong> the
+action. This wizard only adjusts <em>how often</em> the prompt appears —
+it cannot weaken the safety mechanism itself.</p>
+</blockquote>
+<p><strong>Example output:</strong></p>
+<pre><code>How often would you like confirmation prompts to appear?
+A) Always confirm (current default)
+B) Don&#39;t re-ask for repeated actions in the same folder for a day
+C) Skip confirmation for undoable (backed-up) actions as much as possible</code></pre>
+<p>Success looks like:
+<code>{"ok":true,"autonomy_level":"L2"}</code>.</p>
+<blockquote>
+<p>💡 Run <code>/sodam-harness-wizard</code> again anytime to change
+your setting.</p>
+</blockquote>
+<hr />
 <h4 id="sodam-harness-log"><code>/sodam-harness-log</code></h4>
 <p><strong>When to use:</strong> When you want to review what the AI has
 been doing — a timeline of recent actions.</p>
@@ -1095,8 +1322,8 @@ improve your experience.</p>
 <td><code>beginner-tone</code></td>
 <td>Makes all AI guidance use plain, simple, jargon-free language.
 Explains technical terms when they appear.</td>
-<td>Activates automatically — it is not a slash command. If
-explanations feel too technical, just say “Explain it simply”.</td>
+<td>Activates automatically — it is not a slash command. If explanations
+feel too technical, just say “Explain it simply”.</td>
 </tr>
 <tr>
 <td><code>/sodam-harness-self-check</code></td>
@@ -1119,6 +1346,11 @@ it is done.</td>
 <code>/Users/YourName/.sodamharness/backups/</code> <em>(Replace
 <code>YourName</code> with your actual Mac username.)</em></li>
 </ul>
+<p>Two other files live next to the <code>backups\</code> folder in the
+same <code>.sodamharness\</code> directory: <code>activity.log</code>
+(see below) and <code>profile.json</code> (the confirmation-frequency
+level you picked with <code>/sodam-harness-wizard</code> —
+L1/L2/L3).</p>
 <blockquote>
 <p>💡 <strong>What is the “home directory”?</strong> It is the main
 personal folder for your account. On Windows:
@@ -1310,6 +1542,13 @@ and reinstall (Section 2).</td>
 <td>Many possible causes</td>
 <td>Copy the exact error message and run
 <code>/sodam-harness-fix</code>, or start over from Section 2.</td>
+</tr>
+<tr>
+<td><strong>Wizard settings seem to misbehave</strong></td>
+<td><code>profile.json</code> is corrupted or has an invalid value</td>
+<td>It automatically falls back to the safest default (L1, “always
+confirm”). Run <code>/sodam-harness-wizard</code> again to
+reconfigure.</td>
 </tr>
 </tbody>
 </table>
@@ -1535,13 +1774,46 @@ services you run. You must keep the license and copyright notice, state
 your changes if you modify the code, and include the NOTICE file if
 present. See Section 11 for full details.</p>
 <hr />
+<p><strong>Q19. If I use <code>/sodam-harness-wizard</code> to reduce
+prompts, does that make it less safe?</strong></p>
+<p>A: No. The wizard only adjusts <strong>how often</strong> the “Really
+do this?” prompt appears. Blocking of catastrophic actions (whole-folder
+deletion, system deletion) stays on at every level, secret files
+(passwords, tokens) always prompt again, and a failed backup always
+blocks the action. Fewer prompts does not mean fewer safeguards — the
+underlying protections are unchanged.</p>
+<hr />
 <h2 id="update-summary">10-1. Update summary</h2>
 <details>
 <summary>
 <b>📌 Changes by version (click to expand)</b>
 </summary>
-<h3 id="undo-bug-fix-linuxmac-backup-loss-fix-2">2026-07-12 — Undo bug
-fix + Linux/Mac backup-loss fix</h3>
+<h3 id="custom-wizard-sodam-harness-wizard">2026-07-15 — Custom wizard:
+<code>/sodam-harness-wizard</code></h3>
+<ul>
+<li><strong>New command to choose how often confirmation prompts
+appear</strong>: answer one question (A/B/C) and
+<code>hooks/profile.mjs</code> saves your choice to
+<code>~/.sodamharness/profile.json</code>; <code>guard.mjs</code> reads
+it to adjust <strong>only how often it asks</strong> (see Section 6
+above).
+<ul>
+<li>L1 (default, this is the behavior if you never run the wizard): 100%
+identical to before.</li>
+<li>L2: folder-trust (<code>/sodam-harness-trust</code>) duration
+extends from 12 hours to 24 hours.</li>
+<li>L3: risky actions whose backup fully succeeded (not a secret file)
+skip the confirmation prompt.</li>
+</ul></li>
+<li><strong>Unchanged regardless of level</strong>: catastrophic
+commands, whole-folder/recursive deletion, and sensitive paths are still
+always blocked. Secret files (<code>.env</code>, etc.) still always
+prompt. A failed backup still always blocks.</li>
+<li><strong>All 129 self-tests pass</strong> (117 existing + 12 new,
+zero regressions).</li>
+</ul>
+<h3 id="undo-bug-fix-linuxmac-backup-loss-fix">2026-07-12 — Undo bug fix
++ Linux/Mac backup-loss fix</h3>
 <ul>
 <li><strong>Fixed: undo couldn’t find backups</strong>: on a machine
 where several projects create backups at the same time, a just-made
@@ -1550,19 +1822,19 @@ backup could get pushed out of the “most recent 8” list, so
 Found during real-world use — the backup itself was always created
 correctly; only the lookup logic was at fault (no data was ever
 lost).</li>
-<li><strong>Fixed: missing backups on Linux/Mac</strong>: overwriting
-an existing file via <code>cp</code>/<code>mv</code> on Linux/Mac
-could skip the backup step due to a POSIX-absolute-path detection bug
-(Windows was always correct).</li>
-<li><strong>All 117 self-tests pass</strong> (114 existing + 3 new,
-zero regressions).</li>
+<li><strong>Fixed: missing backups on Linux/Mac</strong>: overwriting an
+existing file via <code>cp</code>/<code>mv</code> on Linux/Mac could
+skip the backup step due to a POSIX-absolute-path detection bug (Windows
+was always correct).</li>
+<li><strong>All 117 self-tests pass</strong> (114 existing + 3 new, zero
+regressions).</li>
 </ul>
 <h3 id="fewer-false-blocks-reproducibility-safety-unchanged">2026-07-11
 — Fewer false blocks + reproducibility (safety unchanged)</h3>
 <ul>
 <li><strong>Merely <em>mentioning</em> danger passes</strong>: commands
-that only put a risky string in quotes — <code>echo &quot;rm -rf /&quot;</code>,
-<code>grep &quot;rm -rf&quot;</code>, <code>git commit -m &quot;…rm -rf…&quot;</code> — were
+that only put a risky string in quotes — <code>echo "rm -rf /"</code>,
+<code>grep "rm -rf"</code>, <code>git commit -m "…rm -rf…"</code> — were
 wrongly blocked and now pass. Commands that actually <em>execute</em>
 the content (<code>bash -c</code>, <code>eval</code>, or
 <code>$(...)</code>/backtick command substitution inside double quotes)
@@ -1603,7 +1875,8 @@ whitelist (12h), automatic backup retention (latest 100 + 30 days).</li>
 </ul>
 </details>
 <blockquote>
-<p>Full history: <strong><a href="./CHANGELOG.md">CHANGELOG.md</a></strong>.</p>
+<p>Full history: <strong><a
+href="./CHANGELOG.md">CHANGELOG.md</a></strong>.</p>
 </blockquote>
 <hr />
 <h2 id="license-copyright-commercial-use-strict-notice">11. License ·
@@ -1618,8 +1891,10 @@ needed.</p>
 <ul>
 <li><strong>License:</strong> Apache License 2.0</li>
 <li><strong>Copyright:</strong> © 2026 SoDam AI Studio</li>
-<li><strong>Full license text:</strong> See <strong><a href="./LICENSE">LICENSE</a></strong> in the plugin folder.</li>
-<li><strong>Third-party notices:</strong> See <strong><a href="./NOTICE">NOTICE</a></strong> in the plugin folder.</li>
+<li><strong>Full license text:</strong> See <strong><a
+href="./LICENSE">LICENSE</a></strong> in the plugin folder.</li>
+<li><strong>Third-party notices:</strong> See <strong><a
+href="./NOTICE">NOTICE</a></strong> in the plugin folder.</li>
 </ul>
 <h3 id="what-you-are-allowed-to-do-apache-2.0-allows-all-of-these">What
 you are allowed to do (Apache-2.0 allows all of these)</h3>
@@ -1801,9 +2076,9 @@ cases are found, but it cannot anticipate everything.</li>
 <li><strong>Verified on Windows; Mac is untested.</strong> The code is
 written to be cross-platform, but Mac behavior has not been formally
 verified. Please report any Mac-specific issues to the developer.</li>
-<li><strong>117/117 self-tests passing</strong> as of the current
+<li><strong>129/129 self-tests passing</strong> as of the current
 release — all known test cases pass (including adversarial bypass
-attempts).</li>
+attempts and the custom wizard’s L1/L2/L3 levels).</li>
 <li>For truly important data, <strong>do not rely on this tool
 alone.</strong> Use a dedicated backup solution (Windows Backup, Time
 Machine, cloud storage, an external drive, etc.) in addition to

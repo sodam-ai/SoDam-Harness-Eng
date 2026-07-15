@@ -79,7 +79,9 @@ Every AI action passes through SoDamHarness before it executes:
 |-----------|------|------|
 | **Guard** | `hooks/guard.mjs` | Checks every AI action before it runs. Decides: block, backup+ask, or allow. |
 | **Backup Keeper** | `hooks/backup.mjs` | Makes a safe copy of a file before any risky action happens. |
+| **Trust List** | `hooks/whitelist.mjs` | Remembers what `/sodam-harness-trust` approved (folder + action type, 12h by default) so it stops re-asking. |
 | **Logger** | `hooks/activity.mjs` | Records what the AI did (filename + time only — never content or secrets). |
+| **Preference** | `hooks/profile.mjs` | Stores the confirmation-frequency level (L1/L2/L3) you pick via `/sodam-harness-wizard` — `guard.mjs` reads it to adjust **only how often it asks**. |
 
 **3-tier risk classification:**
 
@@ -103,6 +105,7 @@ Every AI action passes through SoDamHarness before it executes:
 | `/sodam-harness-undo` | Undo (restore by **picking** from the backup list) |
 | `/sodam-harness-trust` | "Stop asking for this folder/action" — silence it for this session (hard blocks & backups still apply) |
 | `/sodam-harness-log` | "What did you just do?" — timeline of AI actions (names & time only; secrets masked) |
+| `/sodam-harness-wizard` | Pick how often confirmation prompts should appear (L1 always-ask / L2 folder-trust for 24h / L3 skip confirmation for risky actions that backed up successfully) — **hard blocks and secret-file prompts always stay on** |
 
 **2 skills (auto):** `beginner-tone` (easy tone) · `sodam-harness-self-check` (verify before "done").
 
@@ -138,6 +141,14 @@ Every AI action passes through SoDamHarness before it executes:
 
 <details>
 <summary><b>📌 Changes by version (click to expand)</b></summary>
+
+### 2026-07-15 — Custom wizard: `/sodam-harness-wizard`
+- **New command to choose how often confirmation prompts appear**: answer one question (A/B/C) and `hooks/profile.mjs` saves your choice to `~/.sodamharness/profile.json`; `guard.mjs` reads it to adjust **only how often it asks**.
+  - L1 (default, this is the behavior if you never run the wizard): 100% identical to before.
+  - L2: folder-trust (`/sodam-harness-trust`) duration extends from 12 hours to 24 hours.
+  - L3: risky actions whose backup fully succeeded (not a secret file) skip the confirmation prompt.
+- **Unchanged regardless of level**: catastrophic commands, whole-folder/recursive deletion, and sensitive paths are still always blocked. Secret files (`.env`, etc.) still always prompt. A failed backup still always blocks.
+- **All 129 self-tests pass** (117 existing + 12 new, zero regressions).
 
 ### 2026-07-12 — Undo bug fix + Linux/Mac backup-loss fix
 - **Fixed: undo couldn't find backups**: on a machine where several projects create backups at the same time, a just-made backup could get pushed out of the "most recent 8" list, so `/sodam-harness-undo` wrongly reported "no backup found." Found during real-world use — the backup itself was always created correctly; only the lookup logic was at fault (no data was ever lost).

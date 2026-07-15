@@ -99,6 +99,7 @@ SoDamHarness sorts every AI action into one of three categories:
 | `hooks/whitelist.mjs` | The Session Pass | Remembers which actions *you* approved this session, so it does not ask repeatedly. Expires when you close Claude Code (12 hours max). | A visitor day-pass that expires at closing time |
 | `hooks/activity.mjs` | The Logger | After each action, writes one line: what file was touched and when. Never records content or secrets. | A front-desk logbook — "Visitor arrived, 9:03 AM" — no personal details |
 | `hooks/safety-rules.json` | The Rule Book | A list of danger patterns (like `rm -rf`) that the Guard checks against. Stored separately so rules can be updated without changing code. | A printed list of banned items at airport security |
+| `hooks/profile.mjs` | The Preference Card | Stores the confirmation-frequency level (L1/L2/L3) you pick via `/sodam-harness-wizard`. The Guard reads it to adjust **only how often it asks** — never the blocking or backup rules. | A guest card noting how often this particular visitor wants to be re-checked |
 
 ### Internal data flow diagram
 
@@ -450,6 +451,8 @@ Here is the full picture of a typical work session:
 [Made a mistake?]  → /sodam-harness-undo to restore ↩️
 [What happened?]   → /sodam-harness-log to review   📜
 [Working OK?]      → /sodam-harness-status to check  🩺
+[Tired of this prompt?] → /sodam-harness-trust to silence it for this session
+[Want fewer prompts overall?] → /sodam-harness-wizard to pick your own frequency
 ```
 
 **Day-to-day tip:** For most work sessions, you do not need to think about SoDamHarness at all. It runs silently in the background. You only notice it when something risky is about to happen.
@@ -567,7 +570,7 @@ If you use both Claude Code and Codex, here is how to improve safety in Codex us
 
 To see all commands, type **`/sodam-harness`** in the Claude Code input area and press Tab or Enter. All commands are **Claude Code only** — they do not work in Codex or other tools.
 
-### The 6 commands in detail
+### The 7 commands in detail
 
 ---
 
@@ -654,6 +657,33 @@ Which backup do you want to restore? Type a number (or "cancel"):
 
 ---
 
+#### `/sodam-harness-wizard`
+
+**When to use:** When confirmation prompts ("Really do this?") appear too often, or you want to change your current setting.
+
+**What it does:** Asks you one question — "How often would you like confirmation prompts to appear?" — with three choices, then saves your answer to `~/.sodamharness/profile.json`.
+
+| Choice | Level | What actually happens |
+|---|---|---|
+| A) Always confirm | L1 (default) | **100% identical** to current behavior — nothing changes |
+| B) Don't re-ask for repeated actions in the same folder for a day | L2 | Folder-trust (`/sodam-harness-trust`) duration extends from 12 hours to **24 hours** |
+| C) Skip confirmation for undoable (backed-up) actions as much as possible | L3 | Risky actions whose **backup actually succeeded** skip the prompt (the backup still happens) |
+
+> 🔒 **What never changes, no matter which option you pick (the safety floor):** Catastrophic actions — deleting whole folders, system deletion, `rm -rf` — are **always blocked**. Secret files (`.env`, certificates, etc.) **always prompt again** (they cannot be backed up, so they cannot be undone). A failed backup **always blocks** the action. This wizard only adjusts *how often* the prompt appears — it cannot weaken the safety mechanism itself.
+
+**Example output:**
+```
+How often would you like confirmation prompts to appear?
+A) Always confirm (current default)
+B) Don't re-ask for repeated actions in the same folder for a day
+C) Skip confirmation for undoable (backed-up) actions as much as possible
+```
+Success looks like: `{"ok":true,"autonomy_level":"L2"}`.
+
+> 💡 Run `/sodam-harness-wizard` again anytime to change your setting.
+
+---
+
 #### `/sodam-harness-log`
 
 **When to use:** When you want to review what the AI has been doing — a timeline of recent actions.
@@ -693,6 +723,8 @@ Backups are stored in a hidden folder inside your home directory:
   *(Replace `YourName` with your actual Windows username.)*
 - **Mac:** `/Users/YourName/.sodamharness/backups/`
   *(Replace `YourName` with your actual Mac username.)*
+
+Two other files live next to the `backups\` folder in the same `.sodamharness\` directory: `activity.log` (see below) and `profile.json` (the confirmation-frequency level you picked with `/sodam-harness-wizard` — L1/L2/L3).
 
 > 💡 **What is the "home directory"?** It is the main personal folder for your account. On Windows: `C:\Users\YourName`. On Mac: `/Users/YourName`.
 
@@ -758,6 +790,7 @@ These files are in the SoDamHarness plugin folder:
 | **Duplicate commands** in the list | Two plugin versions may be installed | Restart → if duplicates persist, uninstall and reinstall. |
 | **"claude" command not recognized** in terminal | Claude Code is not installed or not on the PATH | Install Claude Code (Section 1-2). Restart terminal after. |
 | **Installation command failed** | Many possible causes | Copy the exact error message and run `/sodam-harness-fix`, or start over from Section 2. |
+| **Wizard settings seem to misbehave** | `profile.json` is corrupted or has an invalid value | It automatically falls back to the safest default (L1, "always confirm"). Run `/sodam-harness-wizard` again to reconfigure. |
 
 ### Extended troubleshooting tips
 
@@ -924,10 +957,24 @@ A: Yes. The Apache License 2.0 allows commercial use. You may use it for client 
 
 ---
 
+**Q19. If I use `/sodam-harness-wizard` to reduce prompts, does that make it less safe?**
+
+A: No. The wizard only adjusts **how often** the "Really do this?" prompt appears. Blocking of catastrophic actions (whole-folder deletion, system deletion) stays on at every level, secret files (passwords, tokens) always prompt again, and a failed backup always blocks the action. Fewer prompts does not mean fewer safeguards — the underlying protections are unchanged.
+
+---
+
 ## 10-1. Update summary
 
 <details>
 <summary><b>📌 Changes by version (click to expand)</b></summary>
+
+### 2026-07-15 — Custom wizard: `/sodam-harness-wizard`
+- **New command to choose how often confirmation prompts appear**: answer one question (A/B/C) and `hooks/profile.mjs` saves your choice to `~/.sodamharness/profile.json`; `guard.mjs` reads it to adjust **only how often it asks** (see Section 6 above).
+  - L1 (default, this is the behavior if you never run the wizard): 100% identical to before.
+  - L2: folder-trust (`/sodam-harness-trust`) duration extends from 12 hours to 24 hours.
+  - L3: risky actions whose backup fully succeeded (not a secret file) skip the confirmation prompt.
+- **Unchanged regardless of level**: catastrophic commands, whole-folder/recursive deletion, and sensitive paths are still always blocked. Secret files (`.env`, etc.) still always prompt. A failed backup still always blocks.
+- **All 129 self-tests pass** (117 existing + 12 new, zero regressions).
 
 ### 2026-07-12 — Undo bug fix + Linux/Mac backup-loss fix
 - **Fixed: undo couldn't find backups**: on a machine where several projects create backups at the same time, a just-made backup could get pushed out of the "most recent 8" list, so `/sodam-harness-undo` wrongly reported "no backup found." Found during real-world use — the backup itself was always created correctly; only the lookup logic was at fault (no data was ever lost).
@@ -1047,7 +1094,7 @@ We want to be fully honest about what SoDamHarness can and cannot do.
 - This tool is an **auxiliary safety aid** that reduces common risks. **It is not perfect.**
 - **New or unusual risk patterns** we have not encountered may not be caught. The danger pattern list is updated as new cases are found, but it cannot anticipate everything.
 - **Verified on Windows; Mac is untested.** The code is written to be cross-platform, but Mac behavior has not been formally verified. Please report any Mac-specific issues to the developer.
-- **117/117 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts).
+- **129/129 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts and the custom wizard's L1/L2/L3 levels).
 - For truly important data, **do not rely on this tool alone.** Use a dedicated backup solution (Windows Backup, Time Machine, cloud storage, an external drive, etc.) in addition to SoDamHarness.
 - **Think before you act.** The best safety measure is a moment of careful thought before asking the AI to do something irreversible.
 
