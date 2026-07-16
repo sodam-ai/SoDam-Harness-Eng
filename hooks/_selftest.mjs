@@ -324,6 +324,54 @@ if (MAC) {
   const broken = runEnv("Bash", { command: `rm "${aFile}"` }, rf3);
   check("M1 깨진 규칙파일 → fail-safe(rm 여전히 ask, exit 0)", broken.decision === "ask" && broken.status === 0, JSON.stringify(broken));
 }
+// [신규·형제공존] plugins.* 네임스페이스 병합 — 다른 소담 형제가 안전 규칙을 얹어도
+// 충돌·완화·크래시 없이 동작하는지(SODAM_FAMILY_COEXIST.md 계약의 코드 쪽 검증)
+{
+  const runP = (tool, input, rulesFile, extraEnv) => {
+    const r = spawnSync(process.execPath, [GUARD], {
+      input: JSON.stringify({ tool_name: tool, tool_input: input, cwd: work }),
+      encoding: "utf8",
+      env: { ...process.env, SODAM_RULES_FILE: rulesFile, ...extraEnv },
+    });
+    const out = (r.stdout || "").trim();
+    if (r.status !== 0 && r.status !== null) return { decision: "CRASH", status: r.status };
+    if (!out) return { decision: null, status: r.status };
+    try { return { decision: JSON.parse(out).hookSpecificOutput.permissionDecision, status: r.status }; }
+    catch { return { decision: "PARSE_ERROR", status: r.status }; }
+  };
+  const rf = (obj) => {
+    const f = path.join(work, `sib-${Math.random().toString(36).slice(2)}.json`);
+    writeFileSync(f, typeof obj === "string" ? obj : JSON.stringify(obj));
+    return f;
+  };
+  check("형제공존 형제 risky 주입 → ask로 승격",
+    runP("Bash", { command: "foo-danger-cmd" }, rf({ plugins: { "sodam-fake-sibling": { risky: ["foo-danger-cmd"] } } })).decision === "ask", "");
+  check("형제공존 형제 catastrophic 주입 → deny(강화 허용)",
+    runP("Bash", { command: "my-nuke-cmd" }, rf({ plugins: { "sodam-fake-sibling": { catastrophic: ["my-nuke-cmd"] } } })).decision === "deny", "");
+  {
+    const multi = rf({ plugins: { "sibling-a": { risky: ["alpha-risky-word"] }, "sibling-b": { risky: ["beta-risky-word"] } } });
+    check("형제공존 여러 형제 동시 주입 — A 적용", runP("Bash", { command: "alpha-risky-word" }, multi).decision === "ask", "");
+    check("형제공존 여러 형제 동시 주입 — B도 적용(합집합, 안 덮임)", runP("Bash", { command: "beta-risky-word" }, multi).decision === "ask", "");
+  }
+  check("형제공존 안전바닥: 형제가 safe/allow/deny:false 주입해도 치명 명령은 여전히 deny",
+    runP("Bash", { command: "rm -rf ~" }, rf({ plugins: { "sibling-evil": { safe: ["rm -rf ~"], deny: false, allow: ["*"] } } })).decision === "deny", "");
+  check("형제공존 깨진 정규식(형제 주입) → 크래시 없이 무시",
+    runP("Bash", { command: "echo hello" }, rf({ plugins: { "sibling-broken": { risky: ["(unbalanced("] } } })).decision === null, "");
+  check("형제공존 타입 혼동(risky가 배열 아님) → 크래시 없이 무시",
+    runP("Bash", { command: "echo hi" }, rf({ plugins: { "sibling-typeconfused": { risky: "not-an-array" } } })).decision !== "CRASH", "");
+  check("형제공존 plugins 필드 자체 타입 이상 → 크래시 없이 무시",
+    runP("Bash", { command: "echo hi" }, rf({ plugins: "not-an-object" })).decision !== "CRASH", "");
+  check("형제공존 _로 시작하는 키(_note 등)는 플러그인 규칙으로 취급 안 함",
+    runP("Bash", { command: "should-not-activate-xyz" }, rf({ plugins: { "_note": { risky: ["should-not-activate-xyz"] } } })).decision === null, "");
+  check("형제공존 규칙파일 전체 깨짐(형제 실수) → 기본 치명차단 그대로 유지",
+    runP("Bash", { command: "rm -rf ~" }, rf("{ this is not valid json !!")).decision === "deny", "");
+  {
+    const profileF = path.join(work, "sib-profile.json");
+    writeFileSync(profileF, JSON.stringify({ autonomy_level: "L3" }));
+    const r = runP("Bash", { command: "sibling-marks-this-risky" }, rf({ plugins: { "sibling-c": { risky: ["sibling-marks-this-risky"] } } }), { SODAM_PROFILE_FILE: profileF });
+    check("형제공존 교차기능: 형제규칙+마법사L3 조합도 크래시 없이 판정 반환", r.decision !== "CRASH", JSON.stringify(r));
+  }
+}
 // 31) [D1→2026-07-03 폴더기준 재설계] 화이트리스트 — 신뢰 후 안 물음 + 폴더+작업종류 기준(세션 무관) + deny는 신뢰 불가
 {
   const wl = path.join(work, "wl.json");
