@@ -12,11 +12,9 @@ description: 확인창이 얼마나 자주 뜨길 원하는지 물어보고 그�
 
 답변을 받으면 해당하는 명령을 실행하고 결과를 확인해 주세요:
 
-- A 선택 시: `node ".../hooks/profile.mjs" --set L1`
-- B 선택 시: `node ".../hooks/profile.mjs" --set L2`
-- C 선택 시: `node ".../hooks/profile.mjs" --set L3`
-
-(경로의 `.../`는 이 플러그인이 설치된 실제 폴더 경로로 바꿔서 실행하세요.)
+- A 선택 시: `node "${CLAUDE_PLUGIN_ROOT}/hooks/profile.mjs" --set L1`
+- B 선택 시: `node "${CLAUDE_PLUGIN_ROOT}/hooks/profile.mjs" --set L2`
+- C 선택 시: `node "${CLAUDE_PLUGIN_ROOT}/hooks/profile.mjs" --set L3`
 
 실행 후 `{"ok":true,"autonomy_level":"L1"|"L2"|"L3"}` 형태의 결과가 나오면 성공입니다. 사용자에게 다음을 **반드시** 함께 안내하세요:
 
