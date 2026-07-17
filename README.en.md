@@ -18,7 +18,7 @@
 
 - 🛑 **Very dangerous actions** (deleting a whole folder, etc.) are **blocked.**
 - 💾 Before **hard-to-undo actions** (deleting/overwriting files): **auto-backup** + **"Really do this?"** prompt.
-- ↩️ Made a mistake? **Restore from backup** (`/sodam-harness-undo`).
+- ↩️ Made a mistake? **Restore from backup** (`/sodam-harness:undo`).
 - 🔒 Passwords/tokens are **never touched or backed up.**
 - 🗣️ All guidance in **plain, easy language.**
 
@@ -59,7 +59,7 @@
    - Published (recommended): `sodam-ai/SoDam-Harness-Eng`
    - From your computer folder (current): the full folder path (e.g., `D:\AI_Dev_Work\2026y\26y_06m_22d_SoDam-Harness-Eng`)
 3. **Install `sodam-harness`** → **fully quit and reopen** Claude Code.
-4. Type **`/sodam-harness`** → if commands appear, success. Then run **`/sodam-harness-install`**.
+4. Type **`/sodam-harness:`** → if commands appear, success. Then run **`/sodam-harness:install`**.
 
 > 📌 If not yet published to GitHub, **install via the folder path.** (Full steps & troubleshooting: **[GUIDE.en.md](./GUIDE.en.md)**)
 
@@ -79,9 +79,9 @@ Every AI action passes through SoDamHarness before it executes:
 |-----------|------|------|
 | **Guard** | `hooks/guard.mjs` | Checks every AI action before it runs. Decides: block, backup+ask, or allow. |
 | **Backup Keeper** | `hooks/backup.mjs` | Makes a safe copy of a file before any risky action happens. |
-| **Trust List** | `hooks/whitelist.mjs` | Remembers what `/sodam-harness-trust` approved (folder + action type, 12h by default) so it stops re-asking. |
+| **Trust List** | `hooks/whitelist.mjs` | Remembers what `/sodam-harness:trust` approved (folder + action type, 12h by default) so it stops re-asking. |
 | **Logger** | `hooks/activity.mjs` | Records what the AI did (filename + time only — never content or secrets). |
-| **Preference** | `hooks/profile.mjs` | Stores the confirmation-frequency level (L1/L2/L3) you pick via `/sodam-harness-wizard` — `guard.mjs` reads it to adjust **only how often it asks**. |
+| **Preference** | `hooks/profile.mjs` | Stores the confirmation-frequency level (L1/L2/L3) you pick via `/sodam-harness:wizard` — `guard.mjs` reads it to adjust **only how often it asks**. |
 
 **3-tier risk classification:**
 
@@ -99,13 +99,13 @@ Every AI action passes through SoDamHarness before it executes:
 
 | Command | Description |
 |---|---|
-| `/sodam-harness-install` | Confirms install + getting-started guide |
-| `/sodam-harness-status` | Current state + what to do next (self-check) |
-| `/sodam-harness-fix` | Symptom-based help when something breaks |
-| `/sodam-harness-undo` | Undo (restore by **picking** from the backup list) |
-| `/sodam-harness-trust` | "Stop asking for this folder/action" — silence it for this session (hard blocks & backups still apply) |
-| `/sodam-harness-log` | "What did you just do?" — timeline of AI actions (names & time only; secrets masked) |
-| `/sodam-harness-wizard` | Pick how often confirmation prompts should appear (L1 always-ask / L2 folder-trust for 24h / L3 skip confirmation for risky actions that backed up successfully) — **hard blocks and secret-file prompts always stay on** |
+| `/sodam-harness:install` | Confirms install + getting-started guide |
+| `/sodam-harness:status` | Current state + what to do next (self-check) |
+| `/sodam-harness:fix` | Symptom-based help when something breaks |
+| `/sodam-harness:undo` | Undo (restore by **picking** from the backup list) |
+| `/sodam-harness:trust` | "Stop asking for this folder/action" — silence it for this session (hard blocks & backups still apply) |
+| `/sodam-harness:log` | "What did you just do?" — timeline of AI actions (names & time only; secrets masked) |
+| `/sodam-harness:wizard` | Pick how often confirmation prompts should appear (L1 always-ask / L2 folder-trust for 24h / L3 skip confirmation for risky actions that backed up successfully) — **hard blocks and secret-file prompts always stay on** |
 
 **2 skills (auto):** `beginner-tone` (easy tone) · `sodam-harness-self-check` (verify before "done").
 
@@ -122,7 +122,7 @@ Every AI action passes through SoDamHarness before it executes:
 | Delete / overwrite a file | 💾 Backup + ⚠️ Confirm |
 | Passwords / tokens / auth files | 🔒 Not touched |
 
-- Backups: `~/.sodamharness/backups/` · on mistakes, `/sodam-harness-undo`.
+- Backups: `~/.sodamharness/backups/` · on mistakes, `/sodam-harness:undo`.
 - ⚠️ In "auto-approve" mode the prompt may be skipped (backups still happen).
 - No data is ever sent outside your computer. All features run locally.
 
@@ -132,8 +132,8 @@ Every AI action passes through SoDamHarness before it executes:
 
 - Commands don't appear → **fully quit and reopen** Claude Code (plugins load at startup).
 - "Node.js missing" → install **LTS** from https://nodejs.org, then restart.
-- Deleted by mistake → **`/sodam-harness-undo`**.
-- More detail → **`/sodam-harness-fix`** or **[GUIDE.en.md](./GUIDE.en.md) §8**.
+- Deleted by mistake → **`/sodam-harness:undo`**.
+- More detail → **`/sodam-harness:fix`** or **[GUIDE.en.md](./GUIDE.en.md) §8**.
 
 ---
 
@@ -142,16 +142,16 @@ Every AI action passes through SoDamHarness before it executes:
 <details>
 <summary><b>📌 Changes by version (click to expand)</b></summary>
 
-### 2026-07-15 — Custom wizard: `/sodam-harness-wizard`
+### 2026-07-15 — Custom wizard: `/sodam-harness:wizard`
 - **New command to choose how often confirmation prompts appear**: answer one question (A/B/C) and `hooks/profile.mjs` saves your choice to `~/.sodamharness/profile.json`; `guard.mjs` reads it to adjust **only how often it asks**.
   - L1 (default, this is the behavior if you never run the wizard): 100% identical to before.
-  - L2: folder-trust (`/sodam-harness-trust`) duration extends from 12 hours to 24 hours.
+  - L2: folder-trust (`/sodam-harness:trust`) duration extends from 12 hours to 24 hours.
   - L3: risky actions whose backup fully succeeded (not a secret file) skip the confirmation prompt.
 - **Unchanged regardless of level**: catastrophic commands, whole-folder/recursive deletion, and sensitive paths are still always blocked. Secret files (`.env`, etc.) still always prompt. A failed backup still always blocks.
 - **All 129 self-tests pass** (117 existing + 12 new, zero regressions).
 
 ### 2026-07-12 — Undo bug fix + Linux/Mac backup-loss fix
-- **Fixed: undo couldn't find backups**: on a machine where several projects create backups at the same time, a just-made backup could get pushed out of the "most recent 8" list, so `/sodam-harness-undo` wrongly reported "no backup found." Found during real-world use — the backup itself was always created correctly; only the lookup logic was at fault (no data was ever lost).
+- **Fixed: undo couldn't find backups**: on a machine where several projects create backups at the same time, a just-made backup could get pushed out of the "most recent 8" list, so `/sodam-harness:undo` wrongly reported "no backup found." Found during real-world use — the backup itself was always created correctly; only the lookup logic was at fault (no data was ever lost).
 - **Fixed: missing backups on Linux/Mac**: overwriting an existing file via `cp`/`mv` on Linux/Mac could skip the backup step due to a POSIX-absolute-path detection bug (Windows was always correct).
 - **All 117 self-tests pass** (114 existing + 3 new, zero regressions).
 
@@ -168,7 +168,7 @@ Every AI action passes through SoDamHarness before it executes:
 
 ### 2026-06-23 — v0.1.0 (Phase 1 + 2)
 - **Phase 1 (MVP)**: safety guardrails (3-tier block / auto-backup / undo), plain-language tone, install & self-check commands.
-- **Phase 2**: activity log (`/sodam-harness-log`), self-check skill, optional Codex setup.
+- **Phase 2**: activity log (`/sodam-harness:log`), self-check skill, optional Codex setup.
 - **Precision tuning**: normal `git push` and in-repo edits skip the prompt (backup still made), folder-scoped whitelist (12h), automatic backup retention (latest 100 + 30 days).
 
 </details>
@@ -183,7 +183,7 @@ Every AI action passes through SoDamHarness before it executes:
 - **Allowed**: modify · copy · fork · redistribute · **commercial use · sell · run as a service · client delivery** · patent use.
 - **Obligations**: **keep** license & copyright notices · **state** changes · include NOTICE (if present).
 - **Not provided**: **no warranty (AS-IS)** · **no trademark rights.**
-- **Third-party trademarks**: "Claude", "Claude Code", "Codex", "Anthropic", "OpenAI", "Node.js", etc. belong to their owners — this product is **not affiliated with or endorsed by** them (nominative use only).
+- **Third-party trademarks**: "Claude", "Claude Code", "Anthropic", "Codex", "OpenAI", "Node.js", "Cursor", "Gemini", etc. belong to their owners — this product is **not affiliated with or endorsed by** them (nominative use only).
 - **Disclaimer**: provided "as is"; **the user is responsible for outcomes.** **"100% safe" / "legally 100% safe" is NOT guaranteed.** Keep separate backups of important data.
 - Full text: **[LICENSE](./LICENSE)** · notices: **[NOTICE](./NOTICE)** · details: **[GUIDE.en.md](./GUIDE.en.md) §11**.
 

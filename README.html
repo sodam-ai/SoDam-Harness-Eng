@@ -167,31 +167,6 @@
     }
     .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
-  <style type="text/css">body { font-family: -apple-system, "Malgun Gothic", "Segoe UI", sans-serif; max-width: 820px; margin: 0 auto; padding: 2rem 1.2rem; line-height: 1.7; color: #1a1a1a; background: #fff; }
-  h1 { border-bottom: 3px solid #2563eb; padding-bottom: .4rem; }
-  h2 { border-bottom: 1px solid #ddd; padding-bottom: .3rem; margin-top: 2.2rem; }
-  h3 { margin-top: 1.6rem; }
-  code { background: #f1f3f5; padding: .15rem .4rem; border-radius: 4px; font-size: .92em; }
-  pre { background: #f6f8fa; padding: 1rem; border-radius: 6px; overflow-x: auto; }
-  pre code { background: none; padding: 0; }
-  blockquote { border-left: 4px solid #2563eb; margin: 1rem 0; padding: .3rem 1rem; background: #f0f6ff; }
-  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
-  th, td { border: 1px solid #ddd; padding: .5rem .7rem; text-align: left; }
-  th { background: #f1f3f5; }
-  a { color: #2563eb; }
-  details { border: 1px solid #ddd; border-radius: 6px; padding: .6rem 1rem; margin: 1rem 0; }
-  summary { cursor: pointer; font-weight: 600; }
-  hr { border: none; border-top: 1px solid #ddd; margin: 2rem 0; }
-  @media (prefers-color-scheme: dark) {
-  body { background: #16181d; color: #e6e6e6; }
-  code { background: #24272e; }
-  pre { background: #1d2025; }
-  blockquote { background: #1a2233; }
-  th { background: #24272e; }
-  th, td { border-color: #3a3f47; }
-  details { border-color: #3a3f47; }
-  }
-  </style>
 </head>
 <body>
 <header id="title-block-header">
@@ -234,7 +209,7 @@ href="./GUIDE.md">GUIDE.md</a></strong> 를 보세요(목차 포함).</p>
 <li>💾 <strong>되돌리기 어려운 일</strong>(파일 삭제·덮어쓰기) 전엔
 <strong>자동 백업</strong> + <strong>“정말 할까요?”</strong> 확인.</li>
 <li>↩︎️ 실수해도 <strong>백업에서
-되살리기</strong>(<code>/sodam-harness-undo</code>).</li>
+되살리기</strong>(<code>/sodam-harness:undo</code>).</li>
 <li>🔒 비밀번호·토큰은 <strong>건드리지도, 백업하지도
 않아요.</strong></li>
 <li>🗣️ 모든 안내는 <strong>쉬운 한국어</strong>.</li>
@@ -300,7 +275,7 @@ href="./GUIDE.md">GUIDE.md 1-1장</a></strong> 참고.</p>
 <tr>
 <td><code>hooks/whitelist.mjs</code></td>
 <td>신뢰 목록</td>
-<td><code>/sodam-harness-trust</code>로 등록한 “이건 안 물어봐도 돼”
+<td><code>/sodam-harness:trust</code>로 등록한 “이건 안 물어봐도 돼”
 목록 관리(폴더+작업종류 기준, 기본 12시간)</td>
 </tr>
 <tr>
@@ -312,7 +287,7 @@ href="./GUIDE.md">GUIDE.md 1-1장</a></strong> 참고.</p>
 <tr>
 <td><code>hooks/profile.mjs</code></td>
 <td>맞춤 설정</td>
-<td><code>/sodam-harness-wizard</code>로 고른 확인 빈도(L1/L2/L3)를 저장
+<td><code>/sodam-harness:wizard</code>로 고른 확인 빈도(L1/L2/L3)를 저장
 — guard.mjs가 이 값을 읽어 <strong>ask 빈도만</strong> 조정</td>
 </tr>
 </tbody>
@@ -366,8 +341,8 @@ href="./GUIDE.md">GUIDE.md 0-1장 / 5-1장</a></strong> 참고.</p>
 </ul></li>
 <li><strong><code>sodam-harness</code> 설치</strong> → Claude Code
 <strong>완전히 껐다 켜기</strong>.</li>
-<li>입력칸에 <strong><code>/sodam-harness</code></strong> → 명령이 뜨면
-성공. 그다음 <strong><code>/sodam-harness-install</code></strong>
+<li>입력칸에 <strong><code>/sodam-harness:</code></strong> → 명령이 뜨면
+성공. 그다음 <strong><code>/sodam-harness:install</code></strong>
 실행.</li>
 </ol>
 <blockquote>
@@ -390,33 +365,33 @@ href="./GUIDE.md">GUIDE.md</a></strong>)</p>
 </thead>
 <tbody>
 <tr>
-<td><code>/sodam-harness-install</code></td>
+<td><code>/sodam-harness:install</code></td>
 <td>설치 확인 + 처음 시작 안내</td>
 </tr>
 <tr>
-<td><code>/sodam-harness-status</code></td>
+<td><code>/sodam-harness:status</code></td>
 <td>지금 상태 + 다음에 할 일 (자가진단)</td>
 </tr>
 <tr>
-<td><code>/sodam-harness-fix</code></td>
+<td><code>/sodam-harness:fix</code></td>
 <td>문제가 생겼을 때 증상별 해결 안내</td>
 </tr>
 <tr>
-<td><code>/sodam-harness-undo</code></td>
+<td><code>/sodam-harness:undo</code></td>
 <td>되돌리기 (백업 목록에서 <strong>골라</strong> 복구)</td>
 </tr>
 <tr>
-<td><code>/sodam-harness-trust</code></td>
+<td><code>/sodam-harness:trust</code></td>
 <td>“이 폴더 이 작업 안 물어봐도 돼” — 12시간 동안 그만 묻기, 세션
 바뀌어도 유지 (완전 차단·백업은 유지)</td>
 </tr>
 <tr>
-<td><code>/sodam-harness-log</code></td>
+<td><code>/sodam-harness:log</code></td>
 <td>“방금 뭐 했어?” — AI가 한 일 타임라인 (파일명·시각만, 비밀은
 가림)</td>
 </tr>
 <tr>
-<td><code>/sodam-harness-wizard</code></td>
+<td><code>/sodam-harness:wizard</code></td>
 <td>확인창이 얼마나 자주 뜨길 원하는지 골라 맞춤 설정(L1 항상확인 / L2
 폴더신뢰 24시간 / L3 백업성공한 위험작업은 확인 생략) — <strong>치명
 차단·비밀파일 확인은 항상 그대로</strong></td>
@@ -461,7 +436,7 @@ href="./GUIDE.md">GUIDE.md</a>의 “5-2. (선택) Codex에서도 쓰기”를
 </table>
 <ul>
 <li>백업 위치: <code>~/.sodamharness/backups/</code> · 실수 시
-<code>/sodam-harness-undo</code>.</li>
+<code>/sodam-harness:undo</code>.</li>
 <li>⚠️ “자동 승인” 모드면 질문이 생략될 수 있어요(백업은 됨).</li>
 </ul>
 <hr />
@@ -472,8 +447,8 @@ href="./GUIDE.md">GUIDE.md</a>의 “5-2. (선택) Codex에서도 쓰기”를
 <li>“Node.js 없음” → <code>https://nodejs.org</code> 에서
 <strong>LTS</strong> 설치 후 재시작.</li>
 <li>실수로 지웠어요 →
-<strong><code>/sodam-harness-undo</code></strong>.</li>
-<li>더 자세히 → <strong><code>/sodam-harness-fix</code></strong> 또는
+<strong><code>/sodam-harness:undo</code></strong>.</li>
+<li>더 자세히 → <strong><code>/sodam-harness:fix</code></strong> 또는
 <strong><a href="./GUIDE.md">GUIDE.md 8장</a></strong>.</li>
 </ul>
 <hr />
@@ -482,8 +457,8 @@ href="./GUIDE.md">GUIDE.md</a>의 “5-2. (선택) Codex에서도 쓰기”를
 <summary>
 <b>📌 버전별 변경 요약 (클릭해서 펼치기)</b>
 </summary>
-<h3 id="맞춤-마법사안전강도-마법사-sodam-harness-wizard">2026-07-15 —
-맞춤 마법사(안전강도 마법사): <code>/sodam-harness-wizard</code></h3>
+<h3 id="맞춤-마법사안전강도-마법사-sodam-harnesswizard">2026-07-15 —
+맞춤 마법사(안전강도 마법사): <code>/sodam-harness:wizard</code></h3>
 <ul>
 <li><strong>확인창 빈도를 직접 고를 수 있는 신규 명령</strong>: 질문
 하나(A/B/C)에 답하면 <code>hooks/profile.mjs</code>가
@@ -492,7 +467,7 @@ href="./GUIDE.md">GUIDE.md</a>의 “5-2. (선택) Codex에서도 쓰기”를
 조정합니다.
 <ul>
 <li>L1(기본, 안 쓰면 이 상태): 기존과 100% 동일.</li>
-<li>L2: 폴더 신뢰(<code>/sodam-harness-trust</code>) 유지 기간 12시간 →
+<li>L2: 폴더 신뢰(<code>/sodam-harness:trust</code>) 유지 기간 12시간 →
 24시간.</li>
 <li>L3: 위험(risky) 작업 중 백업이 온전히 성공한 것(비밀파일 아님)은
 확인 없이 통과.</li>
@@ -508,7 +483,7 @@ href="./GUIDE.md">GUIDE.md</a>의 “5-2. (선택) Codex에서도 쓰기”를
 <ul>
 <li><strong>되돌리기가 백업을 못 찾던 버그 수정</strong>: 여러
 프로젝트가 동시에 백업을 만드는 환경에서 방금 만든 백업이 “최근 8개”
-목록 밖으로 밀려나 <code>/sodam-harness-undo</code>가 “없다”고 잘못
+목록 밖으로 밀려나 <code>/sodam-harness:undo</code>가 “없다”고 잘못
 말하던 버그를 실사용 중 발견·수정. (백업 자체는 정상 생성돼 있었음 —
 목록/검색 로직만의 문제, 데이터 손실 없음)</li>
 <li><strong>Linux/Mac 백업 누락 수정</strong>:
@@ -553,7 +528,7 @@ href="./GUIDE.md">GUIDE.md</a>의 “5-2. (선택) Codex에서도 쓰기”를
 <li><strong>Phase 1(MVP)</strong>: 안전 가드레일(3등급 차단·자동
 백업·되돌리기)·쉬운 한국어 말투·설치/자가진단 명령.</li>
 <li><strong>Phase 2</strong>: 활동
-기록(<code>/sodam-harness-log</code>)·자가검증 스킬·Codex 보조
+기록(<code>/sodam-harness:log</code>)·자가검증 스킬·Codex 보조
 설정.</li>
 <li><strong>정밀화</strong>: 일반 <code>git push</code>·git 저장소 안
 편집은 확인 생략(백업은 유지)·폴더 단위 화이트리스트(12시간)·백업 자동
@@ -576,9 +551,9 @@ Studio.</strong></li>
 변경 <strong>명시</strong> · NOTICE 동봉(있을 경우).</li>
 <li><strong>미제공</strong>: <strong>보증 없음(AS-IS)</strong> ·
 <strong>상표권 미부여.</strong></li>
-<li><strong>타사 상표</strong>: “Claude”, “Claude Code”, “Codex”,
-“Anthropic”, “OpenAI” 등은 각 소유자 상표 — 본 제품은 <strong>공식
-제휴·보증 관계 없음</strong>(명목적 표시).</li>
+<li><strong>타사 상표</strong>: “Claude”, “Claude Code”, “Anthropic”,
+“Codex”, “OpenAI”, “Node.js”, “Cursor”, “Gemini” 등은 각 소유자 상표 —
+본 제품은 <strong>공식 제휴·보증 관계 없음</strong>(명목적 표시).</li>
 <li><strong>면책</strong>: “있는 그대로” 제공, <strong>사용 결과 책임은
 사용자</strong>. <strong>“100% 안전”·“법적 100% 안전” 보장 안
 함.</strong> 중요한 자료는 별도 백업 권장.</li>

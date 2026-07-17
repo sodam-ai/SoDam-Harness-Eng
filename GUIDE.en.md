@@ -96,10 +96,10 @@ SoDamHarness sorts every AI action into one of three categories:
 |------|----------|------|---------|
 | `hooks/guard.mjs` | The Guard | Runs before every AI action. Checks the 3-tier list and decides: block, backup+ask, or allow. | A security guard at a building entrance |
 | `hooks/backup.mjs` | The Backup Keeper | Makes a copy of a file before a risky action happens. | A librarian photocopying a rare book before you borrow it |
-| `hooks/whitelist.mjs` | The Session Pass | Remembers which actions *you* approved this session, so it does not ask repeatedly. Expires when you close Claude Code (12 hours max). | A visitor day-pass that expires at closing time |
+| `hooks/whitelist.mjs` | The Trust List | Remembers which actions *you* approved via `/sodam-harness:trust`, so it does not ask repeatedly. Saved to disk and lasts **12 hours** (24 hours if you picked wizard level L2) — it survives closing and reopening Claude Code. | A VIP list that stays valid for 12 hours even if the visitor leaves and comes back |
 | `hooks/activity.mjs` | The Logger | After each action, writes one line: what file was touched and when. Never records content or secrets. | A front-desk logbook — "Visitor arrived, 9:03 AM" — no personal details |
 | `hooks/safety-rules.json` | The Rule Book | A list of danger patterns (like `rm -rf`) that the Guard checks against. Stored separately so rules can be updated without changing code. | A printed list of banned items at airport security |
-| `hooks/profile.mjs` | The Preference Card | Stores the confirmation-frequency level (L1/L2/L3) you pick via `/sodam-harness-wizard`. The Guard reads it to adjust **only how often it asks** — never the blocking or backup rules. | A guest card noting how often this particular visitor wants to be re-checked |
+| `hooks/profile.mjs` | The Preference Card | Stores the confirmation-frequency level (L1/L2/L3) you pick via `/sodam-harness:wizard`. The Guard reads it to adjust **only how often it asks** — never the blocking or backup rules. | A guest card noting how often this particular visitor wants to be re-checked |
 
 ### Internal data flow diagram
 
@@ -361,9 +361,9 @@ This method uses menus inside Claude Code — no memorizing commands required.
    - Type `claude` in the terminal and press Enter to reopen it.
    - **Or:** Close the entire terminal window, open a new terminal, and type `claude`.
    - You **must** restart — plugins only load when Claude Code first starts up.
-8. After restarting, type **`/sodam-harness`** in the input area and press Tab or Enter.
-   - If you see a list of commands beginning with `/sodam-harness-install`, **installation succeeded!** 🎉
-   - Now run **`/sodam-harness-install`** to complete the guided setup.
+8. After restarting, type **`/sodam-harness:`** in the input area and press Tab or Enter.
+   - If you see a list of commands beginning with `/sodam-harness:install`, **installation succeeded!** 🎉
+   - Now run **`/sodam-harness:install`** to complete the guided setup.
 
 ---
 
@@ -381,7 +381,7 @@ If you prefer to type commands directly:
    claude plugin install sodam-harness@sodamharness-marketplace
    ```
 4. **Fully quit and reopen Claude Code** (same as step 7 in Method A).
-5. Verify by typing `/sodam-harness` in Claude Code.
+5. Verify by typing `/sodam-harness:` in Claude Code.
 
 > 📌 **Current status:** The GitHub option (`sodam-ai/SoDam-Harness-Eng`) is not yet active. Use the **folder path** for now. Once the project is public on GitHub, Option 1 in Method A will be the easiest.
 
@@ -390,7 +390,7 @@ If you prefer to type commands directly:
 ## 3. Quick start (3 minutes)
 
 1. (After installing) Reopen Claude Code fresh (type `claude` in a terminal).
-2. Type **`/sodam-harness-install`** and press Enter.
+2. Type **`/sodam-harness:install`** and press Enter.
    → You will see a message confirming "the seatbelt is on."
 3. In a **throwaway, empty practice folder** (a folder you do not care about at all), ask the AI to do things:
    - Try: `"Please create a file called test.txt with the words hello world inside."`
@@ -400,8 +400,8 @@ If you prefer to type commands directly:
    - Try: `"Please delete the file test.txt."`
      → Backup is made automatically, then you are asked to confirm. 💾⚠️
 4. Curious about what just happened?
-   - **`/sodam-harness-status`** — shows whether the seatbelt is on and healthy.
-   - **`/sodam-harness-log`** — shows a timeline of what the AI just did.
+   - **`/sodam-harness:status`** — shows whether the seatbelt is on and healthy.
+   - **`/sodam-harness:log`** — shows a timeline of what the AI just did.
 
 > ⚠️ **Always test in a practice folder first.** Never test a safety tool in a folder with real, important work.
 
@@ -428,7 +428,7 @@ During normal use, just work with the AI **as you normally would.** The seatbelt
 ### Key facts
 
 - **Backups** are automatically saved to `~/.sodamharness/backups/` on your computer (see Section 7).
-- If you accidentally deleted or overwrote something, restore it with **`/sodam-harness-undo`**.
+- If you accidentally deleted or overwrote something, restore it with **`/sodam-harness:undo`**.
 - ⚠️ **Auto-approve (YOLO) mode:** Claude Code has a mode that automatically approves all AI actions without asking. If you have this mode on, the "Really do this?" prompt may be skipped. However, **backups still happen automatically** even in this mode. To always see confirmation prompts, use the **default mode** (not auto-approve). See FAQ Q10 for more.
 
 ---
@@ -448,11 +448,11 @@ Here is the full picture of a typical work session:
          └─ Catastrophic action → Blocked 🛑 (with explanation of why)
          │
          ▼
-[Made a mistake?]  → /sodam-harness-undo to restore ↩️
-[What happened?]   → /sodam-harness-log to review   📜
-[Working OK?]      → /sodam-harness-status to check  🩺
-[Tired of this prompt?] → /sodam-harness-trust to silence it for this session
-[Want fewer prompts overall?] → /sodam-harness-wizard to pick your own frequency
+[Made a mistake?]  → /sodam-harness:undo to restore ↩️
+[What happened?]   → /sodam-harness:log to review   📜
+[Working OK?]      → /sodam-harness:status to check  🩺
+[Tired of this prompt?] → /sodam-harness:trust to silence it for 12 hours
+[Want fewer prompts overall?] → /sodam-harness:wizard to pick your own frequency
 ```
 
 **Day-to-day tip:** For most work sessions, you do not need to think about SoDamHarness at all. It runs silently in the background. You only notice it when something risky is about to happen.
@@ -506,7 +506,7 @@ activity.log: one line — "filename.txt — 14:32:05" — NOTHING ELSE
 | Backup copies of risky files | ✅ Stored locally | `~/.sodamharness/backups/` |
 | Activity log (filename + time only) | ✅ Stored locally | `~/.sodamharness/activity.log` |
 | Danger pattern rules | ✅ Stored locally | `hooks/safety-rules.json` |
-| Session whitelist (/trust decisions) | ✅ In memory only — cleared when Claude Code closes | RAM only |
+| Trust list (/trust decisions) | ✅ Stored locally — lasts 12h (24h at wizard level L2), survives restart | `~/.sodamharness/whitelist.json` |
 | File contents | ❌ NEVER stored in any log | — |
 | Passwords | ❌ NEVER read, NEVER stored | — |
 | Tokens / API keys | ❌ NEVER read, NEVER stored | — |
@@ -568,13 +568,13 @@ If you use both Claude Code and Codex, here is how to improve safety in Codex us
 
 ## 6. Commands (What to use and when)
 
-To see all commands, type **`/sodam-harness`** in the Claude Code input area and press Tab or Enter. All commands are **Claude Code only** — they do not work in Codex or other tools.
+To see all commands, type **`/sodam-harness:`** in the Claude Code input area and press Tab or Enter. All commands are **Claude Code only** — they do not work in Codex or other tools.
 
 ### The 7 commands in detail
 
 ---
 
-#### `/sodam-harness-install`
+#### `/sodam-harness:install`
 
 **When to use:** Right after you finish installing SoDamHarness for the first time.
 
@@ -587,12 +587,12 @@ The seatbelt is on. Here is what happens next:
 - Catastrophic actions will be blocked.
 - Risky actions will be backed up and confirmed with you.
 - Passwords and tokens are never touched.
-Type /sodam-harness-status anytime to check the seatbelt is working.
+Type /sodam-harness:status anytime to check the seatbelt is working.
 ```
 
 ---
 
-#### `/sodam-harness-status`
+#### `/sodam-harness:status`
 
 **When to use:** Anytime you want to check if the seatbelt is working properly, or when something seems off.
 
@@ -612,7 +612,7 @@ Everything looks good. Seatbelt is ON. ✅
 
 ---
 
-#### `/sodam-harness-fix`
+#### `/sodam-harness:fix`
 
 **When to use:** When something is not working — commands do not appear, an action was not blocked when you expected it to be, or you see an error.
 
@@ -622,7 +622,7 @@ Everything looks good. Seatbelt is ON. ✅
 
 ---
 
-#### `/sodam-harness-undo`
+#### `/sodam-harness:undo`
 
 **When to use:** When you (or the AI) accidentally deleted or overwrote a file and you want it back.
 
@@ -642,22 +642,22 @@ Which backup do you want to restore? Type a number (or "cancel"):
 
 ---
 
-#### `/sodam-harness-trust`
+#### `/sodam-harness:trust`
 
-**When to use:** When SoDamHarness keeps asking you about the same type of action repeatedly and you want it to stop asking — just for this work session.
+**When to use:** When SoDamHarness keeps asking you about the same type of action repeatedly and you want it to stop asking.
 
-**What it does:** Adds the current action type and/or folder to a session whitelist. SoDamHarness will stop asking for that specific combination for the rest of your current session only.
+**What it does:** Adds the current action type and folder to a trust list. SoDamHarness will stop asking for that specific combination for **12 hours** — and this is saved to disk, so it survives even if you close Claude Code and start a brand-new session.
 
 **What still applies even after /trust:**
 - 🛑 Hard blocks (catastrophic actions) **still apply** — those cannot be trusted away.
 - 💾 Backups **still happen** automatically.
-- The trust decision expires when you close Claude Code. The next session starts fresh.
+- The trust decision **automatically expires after 12 hours** (or 24 hours if you picked wizard level L2) — it does *not* expire just because you closed the window.
 
-**Example:** The AI keeps asking "Really delete this auto-generated test log?" You know it is safe and run `/sodam-harness-trust`. It will stop asking for that action this session.
+**Example:** The AI keeps asking "Really delete this auto-generated test log?" You know it is safe and run `/sodam-harness:trust`. It will stop asking for that specific action in that folder for the next 12 hours, even across separate conversations.
 
 ---
 
-#### `/sodam-harness-wizard`
+#### `/sodam-harness:wizard`
 
 **When to use:** When confirmation prompts ("Really do this?") appear too often, or you want to change your current setting.
 
@@ -666,7 +666,7 @@ Which backup do you want to restore? Type a number (or "cancel"):
 | Choice | Level | What actually happens |
 |---|---|---|
 | A) Always confirm | L1 (default) | **100% identical** to current behavior — nothing changes |
-| B) Don't re-ask for repeated actions in the same folder for a day | L2 | Folder-trust (`/sodam-harness-trust`) duration extends from 12 hours to **24 hours** |
+| B) Don't re-ask for repeated actions in the same folder for a day | L2 | Folder-trust (`/sodam-harness:trust`) duration extends from 12 hours to **24 hours** |
 | C) Skip confirmation for undoable (backed-up) actions as much as possible | L3 | Risky actions whose **backup actually succeeded** skip the prompt (the backup still happens) |
 
 > 🔒 **What never changes, no matter which option you pick (the safety floor):** Catastrophic actions — deleting whole folders, system deletion, `rm -rf` — are **always blocked**. Secret files (`.env`, certificates, etc.) **always prompt again** (they cannot be backed up, so they cannot be undone). A failed backup **always blocks** the action. This wizard only adjusts *how often* the prompt appears — it cannot weaken the safety mechanism itself.
@@ -680,11 +680,11 @@ C) Skip confirmation for undoable (backed-up) actions as much as possible
 ```
 Success looks like: `{"ok":true,"autonomy_level":"L2"}`.
 
-> 💡 Run `/sodam-harness-wizard` again anytime to change your setting.
+> 💡 Run `/sodam-harness:wizard` again anytime to change your setting.
 
 ---
 
-#### `/sodam-harness-log`
+#### `/sodam-harness:log`
 
 **When to use:** When you want to review what the AI has been doing — a timeline of recent actions.
 
@@ -709,7 +709,7 @@ Skills are helper behaviors that run alongside SoDamHarness to improve your expe
 | Skill | What it does | How to activate |
 |---|---|---|
 | `beginner-tone` | Makes all AI guidance use plain, simple, jargon-free language. Explains technical terms when they appear. | Activates automatically — it is not a slash command. If explanations feel too technical, just say "Explain it simply". |
-| `/sodam-harness-self-check` | Before the AI says "Done!", it verifies the task actually worked — by running the code, checking the file, etc. — rather than just claiming it is done. | Activates automatically. Especially useful for important tasks. |
+| `sodam-harness-self-check` | Before the AI says "Done!", it verifies the task actually worked — by running the code, checking the file, etc. — rather than just claiming it is done. | Activates automatically — it is not a slash command. Especially useful for important tasks. |
 
 ---
 
@@ -724,7 +724,7 @@ Backups are stored in a hidden folder inside your home directory:
 - **Mac:** `/Users/YourName/.sodamharness/backups/`
   *(Replace `YourName` with your actual Mac username.)*
 
-Two other files live next to the `backups\` folder in the same `.sodamharness\` directory: `activity.log` (see below) and `profile.json` (the confirmation-frequency level you picked with `/sodam-harness-wizard` — L1/L2/L3).
+Two other files live next to the `backups\` folder in the same `.sodamharness\` directory: `activity.log` (see below) and `profile.json` (the confirmation-frequency level you picked with `/sodam-harness:wizard` — L1/L2/L3).
 
 > 💡 **What is the "home directory"?** It is the main personal folder for your account. On Windows: `C:\Users\YourName`. On Mac: `/Users/YourName`.
 
@@ -748,7 +748,7 @@ Backup files are plain copies of the original — just regular files. Open them 
 
 Location: `~/.sodamharness/activity.log`
 
-- View it inside Claude Code with `/sodam-harness-log`
+- View it inside Claude Code with `/sodam-harness:log`
 - Or open it directly with any text editor
 - Contains only: filename + timestamp. No file contents. No secrets.
 
@@ -776,21 +776,21 @@ These files are in the SoDamHarness plugin folder:
 
 | Symptom | Why it happens | What to do right now |
 |---------|----------------|----------------------|
-| `/sodam-harness-...` commands **don't appear** | Plugin not loaded — most likely not restarted after install | **Fully close Claude Code** (type `/exit`), open a new terminal, type `claude`. If still missing, return to Section 2 and reinstall. |
-| A risky action **was not stopped or blocked** | Plugin may have turned off, or the risk pattern is not yet known | Restart Claude Code → run `/sodam-harness-status` to diagnose. |
-| **Too many confirmations** — it asks too often | Safety-first default behavior | For a repeated safe action, run `/sodam-harness-trust` to silence it this session. |
+| `/sodam-harness:...` commands **don't appear** | Plugin not loaded — most likely not restarted after install | **Fully close Claude Code** (type `/exit`), open a new terminal, type `claude`. If still missing, return to Section 2 and reinstall. |
+| A risky action **was not stopped or blocked** | Plugin may have turned off, or the risk pattern is not yet known | Restart Claude Code → run `/sodam-harness:status` to diagnose. |
+| **Too many confirmations** — it asks too often | Safety-first default behavior | For a repeated safe action, run `/sodam-harness:trust` to silence it this session. |
 | **"Node.js not found"** or **"node is not recognized"** | Node.js is not installed or not on the PATH | Install **LTS** from **https://nodejs.org**, close and reopen the terminal (Section 1). |
 | **SmartScreen warning** (Windows) | Windows does not recognize the program's publisher | If from the official source, click **"More info"** then **"Run anyway"**. If unsure of the source, do not run. |
 | **Gatekeeper warning** (Mac) | Mac security is blocking an unrecognized developer | If from the official source, go to System Preferences → Security & Privacy → click **"Open Anyway"**. |
-| **Accidentally deleted a file** | — | Run **`/sodam-harness-undo`** and pick the backup from the list. |
+| **Accidentally deleted a file** | — | Run **`/sodam-harness:undo`** and pick the backup from the list. |
 | **Backup folder error** ("permission denied" or "disk full") | Disk is full or the folder has restricted permissions | Free up disk space and retry. If backup fails, the risky action is **automatically cancelled** — nothing is lost. |
-| **Garbled text / strange characters** in terminal | Character encoding issue | This is uncommon with Node.js. If it persists, run `/sodam-harness-fix`. |
+| **Garbled text / strange characters** in terminal | Character encoding issue | This is uncommon with Node.js. If it persists, run `/sodam-harness:fix`. |
 | **Explanations are too technical** | Beginner-tone skill may not have activated | Say **"Explain this in simple, plain language"**. |
 | **Old command names appear** (like `/install` without the prefix) | Leftover data from a previous or different version | Fully restart Claude Code. If they persist, uninstall (Section 9) and reinstall (Section 2). |
 | **Duplicate commands** in the list | Two plugin versions may be installed | Restart → if duplicates persist, uninstall and reinstall. |
 | **"claude" command not recognized** in terminal | Claude Code is not installed or not on the PATH | Install Claude Code (Section 1-2). Restart terminal after. |
-| **Installation command failed** | Many possible causes | Copy the exact error message and run `/sodam-harness-fix`, or start over from Section 2. |
-| **Wizard settings seem to misbehave** | `profile.json` is corrupted or has an invalid value | It automatically falls back to the safest default (L1, "always confirm"). Run `/sodam-harness-wizard` again to reconfigure. |
+| **Installation command failed** | Many possible causes | Copy the exact error message and run `/sodam-harness:fix`, or start over from Section 2. |
+| **Wizard settings seem to misbehave** | `profile.json` is corrupted or has an invalid value | It automatically falls back to the safest default (L1, "always confirm"). Run `/sodam-harness:wizard` again to reconfigure. |
 
 ### Extended troubleshooting tips
 
@@ -802,12 +802,12 @@ This is normal. The folder `~/.sodamharness/backups/` is created automatically t
 - **Mac:** In Finder, press **⌘ Command + Shift + H** to jump to your home folder.
 
 **"The AI completely ignored the seatbelt"**
-This usually means Claude Code was not fully restarted after installation, or the plugin is installed but not active. Run `/sodam-harness-status`. If it shows errors, reinstall following Section 2.
+This usually means Claude Code was not fully restarted after installation, or the plugin is installed but not active. Run `/sodam-harness:status`. If it shows errors, reinstall following Section 2.
 
 **"I see an error message I don't understand"**
 Do not panic. Paste the error into Claude Code and say: "I see this error: [paste it here]. What does it mean and what should I do?" The AI will explain it clearly.
 
-> For deeper diagnosis of any issue, type **`/sodam-harness-fix`** inside Claude Code.
+> For deeper diagnosis of any issue, type **`/sodam-harness:fix`** inside Claude Code.
 
 ---
 
@@ -887,7 +887,7 @@ A: No, not noticeably. SoDamHarness's hooks run only when the AI takes an action
 
 **Q7. I accidentally deleted an entire folder. Can I recover it?**
 
-A: Unfortunately, no — entire folder deletion is not backed up because folders can contain hundreds of files. Instead, SoDamHarness **blocks** folder deletion entirely, so it should not have happened if the plugin is active. Individual files (which are backed up before deletion) can be restored with `/sodam-harness-undo`. If a folder was deleted anyway, this suggests the plugin was not active at that moment — run `/sodam-harness-status` to diagnose.
+A: Unfortunately, no — entire folder deletion is not backed up because folders can contain hundreds of files. Instead, SoDamHarness **blocks** folder deletion entirely, so it should not have happened if the plugin is active. Individual files (which are backed up before deletion) can be restored with `/sodam-harness:undo`. If a folder was deleted anyway, this suggests the plugin was not active at that moment — run `/sodam-harness:status` to diagnose.
 
 ---
 
@@ -909,55 +909,49 @@ A: Claude Code has a mode (sometimes called "YOLO mode" or "auto-approve mode") 
 
 ---
 
-**Q11. What is a "session"? (For the /trust command)**
-
-A: A "session" is one working period with Claude Code — from when you open it to when you close it. When you run `/sodam-harness-trust`, SoDamHarness remembers your trust decision for that session only. When you close Claude Code and reopen it, the trust decisions are cleared and the next session starts fresh with a clean slate. This is intentional — it means you have to consciously re-approve actions each time you begin work.
-
----
-
-**Q12. What happens if a backup fails?**
+**Q11. What happens if a backup fails?**
 
 A: If SoDamHarness cannot create a backup — for example, because your disk is full or there are permission errors — the risky action is **automatically cancelled.** Nothing is deleted or overwritten if the backup could not be made. You will see an error message explaining what went wrong. This is a safety-first design: no backup, no action.
 
 ---
 
-**Q13. How do I know the seatbelt is actually working?**
+**Q12. How do I know the seatbelt is actually working?**
 
-A: Run `/sodam-harness-status` — it reports the health of each component. For a quick live test: in a throwaway empty folder, ask the AI "Please delete this entire folder." If the seatbelt is working, you will immediately see a block message. See Section 3 (Quick start) for a step-by-step test procedure.
+A: Run `/sodam-harness:status` — it reports the health of each component. For a quick live test: in a throwaway empty folder, ask the AI "Please delete this entire folder." If the seatbelt is working, you will immediately see a block message. See Section 3 (Quick start) for a step-by-step test procedure.
 
 ---
 
-**Q14. Can I use SoDamHarness with other AI coding tools besides Claude Code and Codex?**
+**Q13. Can I use SoDamHarness with other AI coding tools besides Claude Code and Codex?**
 
 A: SoDamHarness uses Claude Code's specific plugin and hook system, so the automatic blocking and backup features will not work with other tools (Cursor, GitHub Copilot, Gemini, etc.). However, the `AGENTS.md` file included in the plugin folder — which sets safety guidelines — can be copied into any project folder, and some AI tools may read and respect it.
 
 ---
 
-**Q15. What if I do not understand a warning message or error?**
+**Q14. What if I do not understand a warning message or error?**
 
-A: Simply paste the message into Claude Code and say: "I see this message: [paste here]. What does it mean and what should I do?" The AI will explain it in plain, friendly language. You can also run `/sodam-harness-fix` — it guides you through common problems step by step.
+A: Simply paste the message into Claude Code and say: "I see this message: [paste here]. What does it mean and what should I do?" The AI will explain it in plain, friendly language. You can also run `/sodam-harness:fix` — it guides you through common problems step by step.
 
 ---
 
-**Q16. How long are my backups kept? Do they expire?**
+**Q15. How long are my backups kept? Do they expire?**
 
 A: Most of the time they are cleaned up **automatically**. Backups are kept for the **latest 100 files + 30 days**; anything older is pruned automatically whenever a new backup is made (up to 200 per run). If you want to reduce them further, open `~/.sodamharness/backups/`, review the backup files, and delete ones you no longer need. You can adjust the retention with `backupPolicy` (keepN · keepDays) in `~/.sodamharness/safety-rules.json`.
 
 ---
 
-**Q17. Is my data ever sent to SoDam AI Studio or anyone else?**
+**Q16. Is my data ever sent to SoDam AI Studio or anyone else?**
 
 A: No. No data — not your files, not your filenames, not your activity log, not anything — is ever sent to SoDam AI Studio or any external party. Everything stays on your computer. See Section 5-1 for the full data flow diagram and explanation.
 
 ---
 
-**Q18. Can I use this commercially — for client work, at a company, or in a product I sell?**
+**Q17. Can I use this commercially — for client work, at a company, or in a product I sell?**
 
 A: Yes. The Apache License 2.0 allows commercial use. You may use it for client deliverables, internal company tools, products you sell, or services you run. You must keep the license and copyright notice, state your changes if you modify the code, and include the NOTICE file if present. See Section 11 for full details.
 
 ---
 
-**Q19. If I use `/sodam-harness-wizard` to reduce prompts, does that make it less safe?**
+**Q18. If I use `/sodam-harness:wizard` to reduce prompts, does that make it less safe?**
 
 A: No. The wizard only adjusts **how often** the "Really do this?" prompt appears. Blocking of catastrophic actions (whole-folder deletion, system deletion) stays on at every level, secret files (passwords, tokens) always prompt again, and a failed backup always blocks the action. Fewer prompts does not mean fewer safeguards — the underlying protections are unchanged.
 
@@ -968,16 +962,16 @@ A: No. The wizard only adjusts **how often** the "Really do this?" prompt appear
 <details>
 <summary><b>📌 Changes by version (click to expand)</b></summary>
 
-### 2026-07-15 — Custom wizard: `/sodam-harness-wizard`
+### 2026-07-15 — Custom wizard: `/sodam-harness:wizard`
 - **New command to choose how often confirmation prompts appear**: answer one question (A/B/C) and `hooks/profile.mjs` saves your choice to `~/.sodamharness/profile.json`; `guard.mjs` reads it to adjust **only how often it asks** (see Section 6 above).
   - L1 (default, this is the behavior if you never run the wizard): 100% identical to before.
-  - L2: folder-trust (`/sodam-harness-trust`) duration extends from 12 hours to 24 hours.
+  - L2: folder-trust (`/sodam-harness:trust`) duration extends from 12 hours to 24 hours.
   - L3: risky actions whose backup fully succeeded (not a secret file) skip the confirmation prompt.
 - **Unchanged regardless of level**: catastrophic commands, whole-folder/recursive deletion, and sensitive paths are still always blocked. Secret files (`.env`, etc.) still always prompt. A failed backup still always blocks.
 - **All 129 self-tests pass** (117 existing + 12 new, zero regressions).
 
 ### 2026-07-12 — Undo bug fix + Linux/Mac backup-loss fix
-- **Fixed: undo couldn't find backups**: on a machine where several projects create backups at the same time, a just-made backup could get pushed out of the "most recent 8" list, so `/sodam-harness-undo` wrongly reported "no backup found." Found during real-world use — the backup itself was always created correctly; only the lookup logic was at fault (no data was ever lost).
+- **Fixed: undo couldn't find backups**: on a machine where several projects create backups at the same time, a just-made backup could get pushed out of the "most recent 8" list, so `/sodam-harness:undo` wrongly reported "no backup found." Found during real-world use — the backup itself was always created correctly; only the lookup logic was at fault (no data was ever lost).
 - **Fixed: missing backups on Linux/Mac**: overwriting an existing file via `cp`/`mv` on Linux/Mac could skip the backup step due to a POSIX-absolute-path detection bug (Windows was always correct).
 - **All 117 self-tests pass** (114 existing + 3 new, zero regressions).
 
@@ -994,7 +988,7 @@ A: No. The wizard only adjusts **how often** the "Really do this?" prompt appear
 
 ### 2026-06-23 — v0.1.0 (Phase 1 + 2)
 - **Phase 1 (MVP)**: safety guardrails (3-tier block / auto-backup / undo), plain-language tone, install & self-check commands.
-- **Phase 2**: activity log (`/sodam-harness-log`), self-check skill, optional Codex setup.
+- **Phase 2**: activity log (`/sodam-harness:log`), self-check skill, optional Codex setup.
 - **Precision tuning**: normal `git push` and in-repo edits skip the prompt (backup still made), folder-scoped whitelist (12h), automatic backup retention (latest 100 + 30 days).
 
 </details>
@@ -1057,6 +1051,8 @@ The following names are trademarks of their respective owners. SoDamHarness is *
 | Claude, Claude Code | Anthropic PBC |
 | Codex, OpenAI | OpenAI |
 | Node.js | OpenJS Foundation |
+| Cursor | Anysphere Inc. |
+| Gemini | Google LLC |
 
 ### Liability and disclaimer
 

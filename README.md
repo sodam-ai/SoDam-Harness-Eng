@@ -18,7 +18,7 @@
 
 - 🛑 **아주 위험한 일**(폴더 통째 삭제 등)은 **아예 막아요.**
 - 💾 **되돌리기 어려운 일**(파일 삭제·덮어쓰기) 전엔 **자동 백업** + **"정말 할까요?"** 확인.
-- ↩️ 실수해도 **백업에서 되살리기**(`/sodam-harness-undo`).
+- ↩️ 실수해도 **백업에서 되살리기**(`/sodam-harness:undo`).
 - 🔒 비밀번호·토큰은 **건드리지도, 백업하지도 않아요.**
 - 🗣️ 모든 안내는 **쉬운 한국어**.
 
@@ -57,9 +57,9 @@ SoDamHarness는 3개의 핵심 파일이 팀으로 움직입니다.
 |---|---|---|
 | `hooks/guard.mjs` | 경비원 | AI가 도구를 쓰기 **전에** 실행돼서 위험도를 판단하고 막거나 허용 |
 | `hooks/backup.mjs` | 백업 담당 | 위험한 작업 전 파일을 `~/.sodamharness/backups/`에 자동 저장 |
-| `hooks/whitelist.mjs` | 신뢰 목록 | `/sodam-harness-trust`로 등록한 "이건 안 물어봐도 돼" 목록 관리(폴더+작업종류 기준, 기본 12시간) |
+| `hooks/whitelist.mjs` | 신뢰 목록 | `/sodam-harness:trust`로 등록한 "이건 안 물어봐도 돼" 목록 관리(폴더+작업종류 기준, 기본 12시간) |
 | `hooks/activity.mjs` | 일지 기록원 | AI가 한 일을 `activity.log`에 기록 (파일명·시각만, 비밀은 가림) |
-| `hooks/profile.mjs` | 맞춤 설정 | `/sodam-harness-wizard`로 고른 확인 빈도(L1/L2/L3)를 저장 — guard.mjs가 이 값을 읽어 **ask 빈도만** 조정 |
+| `hooks/profile.mjs` | 맞춤 설정 | `/sodam-harness:wizard`로 고른 확인 빈도(L1/L2/L3)를 저장 — guard.mjs가 이 값을 읽어 **ask 빈도만** 조정 |
 
 **3등급 분류:**
 
@@ -80,7 +80,7 @@ SoDamHarness는 3개의 핵심 파일이 팀으로 움직입니다.
    - 공개 시(권장): `sodam-ai/SoDam-Harness-Eng`
    - 내 컴퓨터 폴더로(현재): 그 폴더 전체 경로 (예: `D:\AI_Dev_Work\2026y\26y_06m_22d_SoDam-Harness-Eng`)
 3. **`sodam-harness` 설치** → Claude Code **완전히 껐다 켜기**.
-4. 입력칸에 **`/sodam-harness`** → 명령이 뜨면 성공. 그다음 **`/sodam-harness-install`** 실행.
+4. 입력칸에 **`/sodam-harness:`** → 명령이 뜨면 성공. 그다음 **`/sodam-harness:install`** 실행.
 
 > 📌 아직 GitHub에 공개 전이면 **폴더 경로로 설치**하세요. (자세한 단계·문제 해결: **[GUIDE.md](./GUIDE.md)**)
 
@@ -90,13 +90,13 @@ SoDamHarness는 3개의 핵심 파일이 팀으로 움직입니다.
 
 | 명령어 | 설명 |
 |---|---|
-| `/sodam-harness-install` | 설치 확인 + 처음 시작 안내 |
-| `/sodam-harness-status` | 지금 상태 + 다음에 할 일 (자가진단) |
-| `/sodam-harness-fix` | 문제가 생겼을 때 증상별 해결 안내 |
-| `/sodam-harness-undo` | 되돌리기 (백업 목록에서 **골라** 복구) |
-| `/sodam-harness-trust` | "이 폴더 이 작업 안 물어봐도 돼" — 12시간 동안 그만 묻기, 세션 바뀌어도 유지 (완전 차단·백업은 유지) |
-| `/sodam-harness-log` | "방금 뭐 했어?" — AI가 한 일 타임라인 (파일명·시각만, 비밀은 가림) |
-| `/sodam-harness-wizard` | 확인창이 얼마나 자주 뜨길 원하는지 골라 맞춤 설정(L1 항상확인 / L2 폴더신뢰 24시간 / L3 백업성공한 위험작업은 확인 생략) — **치명 차단·비밀파일 확인은 항상 그대로** |
+| `/sodam-harness:install` | 설치 확인 + 처음 시작 안내 |
+| `/sodam-harness:status` | 지금 상태 + 다음에 할 일 (자가진단) |
+| `/sodam-harness:fix` | 문제가 생겼을 때 증상별 해결 안내 |
+| `/sodam-harness:undo` | 되돌리기 (백업 목록에서 **골라** 복구) |
+| `/sodam-harness:trust` | "이 폴더 이 작업 안 물어봐도 돼" — 12시간 동안 그만 묻기, 세션 바뀌어도 유지 (완전 차단·백업은 유지) |
+| `/sodam-harness:log` | "방금 뭐 했어?" — AI가 한 일 타임라인 (파일명·시각만, 비밀은 가림) |
+| `/sodam-harness:wizard` | 확인창이 얼마나 자주 뜨길 원하는지 골라 맞춤 설정(L1 항상확인 / L2 폴더신뢰 24시간 / L3 백업성공한 위험작업은 확인 생략) — **치명 차단·비밀파일 확인은 항상 그대로** |
 
 **스킬 2개(자동):** `beginner-tone`(쉬운 말투) · `sodam-harness-self-check`(완료 전 자가검증).
 
@@ -113,7 +113,7 @@ SoDamHarness는 3개의 핵심 파일이 팀으로 움직입니다.
 | 파일 삭제·덮어쓰기 | 💾 백업 + ⚠️ 확인 |
 | 비밀번호·토큰·인증 파일 | 🔒 건드리지 않음 |
 
-- 백업 위치: `~/.sodamharness/backups/` · 실수 시 `/sodam-harness-undo`.
+- 백업 위치: `~/.sodamharness/backups/` · 실수 시 `/sodam-harness:undo`.
 - ⚠️ "자동 승인" 모드면 질문이 생략될 수 있어요(백업은 됨).
 
 ---
@@ -122,8 +122,8 @@ SoDamHarness는 3개의 핵심 파일이 팀으로 움직입니다.
 
 - 명령이 안 떠요 → Claude Code **완전히 껐다 켜기** (플러그인은 켤 때 로드).
 - "Node.js 없음" → `https://nodejs.org` 에서 **LTS** 설치 후 재시작.
-- 실수로 지웠어요 → **`/sodam-harness-undo`**.
-- 더 자세히 → **`/sodam-harness-fix`** 또는 **[GUIDE.md 8장](./GUIDE.md)**.
+- 실수로 지웠어요 → **`/sodam-harness:undo`**.
+- 더 자세히 → **`/sodam-harness:fix`** 또는 **[GUIDE.md 8장](./GUIDE.md)**.
 
 ---
 
@@ -132,16 +132,16 @@ SoDamHarness는 3개의 핵심 파일이 팀으로 움직입니다.
 <details>
 <summary><b>📌 버전별 변경 요약 (클릭해서 펼치기)</b></summary>
 
-### 2026-07-15 — 맞춤 마법사(안전강도 마법사): `/sodam-harness-wizard`
+### 2026-07-15 — 맞춤 마법사(안전강도 마법사): `/sodam-harness:wizard`
 - **확인창 빈도를 직접 고를 수 있는 신규 명령**: 질문 하나(A/B/C)에 답하면 `hooks/profile.mjs`가 `~/.sodamharness/profile.json`에 저장하고, `guard.mjs`가 이를 읽어 **ask 빈도만** 조정합니다.
   - L1(기본, 안 쓰면 이 상태): 기존과 100% 동일.
-  - L2: 폴더 신뢰(`/sodam-harness-trust`) 유지 기간 12시간 → 24시간.
+  - L2: 폴더 신뢰(`/sodam-harness:trust`) 유지 기간 12시간 → 24시간.
   - L3: 위험(risky) 작업 중 백업이 온전히 성공한 것(비밀파일 아님)은 확인 없이 통과.
 - **불변(레벨과 무관, 항상 그대로)**: 치명 명령·폴더 통째/재귀 삭제·민감 위치 → 항상 차단(deny). 비밀파일(`.env` 등) → 항상 확인(ask). 백업 실패 시 → 항상 차단.
 - **자가검증 129개 전부 통과** (기존 117 + 신규 12, 회귀 0).
 
 ### 2026-07-12 — 되돌리기(undo) 버그 수정 + Linux/Mac 백업 누락 수정
-- **되돌리기가 백업을 못 찾던 버그 수정**: 여러 프로젝트가 동시에 백업을 만드는 환경에서 방금 만든 백업이 "최근 8개" 목록 밖으로 밀려나 `/sodam-harness-undo`가 "없다"고 잘못 말하던 버그를 실사용 중 발견·수정. (백업 자체는 정상 생성돼 있었음 — 목록/검색 로직만의 문제, 데이터 손실 없음)
+- **되돌리기가 백업을 못 찾던 버그 수정**: 여러 프로젝트가 동시에 백업을 만드는 환경에서 방금 만든 백업이 "최근 8개" 목록 밖으로 밀려나 `/sodam-harness:undo`가 "없다"고 잘못 말하던 버그를 실사용 중 발견·수정. (백업 자체는 정상 생성돼 있었음 — 목록/검색 로직만의 문제, 데이터 손실 없음)
 - **Linux/Mac 백업 누락 수정**: `cp`/`mv`로 기존 파일을 덮어쓸 때 POSIX 절대경로를 잘못 인식해 백업이 빠지던 버그 수정(Windows는 원래 정상).
 - **자가검증 117개 전부 통과** (기존 114 + 신규 3, 회귀 0).
 
@@ -158,7 +158,7 @@ SoDamHarness는 3개의 핵심 파일이 팀으로 움직입니다.
 
 ### 2026-06-23 — v0.1.0 (Phase 1 + 2)
 - **Phase 1(MVP)**: 안전 가드레일(3등급 차단·자동 백업·되돌리기)·쉬운 한국어 말투·설치/자가진단 명령.
-- **Phase 2**: 활동 기록(`/sodam-harness-log`)·자가검증 스킬·Codex 보조 설정.
+- **Phase 2**: 활동 기록(`/sodam-harness:log`)·자가검증 스킬·Codex 보조 설정.
 - **정밀화**: 일반 `git push`·git 저장소 안 편집은 확인 생략(백업은 유지)·폴더 단위 화이트리스트(12시간)·백업 자동 보존(최근 100개+30일).
 
 </details>
@@ -173,7 +173,7 @@ SoDamHarness는 3개의 핵심 파일이 팀으로 움직입니다.
 - **허용**: 수정·복제·포크·재배포·**상업적 사용·판매·서비스·납품**·특허 사용.
 - **의무**: 라이선스·저작권 고지 **보존** · 변경 **명시** · NOTICE 동봉(있을 경우).
 - **미제공**: **보증 없음(AS-IS)** · **상표권 미부여.**
-- **타사 상표**: "Claude", "Claude Code", "Codex", "Anthropic", "OpenAI" 등은 각 소유자 상표 — 본 제품은 **공식 제휴·보증 관계 없음**(명목적 표시).
+- **타사 상표**: "Claude", "Claude Code", "Anthropic", "Codex", "OpenAI", "Node.js", "Cursor", "Gemini" 등은 각 소유자 상표 — 본 제품은 **공식 제휴·보증 관계 없음**(명목적 표시).
 - **면책**: "있는 그대로" 제공, **사용 결과 책임은 사용자**. **"100% 안전"·"법적 100% 안전" 보장 안 함.** 중요한 자료는 별도 백업 권장.
 - 전문: **[LICENSE](./LICENSE)** · 고지: **[NOTICE](./NOTICE)** · 상세: **[GUIDE.md 11장](./GUIDE.md)**.
 

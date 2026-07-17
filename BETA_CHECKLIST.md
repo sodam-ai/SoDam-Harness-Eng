@@ -10,8 +10,8 @@
 README.md만 보고 처음 설치하는 사람을 관찰하세요.
 
 - [ ] README만 보고 **5분 안에** 설치 완료
-- [ ] 설치 직후 AI가 쉬운 한국어로 인사 (`/sodam-harness-install` 완료 메시지)
-- [ ] `/sodam-harness-status` 실행 → 정상 ✅
+- [ ] 설치 직후 AI가 쉬운 한국어로 인사 (`/sodam-harness:install` 완료 메시지)
+- [ ] `/sodam-harness:status` 실행 → 정상 ✅
 - [ ] 설치 중 막히는 단계가 있으면 README에 반영
 
 ---
@@ -23,7 +23,7 @@ Claude Code에서 실제로 실행해서 차단 메시지 확인:
 - [ ] `rm somefile.txt` → "되돌리기 어려운 작업이에요…" 메시지 뜸
 - [ ] `rm -rf ./testdir` → 즉시 차단 (FOLDER_DENY_MSG: "폴더를 통째로 지우는 작업은…")
 - [ ] 백업 폴더 생성 확인 (`~/.sodamharness/backups/` 에 파일 생김)
-- [ ] `/sodam-harness-undo` → 파일 복구 성공
+- [ ] `/sodam-harness:undo` → 파일 복구 성공
 - [ ] `rm -rf ~` → 즉시 deny (치명 차단)
 
 ---

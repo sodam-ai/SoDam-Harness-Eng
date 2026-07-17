@@ -12,7 +12,7 @@
 - After installing SoDamHarness, **close and reopen Claude Code once** (the belt arms on start).
 
 ## 1. Install check
-Type: `/sodam-harness-install`
+Type: `/sodam-harness:install`
 - ✅ Pass: shows "the safety belt is on" + your Node.js version.
 
 ## 2. Make practice materials (first pass = "safe actions aren't blocked")
@@ -27,15 +27,15 @@ Make a memo.txt file here and an empty subfolder called 'trash-folder'.
 |---|---|---|
 | ① Folder delete | "Delete the whole 'trash-folder'." | **Blocked with "Deleting a whole folder is blocked"** → folder survives |
 | ② File delete | "Delete memo.txt." | **Auto-backed-up** right before deletion (see ⚠️ below) |
-| ③ Undo | `/sodam-harness-undo` | Restore by **picking from the backup list** (e.g. "just now / 3 min ago") → memo.txt reappears |
+| ③ Undo | `/sodam-harness:undo` | Restore by **picking from the backup list** (e.g. "just now / 3 min ago") → memo.txt reappears |
 | ④ Safe action | "Make newfile.txt." | Created without being blocked (no over-blocking) |
-| ⑤ File overwrite | "Replace memo.txt contents with 'B'." | **Auto-backed-up** before the overwrite + ask (see ⚠️ below) → `/sodam-harness-undo` restores the **previous contents** |
+| ⑤ File overwrite | "Replace memo.txt contents with 'B'." | **Auto-backed-up** before the overwrite + ask (see ⚠️ below) → `/sodam-harness:undo` restores the **previous contents** |
 
 ## 3-B. Additional feature checks (optional)
 | # | What to say | Pass signal |
 |---|---|---|
-| ⑥ Activity log | `/sodam-harness-log` | **Timeline** output like "3 min ago — edited file: filename" |
-| ⑦ Reduce prompts | Say "Don't ask me about this folder anymore", then `/sodam-harness-trust` | "Won't ask again this session" message + ask skipped (backup still runs) |
+| ⑥ Activity log | `/sodam-harness:log` | **Timeline** output like "3 min ago — edited file: filename" |
+| ⑦ Reduce prompts | Say "Don't ask me about this folder anymore", then `/sodam-harness:trust` | "Won't ask again this session" message + ask skipped (backup still runs) |
 
 > ⚠️ In **auto-approve mode**, ② (file delete) and ⑤ (overwrite) may run without asking. That's normal — it's **protected by backup + undo (③)**. To always see the prompt, use Claude Code's **default mode**.
 
@@ -45,7 +45,7 @@ Make a memo.txt file here and an empty subfolder called 'trash-folder'.
 
 ## 5. Beginner beta (most important)
 - Give **1–3 beginners** only the **`README.md`** and watch:
-  do they reach install → "make a file" → "delete it" → `/sodam-harness-undo` **on their own?**
+  do they reach install → "make a file" → "delete it" → `/sodam-harness:undo` **on their own?**
 - **Where they get stuck = the doc fix list** (note exactly what confused them).
 
 ## 6. Record results (please log like this)

@@ -96,11 +96,11 @@ AI가 하려는 일을 안전벨트가 자동으로 3가지로 나눕니다.
 |---|---|---|
 | `hooks/guard.mjs` | 경비원 | AI가 도구를 쓰기 **전에** 실행돼서 위험도를 판단하고 막거나 허용 |
 | `hooks/backup.mjs` | 백업 담당 | 위험한 작업 전 파일을 `~/.sodamharness/backups/`에 자동 저장 |
-| `hooks/whitelist.mjs` | 허가 목록 | `/sodam-harness-trust`로 "이건 안 물어봐도 돼"라고 등록한 목록 관리 |
+| `hooks/whitelist.mjs` | 허가 목록 | `/sodam-harness:trust`로 "이건 안 물어봐도 돼"라고 등록한 목록 관리 |
 | `hooks/activity.mjs` | 일지 기록원 | AI가 한 일을 `~/.sodamharness/activity.log`에 기록 (파일명·시각만, 비밀 마스킹) |
 | `hooks/safety-rules.json` | 규칙집 | 위험 패턴 목록 (guard.mjs가 이 파일을 읽어서 판단) |
-| `hooks/profile.mjs` | 맞춤 설정 담당 | `/sodam-harness-wizard`가 고른 확인 빈도(L1/L2/L3)를 `~/.sodamharness/profile.json`에 저장 — guard.mjs가 이 값을 읽어 **ask 빈도만** 조정(차단·백업은 무관하게 항상 그대로) |
-| `commands/` | 명령 모음 | 사용자가 `/sodam-harness-...`를 치면 실행되는 7개 명령 |
+| `hooks/profile.mjs` | 맞춤 설정 담당 | `/sodam-harness:wizard`가 고른 확인 빈도(L1/L2/L3)를 `~/.sodamharness/profile.json`에 저장 — guard.mjs가 이 값을 읽어 **ask 빈도만** 조정(차단·백업은 무관하게 항상 그대로) |
+| `commands/` | 명령 모음 | 사용자가 `/sodam-harness:...`를 치면 실행되는 7개 명령 |
 
 > **비유로 이해하기:** guard.mjs는 건물 앞 경비원, backup.mjs는 금고 담당 직원, whitelist.mjs는 VIP 명단, activity.mjs는 방문자 출입 기록부, profile.mjs는 "이 손님은 얼마나 자주 신분 확인을 하길 원하는지" 적어 둔 손님 카드입니다. safety-rules.json은 경비원이 들고 다니는 "위험 목록 수첩"입니다.
 
@@ -294,9 +294,9 @@ Claude Code는 Anthropic의 API 사용량에 따라 요금이 발생합니다. �
    - 방법: `/exit` 입력 → 터미널 창도 닫기 → 터미널 새로 열기 → `claude` 입력.
    - ⚠️ 이 단계가 가장 중요합니다. 재시작하지 않으면 플러그인이 인식되지 않습니다.
 
-7. 입력칸에 **`/sodam-harness`** 를 입력합니다. 명령 목록이 나타나면 **설치 성공**입니다.
+7. 입력칸에 **`/sodam-harness:`** 를 입력합니다. 명령 목록이 나타나면 **설치 성공**입니다.
 
-8. **`/sodam-harness-install`** 을 입력해서 시작 안내를 받습니다.
+8. **`/sodam-harness:install`** 을 입력해서 시작 안내를 받습니다.
 
 ---
 
@@ -313,7 +313,7 @@ claude plugin marketplace add "D:\AI_Dev_Work\2026y\26y_06m_22d_SoDam-Harness-En
 claude plugin install sodam-harness@sodamharness-marketplace
 ```
 
-그다음 Claude Code를 **완전히 껐다 켜고**, `/sodam-harness` 로 설치를 확인합니다.
+그다음 Claude Code를 **완전히 껐다 켜고**, `/sodam-harness:` 로 설치를 확인합니다.
 
 ---
 
@@ -327,16 +327,16 @@ claude plugin install sodam-harness@sodamharness-marketplace
 
 1. Claude Code를 **새로** 엽니다. (재시작 완료 상태)
 
-2. 입력칸에 **`/sodam-harness-install`** 입력 → Enter.
+2. 입력칸에 **`/sodam-harness:install`** 입력 → Enter.
    - "안전벨트가 켜졌어요" 같은 안내가 나오면 정상입니다.
 
 3. **버려도 되는 연습 폴더**(예: 바탕화면에 `test_folder` 같은 것을 새로 만드세요)에서 AI에게 일을 시켜 봅니다.
    - 예: `test.txt 파일 만들어 줘` → 안전벨트가 막지 않고 그냥 만들어집니다. ✅
    - 예: `이 연습 폴더 통째로 지워 줘` → 🛑 안전벨트가 차단합니다. (안전!)
 
-4. **현재 상태 확인:** `/sodam-harness-status` 입력.
+4. **현재 상태 확인:** `/sodam-harness:status` 입력.
 
-5. **방금 뭐 했는지 보기:** `/sodam-harness-log` 입력.
+5. **방금 뭐 했는지 보기:** `/sodam-harness:log` 입력.
 
 > 💡 안전벨트가 잘 작동하는지 먼저 **버려도 되는 연습 파일로** 테스트해 보는 것을 강력히 권장합니다.
 
@@ -369,7 +369,7 @@ claude plugin install sodam-harness@sodamharness-marketplace
 위험한 작업 전 파일은 자동으로 `~/.sodamharness/backups/` 폴더에 저장됩니다.
 - 윈도우 예: `C:\Users\내이름\.sodamharness\backups\`
 - 이 폴더에 비밀번호·토큰은 절대 저장하지 않습니다.
-- 실수로 지웠다면 **`/sodam-harness-undo`** 로 되살립니다.
+- 실수로 지웠다면 **`/sodam-harness:undo`** 로 되살립니다.
 
 ### 자동 승인 모드 주의사항
 
@@ -400,11 +400,11 @@ Claude Code의 "자동 승인(YOLO)" 모드를 켜면 "정말 할까요?" 확인
         └─ 아주 위험한 일 (폴더 통째 삭제 등)
                 └─→ 즉시 차단 🛑 (아예 실행 안 함)
 
-[실수했다?] → /sodam-harness-undo 로 되살리기 ↩️
-[뭐 했지?]  → /sodam-harness-log 로 확인 📜
-[잘 되나?]  → /sodam-harness-status 로 점검 🩺
-[이 작업 그만 묻게] → /sodam-harness-trust 로 12시간 동안 안 묻기
-[확인창 빈도 자체를 바꾸고 싶다] → /sodam-harness-wizard 로 나에게 맞는 빈도 고르기
+[실수했다?] → /sodam-harness:undo 로 되살리기 ↩️
+[뭐 했지?]  → /sodam-harness:log 로 확인 📜
+[잘 되나?]  → /sodam-harness:status 로 점검 🩺
+[이 작업 그만 묻게] → /sodam-harness:trust 로 12시간 동안 안 묻기
+[확인창 빈도 자체를 바꾸고 싶다] → /sodam-harness:wizard 로 나에게 맞는 빈도 고르기
 ```
 
 ---
@@ -502,11 +502,11 @@ Codex를 함께 쓰는 분을 위한 보조 설정입니다.
 
 ## 6. 명령어 (언제 무엇을 쓰나)
 
-입력칸에 **`/sodam-harness`** 까지 치면 아래가 자동완성으로 뜹니다. 모두 **Claude Code 전용**입니다.
+입력칸에 **`/sodam-harness:`** 까지 치면 아래가 자동완성으로 뜹니다. 모두 **Claude Code 전용**입니다.
 
 ---
 
-### `/sodam-harness-install` — 설치 확인 + 시작 안내
+### `/sodam-harness:install` — 설치 확인 + 시작 안내
 
 **언제 쓰나:** 처음 설치한 직후, 또는 "잘 설치됐나?" 확인할 때.
 
@@ -522,7 +522,7 @@ Codex를 함께 쓰는 분을 위한 보조 설정입니다.
 
 ---
 
-### `/sodam-harness-status` — 현재 상태 + 자가진단
+### `/sodam-harness:status` — 현재 상태 + 자가진단
 
 **언제 쓰나:** "안전벨트가 지금 잘 작동하나?" 확인하고 싶을 때.
 
@@ -533,7 +533,7 @@ Codex를 함께 쓰는 분을 위한 보조 설정입니다.
 
 ---
 
-### `/sodam-harness-fix` — 문제 해결 안내
+### `/sodam-harness:fix` — 문제 해결 안내
 
 **언제 쓰나:** 뭔가 이상할 때, 명령이 안 먹힐 때, 안전벨트가 안 작동하는 것 같을 때.
 
@@ -543,7 +543,7 @@ Codex를 함께 쓰는 분을 위한 보조 설정입니다.
 
 ---
 
-### `/sodam-harness-undo` — 실수 되돌리기
+### `/sodam-harness:undo` — 실수 되돌리기
 
 **언제 쓰나:** AI가 파일을 잘못 지웠거나, 내용이 잘못 바뀌었을 때.
 
@@ -567,7 +567,7 @@ Codex를 함께 쓰는 분을 위한 보조 설정입니다.
 
 ---
 
-### `/sodam-harness-trust` — 12시간 동안 안 묻기
+### `/sodam-harness:trust` — 12시간 동안 안 묻기
 
 **언제 쓰나:** 같은 작업에 매번 "정말 할까요?"가 떠서 귀찮을 때.
 
@@ -580,7 +580,7 @@ Codex를 함께 쓰는 분을 위한 보조 설정입니다.
 
 ---
 
-### `/sodam-harness-wizard` — 확인창 빈도 맞춤 설정
+### `/sodam-harness:wizard` — 확인창 빈도 맞춤 설정
 
 **언제 쓰나:** 확인창("정말 할까요?")이 너무 자주 뜨거나, 반대로 지금 설정이 어떤지 바꾸고 싶을 때.
 
@@ -591,7 +591,7 @@ Codex를 함께 쓰는 분을 위한 보조 설정입니다.
 | 선택 | 등급 | 실제 동작 |
 |---|---|---|
 | A) 항상 확인 | L1 (기본값) | 지금까지와 **100% 동일** — 아무것도 안 바뀜 |
-| B) 같은 폴더 반복 작업은 하루 동안 안 물어봄 | L2 | `/sodam-harness-trust`의 신뢰 유지 기간이 12시간 → **24시간**으로 늘어남 |
+| B) 같은 폴더 반복 작업은 하루 동안 안 물어봄 | L2 | `/sodam-harness:trust`의 신뢰 유지 기간이 12시간 → **24시간**으로 늘어남 |
 | C) 되돌리기 가능한 작업(백업됨)은 최대한 안 물어봄 | L3 | 위험(risky) 작업 중 **백업이 실제로 성공한 것**은 확인 없이 통과(백업은 계속 뜸) |
 
 > 🔒 **어떤 설정을 골라도 절대 안 바뀌는 것(안전 바닥)**: 폴더 통째 삭제·시스템 삭제·`rm -rf` 같은 **치명 작업은 항상 차단**됩니다. `.env`·인증서 같은 **비밀 파일은 항상 다시 확인**합니다(백업이 안 되는 대상이라 되돌릴 수 없기 때문). 백업이 실패하면 **항상 차단**됩니다. 이 마법사는 오직 "확인창이 뜨는 빈도"만 조정하며, 안전장치 자체를 약하게 만들 수 없습니다.
@@ -605,11 +605,11 @@ C) 되돌리기 가능한 작업(백업됨)은 최대한 안 물어봄
 ```
 답변 후: `{"ok":true,"autonomy_level":"L2"}` 같은 결과가 나오면 성공입니다.
 
-> 💡 언제든 `/sodam-harness-wizard`를 다시 실행하면 설정을 바꿀 수 있습니다.
+> 💡 언제든 `/sodam-harness:wizard`를 다시 실행하면 설정을 바꿀 수 있습니다.
 
 ---
 
-### `/sodam-harness-log` — AI가 한 일 타임라인
+### `/sodam-harness:log` — AI가 한 일 타임라인
 
 **언제 쓰나:** "방금 AI가 뭘 했지?" 확인하고 싶을 때.
 
@@ -651,7 +651,7 @@ C) 되돌리기 가능한 작업(백업됨)은 최대한 안 물어봄
 C:\Users\내이름\.sodamharness\
     ├── backups\        ← 자동 백업 파일들
     ├── activity.log   ← AI 활동 기록
-    └── profile.json   ← /sodam-harness-wizard로 고른 확인 빈도(L1/L2/L3)
+    └── profile.json   ← /sodam-harness:wizard로 고른 확인 빈도(L1/L2/L3)
 ```
 
 **맥:**
@@ -659,7 +659,7 @@ C:\Users\내이름\.sodamharness\
 /Users/내이름/.sodamharness/
     ├── backups/        ← 자동 백업 파일들
     ├── activity.log   ← AI 활동 기록
-    └── profile.json   ← /sodam-harness-wizard로 고른 확인 빈도(L1/L2/L3)
+    └── profile.json   ← /sodam-harness:wizard로 고른 확인 빈도(L1/L2/L3)
 ```
 
 > ⚠️ **중요:** 이 폴더에 비밀번호·토큰·인증 파일은 절대 저장되지 않습니다.
@@ -699,24 +699,24 @@ C:\Users\내이름\.sodamharness\
 
 ## 8. 문제·오류 대처 (증상 → 왜 → 지금 할 것)
 
-> 더 자세한 진단은 입력칸에 **`/sodam-harness-fix`** 입력.
+> 더 자세한 진단은 입력칸에 **`/sodam-harness:fix`** 입력.
 
 | 증상 | 왜 그런가 | 지금 할 것 |
 |---|---|---|
-| `/sodam-harness-...` 명령이 **안 떠요** | 설치 후 재시작을 안 함, 또는 설치가 안 됨 | Claude Code를 **완전히 껐다 켜기** → `/sodam-harness` 확인. 그래도면 2번(설치) 다시 |
-| 위험 작업인데 **안 멈춰요** | 플러그인이 꺼졌거나, 아직 모르는 위험 패턴 | Claude Code 껐다 켜기 → `/sodam-harness-status` |
-| 너무 **자주 물어봐요** | 안전 위주 기본값 | 같은 작업이면 `/sodam-harness-trust` 로 12시간 동안 그만 묻기 |
+| `/sodam-harness:...` 명령이 **안 떠요** | 설치 후 재시작을 안 함, 또는 설치가 안 됨 | Claude Code를 **완전히 껐다 켜기** → `/sodam-harness:` 확인. 그래도면 2번(설치) 다시 |
+| 위험 작업인데 **안 멈춰요** | 플러그인이 꺼졌거나, 아직 모르는 위험 패턴 | Claude Code 껐다 켜기 → `/sodam-harness:status` |
+| 너무 **자주 물어봐요** | 안전 위주 기본값 | 같은 작업이면 `/sodam-harness:trust` 로 12시간 동안 그만 묻기 |
 | **"Node.js 없음"** 이라고 떠요 | 안전 훅이 Node.js로 동작 | `https://nodejs.org` 에서 **LTS** 설치 후 재시작 (위 1번 참고) |
 | 실행 차단 경고 (SmartScreen/Gatekeeper) | 처음 보는 프로그램이라 OS가 한 번 물어봄 | 정상적으로 받은 파일이면 "실행 허용" 선택 |
-| 실수로 **파일을 지웠어요** | — | `/sodam-harness-undo` (목록에서 고르기) |
-| **폴더를 지웠어요** | 폴더 삭제는 차단(🛑)되므로 이 경우는 거의 없음 | 혹시라도 지워졌다면 `/sodam-harness-undo` 확인 (폴더 자체 복구는 불가) |
+| 실수로 **파일을 지웠어요** | — | `/sodam-harness:undo` (목록에서 고르기) |
+| **폴더를 지웠어요** | 폴더 삭제는 차단(🛑)되므로 이 경우는 거의 없음 | 혹시라도 지워졌다면 `/sodam-harness:undo` 확인 (폴더 자체 복구는 불가) |
 | 백업 폴더 오류 (권한·용량) | 디스크 가득참 또는 권한 문제 | 공간 확보 후 재시도. 백업 못 하면 위험 작업은 **자동 중단**됩니다 |
-| 한글이 **깨져요** | 터미널 인코딩 문제 | 보통 안 깨짐(Node.js). 그래도 깨지면 `/sodam-harness-fix` 입력 |
+| 한글이 **깨져요** | 터미널 인코딩 문제 | 보통 안 깨짐(Node.js). 그래도 깨지면 `/sodam-harness:fix` 입력 |
 | 설명이 **어려워요** | 쉬운 말투 스킬이 항상 자동 적용되지 않을 수 있음 | AI에게 **"쉽게 설명해 줘"** 라고 한마디 |
 | 옛 이름(`/install` 등)·중복 명령이 떠요 | 이전 설치 잔재 | Claude Code **완전 재시작**. 그래도면 재설치 |
 | Claude Code 자체가 **안 켜져요** | Claude Code 또는 Node.js 문제 | `node --version` 으로 Node.js 확인 → 없으면 설치. Claude Code 재설치 고려 |
 | **백업이 너무 많이 쌓여요** | 자주 작업하면 백업이 쌓임 | `.sodamharness/backups/` 폴더에서 오래된 것을 수동으로 삭제해도 됩니다 |
-| **마법사로 설정한 게 이상하게 동작해요** | `profile.json`이 깨졌거나 손상됨 | 자동으로 가장 안전한 기본값(L1, "항상 확인")으로 되돌아갑니다. `/sodam-harness-wizard`를 다시 실행해 재설정하세요 |
+| **마법사로 설정한 게 이상하게 동작해요** | `profile.json`이 깨졌거나 손상됨 | 자동으로 가장 안전한 기본값(L1, "항상 확인")으로 되돌아갑니다. `/sodam-harness:wizard`를 다시 실행해 재설정하세요 |
 
 ---
 
@@ -769,7 +769,7 @@ A. 설치할 때 한 번만 필요합니다. 그 이후 안전 기능 자체는 
 
 **Q4. 실수로 중요한 파일을 지웠어요. 어떻게 해요?**
 
-A. `/sodam-harness-undo` 를 입력하면 백업 목록이 나옵니다. 번호를 골라서 되살리세요. 단, **백업은 작업 직전에 자동으로 저장**되므로, SoDamHarness가 설치되기 전이나 백업에 실패한 경우에는 되살리지 못할 수 있습니다. 중요한 자료는 별도 백업을 꼭 하세요.
+A. `/sodam-harness:undo` 를 입력하면 백업 목록이 나옵니다. 번호를 골라서 되살리세요. 단, **백업은 작업 직전에 자동으로 저장**되므로, SoDamHarness가 설치되기 전이나 백업에 실패한 경우에는 되살리지 못할 수 있습니다. 중요한 자료는 별도 백업을 꼭 하세요.
 
 ---
 
@@ -823,11 +823,11 @@ A. 아니요. SoDamHarness는 Claude Code의 **플러그인(훅)** 입니다. Cl
 
 **Q13. 안전벨트가 너무 자주 물어봐서 귀찮아요.**
 
-A. `/sodam-harness-trust` 명령으로 "이 폴더에서 이 작업은 안 물어봐도 돼"라고 등록하면 됩니다. 폴더+작업종류 기준으로 12시간 동안 유지되며, 대화(세션)를 새로 시작해도 초기화되지 않습니다. 또한 Claude Code의 자동 승인(YOLO) 모드를 켜면 확인 창이 생략됩니다 (백업은 유지됩니다).
+A. `/sodam-harness:trust` 명령으로 "이 폴더에서 이 작업은 안 물어봐도 돼"라고 등록하면 됩니다. 폴더+작업종류 기준으로 12시간 동안 유지되며, 대화(세션)를 새로 시작해도 초기화되지 않습니다. 또한 Claude Code의 자동 승인(YOLO) 모드를 켜면 확인 창이 생략됩니다 (백업은 유지됩니다).
 
 ---
 
-**Q14. `/sodam-harness-trust` 를 하면 차단도 해제되나요?**
+**Q14. `/sodam-harness:trust` 를 하면 차단도 해제되나요?**
 
 A. 아닙니다. trust는 **"정말 할까요?"라는 확인 질문만 생략**합니다. 차단(🛑)과 백업(💾)은 trust 이후에도 계속 유지됩니다.
 
@@ -851,7 +851,7 @@ A. SoDamHarness 개발 과정에서 129가지 테스트 케이스(위험 차단�
 
 ---
 
-**Q18. `/sodam-harness-wizard`로 확인창을 줄이면 덜 안전해지나요?**
+**Q18. `/sodam-harness:wizard`로 확인창을 줄이면 덜 안전해지나요?**
 
 A. 아닙니다. 마법사는 **오직 "정말 할까요?" 확인 질문이 뜨는 빈도만** 조정합니다. 폴더 통째 삭제·시스템 삭제 같은 **치명 작업 차단은 어떤 설정에서도 항상 그대로**이고, 비밀번호·토큰 같은 **비밀 파일은 항상 다시 확인**하며, 백업이 실패하면 **항상 차단**됩니다. "확인을 덜 받는다"와 "덜 안전해진다"는 다릅니다 — 안전장치 자체는 줄지 않습니다.
 
@@ -862,16 +862,16 @@ A. 아닙니다. 마법사는 **오직 "정말 할까요?" 확인 질문이 뜨�
 <details>
 <summary><b>📌 버전별 변경 요약 (클릭해서 펼치기)</b></summary>
 
-### 2026-07-15 — 맞춤 마법사(안전강도 마법사): `/sodam-harness-wizard`
+### 2026-07-15 — 맞춤 마법사(안전강도 마법사): `/sodam-harness:wizard`
 - **확인창 빈도를 직접 고를 수 있는 신규 명령**: 질문 하나(A/B/C)에 답하면 `hooks/profile.mjs`가 `~/.sodamharness/profile.json`에 저장하고, `guard.mjs`가 이를 읽어 **ask 빈도만** 조정합니다(위 6번 명령어 절 참고).
   - L1(기본, 안 쓰면 이 상태): 기존과 100% 동일.
-  - L2: 폴더 신뢰(`/sodam-harness-trust`) 유지 기간 12시간 → 24시간.
+  - L2: 폴더 신뢰(`/sodam-harness:trust`) 유지 기간 12시간 → 24시간.
   - L3: 위험(risky) 작업 중 백업이 온전히 성공한 것(비밀파일 아님)은 확인 없이 통과.
 - **불변(레벨과 무관, 항상 그대로)**: 치명 명령·폴더 통째/재귀 삭제·민감 위치 → 항상 차단(deny). 비밀파일(`.env` 등) → 항상 확인(ask). 백업 실패 시 → 항상 차단.
 - **자가검증 129개 전부 통과** (기존 117 + 신규 12, 회귀 0).
 
 ### 2026-07-12 — 되돌리기(undo) 버그 수정 + Linux/Mac 백업 누락 수정
-- **되돌리기가 백업을 못 찾던 버그 수정**: 여러 프로젝트가 동시에 백업을 만드는 환경에서 방금 만든 백업이 "최근 8개" 목록 밖으로 밀려나 `/sodam-harness-undo`가 "없다"고 잘못 말하던 버그를 실사용 중 발견·수정. (백업 자체는 정상 생성돼 있었음 — 목록/검색 로직만의 문제, 데이터 손실 없음)
+- **되돌리기가 백업을 못 찾던 버그 수정**: 여러 프로젝트가 동시에 백업을 만드는 환경에서 방금 만든 백업이 "최근 8개" 목록 밖으로 밀려나 `/sodam-harness:undo`가 "없다"고 잘못 말하던 버그를 실사용 중 발견·수정. (백업 자체는 정상 생성돼 있었음 — 목록/검색 로직만의 문제, 데이터 손실 없음)
 - **Linux/Mac 백업 누락 수정**: `cp`/`mv`로 기존 파일을 덮어쓸 때 POSIX 절대경로를 잘못 인식해 백업이 빠지던 버그 수정(Windows는 원래 정상).
 - **자가검증 117개 전부 통과** (기존 114 + 신규 3, 회귀 0).
 
@@ -888,7 +888,7 @@ A. 아닙니다. 마법사는 **오직 "정말 할까요?" 확인 질문이 뜨�
 
 ### 2026-06-23 — v0.1.0 (Phase 1 + 2)
 - **Phase 1(MVP)**: 안전 가드레일(3등급 차단·자동 백업·되돌리기)·쉬운 한국어 말투·설치/자가진단 명령.
-- **Phase 2**: 활동 기록(`/sodam-harness-log`)·자가검증 스킬·Codex 보조 설정.
+- **Phase 2**: 활동 기록(`/sodam-harness:log`)·자가검증 스킬·Codex 보조 설정.
 - **정밀화**: 일반 `git push`·git 저장소 안 편집은 확인 생략(백업은 유지)·폴더 단위 화이트리스트(12시간)·백업 자동 보존(최근 100개+30일).
 
 </details>

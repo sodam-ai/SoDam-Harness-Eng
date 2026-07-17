@@ -5,6 +5,21 @@
 
 ---
 
+## [Unreleased] — 2026-07-17
+
+### 변경 — 명령어 표기를 `/sodam-harness-xxx` → `/sodam-harness:xxx`로 통일
+- **무엇**: `commands/` 안의 7개 명령 파일명·frontmatter `name:`을 `sodam-harness-install.md`(name: `sodam-harness-install`) 형태에서
+  `install.md`(name: `install`) 형태로 변경. Claude Code의 플러그인 네임스페이스 규칙(`/<plugin>:<command>`)에 따라
+  실제 호출 형태가 `/sodam-harness:sodam-harness-install`(중복 표기)에서 `/sodam-harness:install`로 짧아짐.
+  README/GUIDE(한/영, md+html)·BETA*·TESTING*·스킬 2종의 모든 명령 참조도 함께 갱신(255건). `git mv`로 파일 이력 보존.
+- **왜**: 사용자가 실제 라이브 세션에서 `/sodam-harness:sodam-harness-wizard`처럼 이름이 중복 표기되는 것을 확인하고,
+  `/sodam-harness:install`처럼 간결한 형태로 개선을 요청함.
+- **영향 없음(불변)**: 명령 내용·안전 로직(`guard.mjs` 등)은 전혀 변경하지 않음 — 순수 명명 규칙 변경. `hooks/_selftest.mjs` 140개 회귀 테스트 전부 재확인(영향 없음, PASS 유지).
+- **의도적으로 유지**: 이 CHANGELOG의 과거 항목(예: 2026-07-15 항목의 `/sodam-harness-wizard` 표기)은 당시 실제 명령 이름을 기록한 역사적 사실이라 고치지 않음. `codex/CODEX_SETUP.md`의 `/sodam-harness-codex`(이미 제거된 옛 명령 언급)도 과거 안내문이라 그대로 둠.
+- 관련: `commands/*.md`(7개 rename), `README.md`, `README.en.md`, `GUIDE.md`, `GUIDE.en.md` 및 각 `.html`, `BETA.md`, `BETA_CHECKLIST.md`, `TESTING.md`, `TESTING.en.md`, `skills/beginner-tone/SKILL.md`, `skills/sodam-harness-self-check/SKILL.md`
+
+---
+
 ## [Unreleased] — 2026-07-15
 
 ### 추가 — 맞춤 마법사(안전강도 마법사): `/sodam-harness-wizard`
