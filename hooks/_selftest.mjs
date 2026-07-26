@@ -801,6 +801,39 @@ let backupDir1 = null;
   check("안전바닥 불변: L3이어도 폴더 재귀삭제 → 여전히 deny", decFolder === "deny", JSON.stringify(decFolder));
 }
 
+// 43) [신규·cwd=홈 루트 오탐] git 서브커맨드 토큰(예: "git rm"의 "rm")이 존재하지 않는 경로 후보로
+//     잘못 취급돼, cwd가 홈 루트일 때 dirname 폴백이 홈 자체를 가리키는 바람에 민감위치 오탐 deny가
+//     나던 버그의 회귀 잠금(2026-07-26 실측 재현: 이 세션에서 자기 진단 명령이 실제로 이렇게 막혔음).
+{
+  const homeCwd = homedir();
+  const r = spawnSync(process.execPath, [GUARD], {
+    input: JSON.stringify({
+      tool_name: "Bash",
+      tool_input: { command: "git rm sodam-selftest-nonexistent-target.txt" },
+      cwd: homeCwd,
+    }),
+    encoding: "utf8",
+  });
+  let dec = null;
+  try { dec = JSON.parse((r.stdout || "").trim()).hookSpecificOutput.permissionDecision; } catch {}
+  check(
+    "cwd=홈 루트에서 git rm(대상 없음) → 민감위치 오탐 deny 아님(ask가 정상)",
+    dec !== "deny",
+    JSON.stringify(dec),
+  );
+  check("cwd=홈 루트에서도 진짜 민감 위치(시스템 폴더)는 여전히 deny", (() => {
+    const r2 = spawnSync(process.execPath, [GUARD], {
+      input: JSON.stringify({
+        tool_name: "Write",
+        tool_input: { file_path: WIN ? "C:\\Windows\\x.txt" : "/etc/x.txt", content: "x" },
+        cwd: homeCwd,
+      }),
+      encoding: "utf8",
+    });
+    try { return JSON.parse((r2.stdout || "").trim()).hookSpecificOutput.permissionDecision === "deny"; } catch { return false; }
+  })(), "");
+}
+
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)
 try { rmSync(bwork, { recursive: true, force: true }); } catch {}
 try { if (backupDir1) rmSync(backupDir1, { recursive: true, force: true }); } catch {}

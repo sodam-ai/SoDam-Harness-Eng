@@ -78,6 +78,10 @@ function commandPaths(cmd) {
     // git -C <경로> / -c <key=val> 의 '값'은 삭제 대상이 아니라 옵션 인자 → 경로 후보에서 제외(실측 2026-06-21)
     const prevTok = (toks[i - 1] || "").replace(/^["']+|["']+$/g, "");
     if (/^-[Cc]$/.test(prevTok)) continue;
+    // git 서브커맨드 이름(예: "git rm"의 "rm")은 경로가 아니라 명령어 문법의 일부 → 경로 후보에서 제외.
+    // 안 그러면 존재하지 않는 이 토큰이 cwd=홈 루트일 때 dirname 폴백(realOf)이 홈 자체를 가리켜
+    // 민감위치 오탐 deny가 난다(실측 2026-07-26 — 이 세션의 자기 진단 명령이 실제로 이렇게 막힘).
+    if (i === 1 && (toks[0] || "").toLowerCase() === "git") continue;
     // 경로에 셸 구분기호(;,&,|)·따옴표가 붙어오면 정리 (예: "x.txt"; → x.txt) — 백업 누락 방지(실측 2026-06-21)
     const t = toks[i].replace(/^["';|&]+|["';|&]+$/g, "");
     if (!t) continue;
@@ -225,13 +229,13 @@ function isSensitiveRaw(absInput) {
   if (!WIN && a === "/") return true;
   return false;
 }
-// 실제 경로 해석(없으면 부모 폴더 기준) — junction/심볼릭 링크 우회 차단용(E1)
+// 실제 경로 해석 — junction/심볼릭 링크 우회 차단용(E1). existsSync로 나뉜 두 갈래는
+// isSensitive()에서 각각 "존재함(직접 realpath)" / "존재 안 함(부모 폴더로 진짜 indirection이
+// 있는지만 확인)"으로 쓰인다 — 부모 폴더 자체가 문자 그대로 민감 위치인 경우(예: 홈 루트 바로
+// 아래 새 파일)까지 "정션 우회"로 오인하면 안 되기 때문(2026-07-26 실측 버그, 아래 isSensitive 참고).
 function realOf(p) {
   try {
     return realpathSync(p);
-  } catch {}
-  try {
-    return realpathSync(path.dirname(p)); // 새 파일이면 부모 폴더(junction일 수 있음)
   } catch {}
   return null;
 }
@@ -243,9 +247,23 @@ function isSensitive(absInput) {
     return true;
   }
   if (isSensitiveRaw(abs)) return true;
-  // junction/심볼릭 링크가 민감 위치를 가리키면 우회 차단(E1): 실제 경로로 풀어 다시 검사
-  const real = realOf(abs);
-  if (real && toComparable(real) !== toComparable(abs) && isSensitiveRaw(real)) return true;
+  if (existsSync(abs)) {
+    // 이미 있는 파일/폴더: 그 자신이 junction·심볼릭 링크로 민감 위치를 가리키면 우회 차단(E1)
+    const real = realOf(abs);
+    if (real && toComparable(real) !== toComparable(abs) && isSensitiveRaw(real)) return true;
+    return false;
+  }
+  // 새로 만들 파일(아직 없음): "부모 폴더"가 junction/심볼릭 링크로 민감 위치를 가리키는 경우만
+  // 잡는다(E1 진짜 목적). 부모가 링크 없이 "문자 그대로" 민감 위치인 경우는 위 isSensitiveRaw(abs)가
+  // 이미 판정했으므로(홈 루트 바로 아래 새 파일은 원래 허용) 여기서 realpath(부모) === 부모(문자 그대로)면
+  // 진짜 indirection이 없다는 뜻 — 그때는 추가로 막지 않는다(과잉차단 방지, 실측 재현: git rm 등
+  // "존재하지 않는 대상"이 cwd=홈 루트일 때 부모 폴백이 홈 자체를 가리켜 오탐 deny 나던 버그).
+  const dir = path.dirname(abs);
+  let realDir = null;
+  try {
+    realDir = realpathSync(dir);
+  } catch {}
+  if (realDir && toComparable(realDir) !== toComparable(dir) && isSensitiveRaw(realDir)) return true;
   return false;
 }
 function isSymlink(p) {

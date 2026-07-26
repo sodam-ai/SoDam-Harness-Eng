@@ -10,12 +10,17 @@
 ```
 .claude-plugin/plugin.json      플러그인 정보(name=sodam-harness, Apache-2.0)
 .claude-plugin/marketplace.json 마켓플레이스 등록 정보
-hooks/hooks.json                PreToolUse 훅 등록(matcher → guard.mjs)
+hooks/hooks.json                PreToolUse/PostToolUse 훅 등록(matcher → guard.mjs/activity.mjs)
 hooks/guard.mjs                 위험 판정 엔진(deny/ask/통과)
 hooks/backup.mjs                백업·복구 엔진(+ CLI: --list/--plan/--restore/--cleanup)
-hooks/_selftest.mjs             자가 테스트(.gitignore — 배포 제외)
+hooks/whitelist.mjs             폴더 화이트리스트(D1, /sodam-harness:trust)
+hooks/profile.mjs               맞춤 마법사 설정(L1/L2/L3, /sodam-harness:wizard)
+hooks/activity.mjs              활동 기록(P2-A, /sodam-harness:log)
+hooks/safety-rules.json         위험 패턴·민감경로 확장 데이터(기본은 코드 내장)
+hooks/_selftest.mjs             자가 테스트(저장소에 추적됨 — 2026-07-11 A2 이후 배포에서도 실행 가능)
 skills/beginner-tone/SKILL.md   쉬운 한국어 말투(Claude Code 자동 로드)
-commands/{install,status,fix,undo}.md  초보자용 슬래시 명령
+skills/sodam-harness-self-check/SKILL.md  자가검증 루프(P2-B)
+commands/{install,status,fix,undo,trust,log,wizard}.md  초보자용 슬래시 명령(/sodam-harness:xxx)
 AGENTS.md                       (선택) Codex·타도구용 말투 — Claude Code는 자동 로드 안 함
 ```
 
