@@ -365,6 +365,27 @@ E-1을 먼저 하는 이유: 지금 문서가 98을 서로 어긋나게(72 vs 98
 
 ---
 
+## U. 상태 갱신 — 2026-07-26 (T섹션의 "미확정" 종결 + PRIVATE 확정 이후 방치 문서 3곳 정합화 · 이 섹션이 최신)
+
+> T 이후 같은 세션. 두 가지를 마무리한다: ① T섹션이 "미확정"으로 남긴 훅 이중발동 여부를 공식 문서로 확정. ② `03_PHASES.md`·`BETA.md`·`BETA_CHECKLIST.md`가 N/O(2026-07-15 PRIVATE 확정) 이후에도 여전히 "외부 공개 준비" 전제로 방치돼 있던 것(R-3가 2026-07-18에 이미 지적, 8일 미조치)을 배너로 정합화.
+
+### 🔴 T섹션의 "미확정"이 확정으로 바뀜(공식 문서 직접 인용, Claude Code Hooks Reference)
+- **확인됨**: "All matching hooks run in parallel, and identical handlers are deduplicated automatically. Command hooks are deduplicated **by command string and args**." → 레거시 `~/.claude/settings.json`(`node "D:/...".../guard.mjs"`)과 설치된 플러그인의 `hooks/hooks.json`(`node "${CLAUDE_PLUGIN_ROOT}/hooks/guard.mjs"`, 캐시 경로로 치환됨)은 **명령 문자열이 서로 달라 중복제거 대상이 아니다** → **guard.mjs는 이 PC의 모든 Bash/Write/Edit 호출마다 실제로 두 번 실행된다(확인됨, 추정 아님)**.
+- **확인됨**: "When a plugin is enabled, its hooks merge with your user and project hooks." → 레거시 수동 등록과 플러그인 자동 등록은 서로 대체가 아니라 **병합(추가)** 관계.
+- **확인됨(문서 원문 그대로)**: "no explicit precedence rule is documented for when multiple hooks fire on the same event" — deny/ask/allow가 서로 다른 두 결과가 나올 때 **어느 쪽이 이기는지 공식적으로 정의돼 있지 않다.**
+- **재평가(정직한 정정)**: T섹션은 "이 세션은 라이브 재현으로 안전함이 확인됐다"고 적었다. 이번 확인으로 그 의미가 명확해진다 — **그건 "이중 실행이 이번엔 우연히 문제를 안 일으켰다"는 뜻이지, "이중 실행이 설계상 안전하다"는 뜻이 아니다.** 캐시(구버전)가 만약 이 특정 케이스에서 우연히 "ask"를 냈거나, Claude Code의 실제(미문서화) 병합 로직이 "더 관대한 쪽"을 택했을 가능성도 배제할 수 없다 — **두 가능성 다 검증 못 함(가능성으로만 남김)**.
+- **결론 — 캐시 갱신의 긴급도 상향(일관성 원칙: 새 데이터로 결론 변경)**: T섹션은 "급하지 않음(이 세션은 레거시 배선으로 보호됨)"이라 적었으나, **이중 실행·미정의 우선순위가 공식 문서로 확정된 지금은 그 낙관의 근거가 사라졌다.** sodam-harness 플러그인 재설치(캐시 갱신)를 **더 이상 "선택"이 아니라 "권장"으로 격상**한다. 단, 여전히 사용자 REPL(`/plugin`) 전용이라 AI 실행 불가는 불변.
+
+### 문서 정합화 — PRIVATE 확정(N/O) 이후 방치된 3곳에 배너 추가(내용 삭제 0)
+- `03_PHASES.md` 로드맵표: "외부 초보자 베타만 대기" → "PRIVATE 유지 중 외부 베타 불필요(CHECKPOINT N/O 확정)"로 정정.
+- `BETA.md`·`BETA_CHECKLIST.md`: 최상단에 "현재 PRIVATE 유지 중이라 이 문서는 당장 해당 없음, 공개 전환 재결정 시 재사용" 배너 추가(`12_CONFIG_FILE_DENY §6 후보 B` "정직한 안내" 패턴과 동일 — 삭제 아닌 안내).
+- **R-3(2026-07-18)가 최초 지적한 지 8일 만에 조치 완료.**
+
+**모순 확인 결과: 0건**(T섹션 "급하지 않음" 판단을 U섹션이 뒤집은 것은 흔들림이 아니라 위 "재평가" 항목에 명시한 **새 데이터(공식 문서 확인) 기반 정정** — 일관성 원칙 그대로 적용).
+**다음 세션 재개 순서**: (1) 미완료 사항 재확인 — push 승인(현재 ahead 3), A4(`.PRD` 추적해제), **sodam-harness 플러그인 재설치(격상된 권장)**. (2) 그 외엔 사용자가 새로 지정하는 작업.
+
+---
+
 ## M. 상태 갱신 — 2026-07-15 (Phase 3 착수 결정 · 이 섹션이 최신)
 
 > L 이후 진행. 사용자가 "외부 초보자 베타"의 검증 수준 판단을 명시적으로 확정.

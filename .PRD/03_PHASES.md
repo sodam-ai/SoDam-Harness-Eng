@@ -116,6 +116,6 @@ AI가 한 일을 초보자가 쉽게 보고 되돌릴 수 있게 하고, AI가 "
 
 | Phase | 핵심 기능 | 상태 |
 |-------|----------|------|
-| Phase 1 (MVP) | 안전 가드레일(차단·백업·되돌리기) + 말투(AGENTS.md) + 설치·자가진단 (Claude Code) | 코드·문서 완료(CHECKPOINT.md 참고) · 외부 초보자 베타만 대기 |
+| Phase 1 (MVP) | 안전 가드레일(차단·백업·되돌리기) + 말투(AGENTS.md) + 설치·자가진단 (Claude Code) | 코드·문서 완료(CHECKPOINT.md 참고) · **PRIVATE 유지 중 외부 베타 불필요**(CHECKPOINT N/O 확정, 2026-07-26 정정) |
 | Phase 2 | 활동 기록 + 자가검증 + Codex 지원(AGENTS.md + config.toml) | Phase 1 완료 후 |
 | Phase 3 | 맞춤 마법사 + 정식 공개 + 영어/다중 도구 | Phase 2 완료 후 |
