@@ -56,6 +56,8 @@ sodamharness/
 ## 절대 하지 마 (DO NOT)
 
 > AI에게 코드를 시킬 때 반드시 함께 공유.
+>
+> **2026-07-27 실사 메모**: 아래 `[ ]`는 "완료하면 체크하는 일회성 작업"이 아니라 **AI에게 매번 공유하는 상시 규칙**이라, 체크하면 "이제 안 지켜도 됨"으로 오독될 위험이 있어 **의도적으로 미체크 유지**한다. 대신 근거: `CHECKPOINT.md` §K 보안점검(2026-07-13)에서 `eval|exec|fetch|http` 실호출 0건·`auth.json` 등 자격증명 미접근·런타임 의존성 0·`Math.random()` 미사용(전부 `crypto.randomUUID()`)·환경변수 오버라이드 6곳 전부 경로만 대체(핵심 차단 배열 하드코딩)를 코드로 직접 확인 — 이 문서의 규칙들이 **현재 시점 기준 실제로 지켜지고 있음**을 뜻하되, "앞으로도 항상 지켜야 함"이라는 규칙 자체의 성격은 그대로 유지된다.
 
 **안전 동작**
 - [ ] 위험 차단을 **"말로만" 처리하지 마** — 반드시 PreToolUse hook `deny`/`ask`로 실제 막아라
@@ -190,6 +192,6 @@ node hooks/guard.mjs      # 위험 명령 입력 시 deny 반환?
 ---
 
 ## [NEEDS CLARIFICATION]
-- [ ] hooks.json 감시 범위(Bash/Write/Edit 등 어떤 도구 호출까지)
-- [ ] 위험 작업 세부 패턴 목록(첫 테스트에서 확정)
-- [ ] 대화형 안내 필요 시 라이브러리 사용 여부(가능하면 plugin commands만)
+- [x] hooks.json 감시 범위(Bash/Write/Edit 등 어떤 도구 호출까지) — **2026-07-27 확인**: `hooks/hooks.json` matcher = `"Bash|PowerShell|Write|Edit|MultiEdit|NotebookEdit"`(PreToolUse·PostToolUse 동일 범위).
+- [x] 위험 작업 세부 패턴 목록(첫 테스트에서 확정) — 01_PRD §13과 동일 근거.
+- [x] 대화형 안내 필요 시 라이브러리 사용 여부(가능하면 plugin commands만) — **결정: plugin commands만**. `package.json` devDependencies 없음(`CHECKPOINT.md` §K 확인) — 대화형 라이브러리 미도입, `commands/*.md`로만 안내.
