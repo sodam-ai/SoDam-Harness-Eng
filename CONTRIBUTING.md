@@ -23,7 +23,7 @@ SoDamHarness는 **완전 초보자를 위한 AI 안전벨트**입니다.
 아래를 모두 통과해야 PR을 올릴 수 있습니다:
 
 ```bash
-# 1. 전체 자동화 테스트 (Windows 기준 142 PASS · 0 FAIL 유지)
+# 1. 전체 자동화 테스트 (Windows 기준 144 PASS · 0 FAIL 유지)
 node hooks/_selftest.mjs
 
 # 2. 안전벨트 자가점검
@@ -34,7 +34,7 @@ npm audit --audit-level=high
 ```
 
 체크리스트:
-- [ ] `node hooks/_selftest.mjs` → 0 FAIL (Windows 기준 142 PASS, 기존 테스트 감소 없음)
+- [ ] `node hooks/_selftest.mjs` → 0 FAIL (Windows 기준 144 PASS, 기존 테스트 감소 없음)
 - [ ] `node hooks/guard.mjs --selfcheck` → 정상 ✅
 - [ ] `npm audit --audit-level=high` → 고위험 없음
 - [ ] 외부 의존성 추가 없음 (`package.json dependencies: {}` 유지)

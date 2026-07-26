@@ -5,6 +5,27 @@
 
 ---
 
+## [Unreleased] — 2026-07-27
+
+### 수정 — 셸 경로(Bash/PowerShell) 민감위치 deny 메시지를 Write/Edit 경로와 통일 (12 C1/후보B 완결)
+- **무엇**: `12_CONFIG_FILE_DENY_AND_SELF_PROTECTION.md`가 권장한 "정직한 안내"(막다른 벽 → 문) 메시지
+  개선이 `bfd534b`(2026-07-07)에서 Write/Edit 경로에만 적용되고, 셸(Bash/PowerShell) 경로는 최초
+  커밋(`c533afd`)의 옛 문구("시스템·홈 등 민감한 위치를 건드리는 위험한 작업이라 막았어요...")로
+  방치돼 있던 불일치를 발견·수정. 셸 경로 메시지를 "이 위치엔 시스템·안전장치 설정이 들어 있어 AI가
+  직접 건드리지 못해요. 꼭 필요하면 파일을 직접 열어 확인 후 처리하세요 — 안전장치는 그대로
+  유지돼요."로 교체 — **판정(deny) 로직은 무변화, 문구만.**
+- **왜**: 두 경로가 같은 종류의 차단인데 사용자에게 보이는 안내 수준이 달라, 셸로 시도하면 "왜
+  막혔는지·어떻게 하면 되는지" 안내 없이 막다른 벽처럼 느껴짐 — 12번 문서 §6 후보B의 취지(사용자
+  주권 보존, 안전은 그대로)를 셸 경로에도 동일하게 적용.
+- **Q1 확정(부가 조사)**: 12번 문서가 미검증으로 남겼던 "`!` 직접실행이 훅을 우회하는가"를 Claude
+  Code 공식 문서(`interactive-mode`)로 확인 — `!` 셸 모드는 "Doesn't require Claude to interpret or
+  approve the command", 즉 Claude의 도구 호출 자체를 안 타 `guard.mjs`가 실행되지 않는다. 우회가
+  아니라 애초에 이 도구의 감시 범위(AI 행동) 밖 — `01_PRD` 원 목적과 일치.
+- 검증: `_selftest.mjs`에 회귀 2건 추가(셸 경로 deny 판정 불변 + 메시지 스타일 통일 잠금) —
+  **144 PASS / 0 FAIL**(기존 142 + 신규 2, 회귀 0). `guard.mjs --selfcheck` 정상.
+- 관련: `hooks/guard.mjs`(셸 경로 deny 메시지), `hooks/_selftest.mjs`(44번 회귀),
+  `.PRD/12_CONFIG_FILE_DENY_AND_SELF_PROTECTION.md`(C1 완료 표기, Q1 확정 반영), `.PRD/CHECKPOINT.md`(V섹션)
+
 ## [Unreleased] — 2026-07-26
 
 ### 수정 — cwd=홈 루트에서 삭제류 명령이 "대상 없음"인데도 민감위치로 오탐 차단되던 버그

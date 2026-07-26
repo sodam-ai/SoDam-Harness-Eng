@@ -834,6 +834,19 @@ let backupDir1 = null;
   })(), "");
 }
 
+// 44) [신규·12 C1/후보B 완결] 셸 경로(Bash/PowerShell) 민감위치 deny 메시지도
+//     Write/Edit 경로(69번, bfd534b)와 동일하게 "직접 처리하는 법 + 안전장치 유지" 안내를 포함해야 함.
+//     기존엔 Write/Edit만 고쳐지고 셸 경로는 옛 "막다른 벽" 문구로 남아있던 불일치를 잠금(2026-07-27).
+{
+  const r = run("Bash", { command: `rm ${sysFile}` }, work);
+  check("셸 경로 민감위치 deny → 여전히 deny(판정 불변)", r.decision === "deny", JSON.stringify(r));
+  check(
+    "C1 완결: 셸 경로 deny 메시지도 실행가능 안내 포함(Write/Edit와 동일 스타일)",
+    r.decision === "deny" && r.reason.includes("직접") && r.reason.includes("유지"),
+    JSON.stringify(r),
+  );
+}
+
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)
 try { rmSync(bwork, { recursive: true, force: true }); } catch {}
 try { if (backupDir1) rmSync(backupDir1, { recursive: true, force: true }); } catch {}
