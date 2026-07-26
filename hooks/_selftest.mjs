@@ -897,6 +897,53 @@ if (WIN) {
   console.log("  SKIP  45) 활성 claude-code 설정파일 자기보호 (Windows 전용 경로만 구현·검증)");
 }
 
+// 46) [신규·2026-07-27 성능] cleanupBackups 자동 호출 스로틀링 — USERPROFILE을 임시 가짜
+//     홈으로 override해 완전 격리된 환경에서 검증(실제 사용자 백업 미접촉).
+{
+  const fakeHome46 = path.join(work, "fakehome46");
+  mkdirSync(path.join(fakeHome46, ".sodamharness", "backups"), { recursive: true });
+  const markerPath = path.join(fakeHome46, ".sodamharness", "backups", ".last_cleanup");
+  const target46 = path.join(fakeHome46, "target.txt");
+  writeFileSync(target46, "v1");
+
+  const runWrite = (content, extraEnv = {}) => {
+    const r = spawnSync(process.execPath, [GUARD], {
+      input: JSON.stringify({
+        tool_name: "Write",
+        tool_input: { file_path: target46, content },
+        cwd: fakeHome46,
+      }),
+      encoding: "utf8",
+      env: { ...process.env, USERPROFILE: fakeHome46, ...extraEnv },
+    });
+    let dec = null;
+    try { dec = JSON.parse((r.stdout || "").trim()).hookSpecificOutput.permissionDecision; } catch {}
+    return dec;
+  };
+
+  // (a) 마커 없음(최초) → fail-safe로 정리 실행 → 마커 생성됨
+  check("스로틀 46a: 첫 위험작업 → deny 아님(ask)", runWrite("v2") === "ask", "");
+  check("스로틀 46a: 첫 실행 후 마커 파일 생성됨(fail-safe 실행 확인)", existsSync(markerPath), "");
+  const t1 = existsSync(markerPath) ? readFileSync(markerPath, "utf8") : null;
+
+  // (b) 곧바로 두 번째 위험작업(같은 fakeHome, 기본 스로틀=1시간 이내) → 마커 갱신 안 됨(정리 스킵)
+  runWrite("v3");
+  const t2 = existsSync(markerPath) ? readFileSync(markerPath, "utf8") : null;
+  check("스로틀 46b: 스로틀 창 안에서는 두 번째 호출이 마커를 안 바꿈(정리 스킵)", t1 !== null && t1 === t2, JSON.stringify({ t1, t2 }));
+
+  // (c) SODAM_CLEANUP_THROTTLE_MS=0 → 매번 실행(기존 동작·탈출구) → 마커가 매번 갱신됨
+  runWrite("v4", { SODAM_CLEANUP_THROTTLE_MS: "0", SODAM_NOW_MS: String(Date.now() + 5000) });
+  const t3 = existsSync(markerPath) ? readFileSync(markerPath, "utf8") : null;
+  check("스로틀 46c: THROTTLE_MS=0이면 매번 실행(마커 갱신)", t3 !== null && t3 !== t2, JSON.stringify({ t2, t3 }));
+
+  // (d) 마커 파일 손상 → 크래시 없이 fail-safe로 정리 실행(그리고 정상 마커로 복구)
+  writeFileSync(markerPath, "이게아니야숫자아님", "utf8");
+  const decCorrupt = runWrite("v5");
+  const t4 = existsSync(markerPath) ? readFileSync(markerPath, "utf8") : null;
+  check("스로틀 46d: 마커 손상 → 크래시 없이 정상 판정(ask) 유지", decCorrupt === "ask", "");
+  check("스로틀 46d: 마커 손상 후 fail-safe 실행으로 정상 숫자 마커 복구됨", /^\d+$/.test(String(t4)), JSON.stringify(t4));
+}
+
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)
 try { rmSync(bwork, { recursive: true, force: true }); } catch {}
 try { if (backupDir1) rmSync(backupDir1, { recursive: true, force: true }); } catch {}

@@ -25,6 +25,38 @@ export function backupsRoot() {
   return path.join(baseDir(), "backups");
 }
 
+// 시각 의존 — 테스트는 SODAM_NOW_MS로 고정 가능(whitelist.mjs·profile.mjs와 동일 관례)
+function nowMs() {
+  const t = parseInt(process.env.SODAM_NOW_MS || "", 10);
+  return Number.isFinite(t) ? t : Date.now();
+}
+
+// [2026-07-27 성능] 백업이 20,000개+ 쌓인 실사용 환경에서 cleanupBackups()의 전체 폴더 스캔이
+// 위험 작업마다(매번) 돌아 ~1초 지연을 유발함(실측). 정리 로직(keepN·keepDays·회당 상한)은
+// 그대로 두고, "얼마나 자주 도는가"만 마커 파일로 스로틀링 — 백업 생성(안전 기능)은 무영향,
+// 정리(마찰) 빈도만 낮춘다(09 §2 2층 원칙: 안전바닥 무변화). 마커가 없거나 손상되면 fail-safe로
+// "지금 실행"(기존 동작과 동일) — 정리가 영구히 멈추는 실패 모드를 만들지 않는다.
+function lastCleanupMarkerPath() {
+  return path.join(backupsRoot(), ".last_cleanup");
+}
+function shouldRunCleanupNow() {
+  const raw = process.env.SODAM_CLEANUP_THROTTLE_MS;
+  const throttleMs = raw !== undefined && Number.isFinite(parseInt(raw, 10)) ? parseInt(raw, 10) : 60 * 60 * 1000; // 기본 1시간
+  if (throttleMs <= 0) return true; // 0 이하 = 매번 실행(테스트·명시적 강제용)
+  try {
+    const last = parseInt(readFileSync(lastCleanupMarkerPath(), "utf8"), 10);
+    if (!Number.isFinite(last)) return true; // 손상 → fail-safe: 실행
+    return nowMs() - last >= throttleMs;
+  } catch {
+    return true; // 마커 없음/읽기 실패(최초 실행 포함) → fail-safe: 실행
+  }
+}
+function markCleanupRan() {
+  try {
+    writeFileSync(lastCleanupMarkerPath(), String(nowMs()), "utf8");
+  } catch {}
+}
+
 // 폴더 이름용 시각 문자열 (예: 20260620-142233)
 export function timestamp() {
   const d = new Date();
@@ -110,9 +142,13 @@ export function backupPaths(paths, cwd, sessionId) {
       "utf8",
     );
     // [2026-07-03 U4] 백업 성공 직후 보수적 자동 정리 — 실패해도 백업 흐름에 영향 0(try/catch).
+    // [2026-07-27 성능] 매번이 아니라 스로틀 조건(shouldRunCleanupNow) 통과할 때만 실행.
     try {
-      const pol = readBackupPolicy();
-      cleanupBackups(pol.keepN, pol.keepDays, { maxRemove: 200 });
+      if (shouldRunCleanupNow()) {
+        const pol = readBackupPolicy();
+        cleanupBackups(pol.keepN, pol.keepDays, { maxRemove: 200 });
+        markCleanupRan();
+      }
     } catch {}
     return { ok: true, count, dir, skippedDirs, skippedSecrets };
   } catch (e) {
