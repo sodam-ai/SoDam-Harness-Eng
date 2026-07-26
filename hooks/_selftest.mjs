@@ -847,6 +847,56 @@ let backupDir1 = null;
   );
 }
 
+// 45) [신규·2026-07-27] 활성 claude-code 설정파일(enabledPlugins·permissions 보유, hooks는 없음 —
+//     ~/.claude/settings.json과는 다른 파일) 자기보호 인지 강화. deny 승격 아님 — ask 메시지에
+//     경고 문구만 추가되는지, 무관한 파일엔 안 붙는지(과잉확장 방지) 확인. 실제 사용자 홈은 건드리지
+//     않고 USERPROFILE을 임시 가짜 홈으로 override해서 완전히 격리된 환경에서 검증.
+if (WIN) {
+  const fakeHome = path.join(work, "fakehome45");
+  const cfgDir = path.join(fakeHome, "AppData", "Roaming", "claude-code");
+  mkdirSync(cfgDir, { recursive: true });
+  const cfgFile = path.join(cfgDir, "settings.json");
+  writeFileSync(cfgFile, JSON.stringify({ model: "x" }));
+  const otherFile = path.join(cfgDir, "other.json");
+  writeFileSync(otherFile, "{}");
+  const fakeEnv = { ...process.env, USERPROFILE: fakeHome };
+
+  const r1 = spawnSync(process.execPath, [GUARD], {
+    input: JSON.stringify({
+      tool_name: "Write",
+      tool_input: { file_path: cfgFile, content: JSON.stringify({ model: "y" }) },
+      cwd: fakeHome,
+    }),
+    encoding: "utf8",
+    env: fakeEnv,
+  });
+  let dec1 = null, reason1 = "";
+  try {
+    const o = JSON.parse((r1.stdout || "").trim()).hookSpecificOutput;
+    dec1 = o.permissionDecision;
+    reason1 = o.permissionDecisionReason || "";
+  } catch {}
+  check("활성 config 파일 편집 → deny 아님(ask, 안전바닥 무변화)", dec1 === "ask", JSON.stringify(dec1));
+  check("활성 config 파일 ask 메시지에 자기보호 경고 포함", reason1.includes("플러그인 켜짐"), reason1.slice(0, 60));
+
+  const r2 = spawnSync(process.execPath, [GUARD], {
+    input: JSON.stringify({
+      tool_name: "Write",
+      tool_input: { file_path: otherFile, content: "{}" },
+      cwd: fakeHome,
+    }),
+    encoding: "utf8",
+    env: fakeEnv,
+  });
+  let reason2 = "";
+  try {
+    reason2 = JSON.parse((r2.stdout || "").trim()).hookSpecificOutput.permissionDecisionReason || "";
+  } catch {}
+  check("같은 폴더의 무관한 파일은 경고 문구 없음(과잉확장 방지)", !reason2.includes("플러그인 켜짐"), reason2.slice(0, 60));
+} else {
+  console.log("  SKIP  45) 활성 claude-code 설정파일 자기보호 (Windows 전용 경로만 구현·검증)");
+}
+
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)
 try { rmSync(bwork, { recursive: true, force: true }); } catch {}
 try { if (backupDir1) rmSync(backupDir1, { recursive: true, force: true }); } catch {}

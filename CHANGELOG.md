@@ -5,6 +5,30 @@
 
 ---
 
+## [Unreleased] — 2026-07-27 (2)
+
+### 추가 — 활성 claude-code 설정파일 자기보호 인지 강화 (deny 아님, ask 메시지만)
+- **무엇**: `%APPDATA%\claude-code\settings.json`(Windows)을 편집/덮어쓸 때, 기존 일반 "백업했어요,
+  진행할까요?" 문구에 "이 파일엔 플러그인 켜짐/꺼짐·권한 자동승인 설정이 들어 있어요..." 경고를
+  추가. **판정은 여전히 ask — deny로 올리지 않음.**
+- **왜**: 이 파일을 직접 열어 키 구조를 확인한 결과, `~/.claude/settings.json`(이미 deny 보호,
+  `hooks` 보유)과 **다른 파일**임이 드러남 — 이 파일엔 `hooks`가 없고 대신 `enabledPlugins`(플러그인
+  끄기로 guard 자체 무력화 가능)·`permissions`(위험도구 자동허용 가능)가 있어 별도의 자기보호
+  위험이었다. 그런데 같은 파일에 `model`·`theme`·`tui` 등 무해 필드도 섞여 있어(12번 문서의 원래
+  사건과 동일 구조) deny로 올리면 똑같은 마찰이 재현된다 — 그래서 후보B와 같은 정신으로 메시지만
+  강화.
+- **바로잡은 것(중요)**: 이전 세션 기록이 이 파일을 "`~/.claude/settings.json`과 같은, hooks를 담은
+  실제 활성 파일"로 서술했었는데, 이번에 직접 JSON 키 구조를 확인해보니 **부정확했다** —
+  `~/.claude/settings.json`은 여전히 hooks를 담은 별도 파일로 존재하고 이미 보호돼 있다. 정정 근거는
+  `.PRD/CHECKPOINT.md` X섹션 참고.
+- **알려진 한계(고치지 않음, 문서화만)**: 맞춤 마법사 L3 autonomy·세션 폴더 화이트리스트(D1)가 걸린
+  상태면 이 ask 자체를 건너뛴다(기존 매커니즘, 이번 변경이 새로 만든 구멍 아님). 현재 기본값 L1이라
+  당장 비활성.
+- 검증: `_selftest.mjs`에 회귀 3건 추가(격리된 가짜 홈 디렉터리로 실제 사용자 파일 미접촉) —
+  **147 PASS / 0 FAIL**(기존 144 + 신규 3, 회귀 0). `guard.mjs --selfcheck` 정상.
+- 관련: `hooks/guard.mjs`(`isActiveClaudeCodeConfigFile`), `hooks/_selftest.mjs`(45번 회귀),
+  `.PRD/12_CONFIG_FILE_DENY_AND_SELF_PROTECTION.md`(Q2 완료 확인·신규 발견 기록), `.PRD/CHECKPOINT.md`(X섹션)
+
 ## [Unreleased] — 2026-07-27
 
 ### 수정 — 셸 경로(Bash/PowerShell) 민감위치 deny 메시지를 Write/Edit 경로와 통일 (12 C1/후보B 완결)

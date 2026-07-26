@@ -266,6 +266,21 @@ function isSensitive(absInput) {
   if (realDir && toComparable(realDir) !== toComparable(dir) && isSensitiveRaw(realDir)) return true;
   return false;
 }
+// [2026-07-27·12 C1 후속] Claude Code 앱 자신의 활성 설정파일(플러그인 켜짐/꺼짐·권한 자동승인이 들어있음).
+// ~/.claude/settings.json(hooks 보유, 이미 deny 보호)과는 다른 파일 — 여긴 hooks는 없지만
+// enabledPlugins(플러그인 끄기로 guard 자체 무력화 가능)·permissions(위험도구 자동허용 가능)가 있어
+// 자기보호 관점에서 여전히 민감. 단, model·theme·tui 등 무해 필드도 같은 파일에 섞여 있어(12번 문서와
+// 동일한 구조) deny로 올리면 §12 사례처럼 정상 요청까지 막는다 — 그래서 deny 승격이 아니라
+// ask 메시지에 인지 강화 문구만 추가한다(마찰 확대 없음, 안전바닥 무변화).
+// Windows 경로만 실측 확인(파일 존재 직접 확인, 2026-07-27). Mac/Linux는 Node/Electron 통상 관례
+// 추정(⚪ 미검증) — 틀려도 그냥 매칭 안 될 뿐 과잉차단 리스크 없음(fail-open 방향이라 안전).
+function isActiveClaudeCodeConfigFile(abs) {
+  let candidate;
+  if (WIN) candidate = path.join(homedir(), "AppData", "Roaming", "claude-code", "settings.json");
+  else if (MAC) candidate = path.join(homedir(), "Library", "Application Support", "claude-code", "settings.json");
+  else candidate = path.join(homedir(), ".config", "claude-code", "settings.json");
+  return toComparable(abs) === toComparable(candidate);
+}
 function isSymlink(p) {
   try {
     const abs = path.resolve(p);
@@ -760,9 +775,15 @@ function main() {
       return;
     }
     recordPending(sessionId, cwd, opClass);
+    // [2026-07-27·12 C1 후속] 자기보호 인지 강화: deny 승격 없이 이 문구만 추가.
+    // 알려진 한계(문서화만, 이번 변경 범위 밖) — 아래 두 경로는 이 문구를 건너뛴다(기존 동작, 신규 아님):
+    // ① 맞춤 마법사 L3(현재 기본 L1이라 비활성) ② 같은 폴더 화이트리스트 신뢰(D1). 필요 시 별도 결정 사항.
+    const selfProtectNote = overwrites.some((t) => isActiveClaudeCodeConfigFile(resolveLoose(cwd, t)))
+      ? " ⚠️ 이 파일엔 플러그인 켜짐/꺼짐·권한 자동승인 설정이 들어 있어요. 안전장치를 끄거나 위험한 자동승인을 켜는 내용이면 특히 조심하세요."
+      : "";
     decide(
       "ask",
-      `기존 파일을 바꾸기 전에 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 진행할까요? 잘못되면 "되돌려 줘"로 복구돼요. (이 폴더에서 이런 작업을 계속 할 거면 "이 폴더는 안 물어봐도 돼"라고 하면 이 폴더에서는 12시간 동안 안 물을게요. 대화를 새로 시작해도 유지돼요.)${BYPASS_WARN}`,
+      `기존 파일을 바꾸기 전에 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)}${selfProtectNote} 진행할까요? 잘못되면 "되돌려 줘"로 복구돼요. (이 폴더에서 이런 작업을 계속 할 거면 "이 폴더는 안 물어봐도 돼"라고 하면 이 폴더에서는 12시간 동안 안 물을게요. 대화를 새로 시작해도 유지돼요.)${BYPASS_WARN}`,
     );
     return;
   }
