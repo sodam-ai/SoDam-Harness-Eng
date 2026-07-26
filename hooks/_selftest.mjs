@@ -944,6 +944,28 @@ if (WIN) {
   check("스로틀 46d: 마커 손상 후 fail-safe 실행으로 정상 숫자 마커 복구됨", /^\d+$/.test(String(t4)), JSON.stringify(t4));
 }
 
+// 47) [신규·2026-07-27 실측 발견] 복합 명령(무관한 세그먼트가 실제 폴더를 언급 + 별도 세그먼트가
+//     파일 삭제)에서 그 무관한 폴더가 삭제 후보로 잘못 섞여 "폴더 통째 삭제"로 오탐 차단되던 버그.
+//     이 세션 자신의 진단용 Bash 명령이 실제로 이렇게 막힌 것을 계기로 발견·재현·수정(commandPaths를
+//     세그먼트 단위로 분리해, 그 세그먼트 자체가 위험 분류일 때만 경로 후보를 뽑도록 변경).
+{
+  const b47 = path.join(work, "b47.txt");
+  writeFileSync(b47, "x");
+  // (a) && 로 이어진 복합 명령 — ls는 무관한 세그먼트, 실제 삭제 대상은 파일 하나뿐 → ask가 정상(deny 아님)
+  const r47a = run("Bash", { command: `ls "${aDir}" && rm b47.txt` }, work);
+  check("47a: ls(실제폴더)+rm 복합명령 → 폴더삭제 오탐 아님(ask)", r47a.decision === "ask", JSON.stringify(r47a));
+  writeFileSync(b47, "x"); // 다음 케이스를 위해 복원(위 케이스가 실제 삭제는 안 했지만 방어적으로 재생성)
+  // (b) 개행으로 이어진 복합 명령(세미콜론과 동등하게 취급돼야 함)
+  const r47b = run("Bash", { command: `ls "${aDir}"\nrm b47.txt` }, work);
+  check("47b: 개행으로 이어진 복합명령도 동일하게 오탐 아님(ask)", r47b.decision === "ask", JSON.stringify(r47b));
+  // (c) 대조군 — 진짜로 그 폴더 자체가 삭제 대상이면 여전히 deny(안전바닥 불변, 과소차단 방지)
+  const r47c = run("Bash", { command: `rm folder1` }, work);
+  check("47c: 진짜 폴더 자체를 삭제 대상으로 하면 여전히 deny(안전바닥 불변)", r47c.decision === "deny", JSON.stringify(r47c));
+  // (d) 대조군 — 진짜 재귀 삭제(-r)는 기존 경로(isRecursiveDeletePattern)로 여전히 즉시 deny
+  const r47d = run("Bash", { command: `rm -rf folder1` }, work);
+  check("47d: 진짜 재귀삭제(-rf)는 여전히 즉시 deny(무관)", r47d.decision === "deny", JSON.stringify(r47d));
+}
+
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)
 try { rmSync(bwork, { recursive: true, force: true }); } catch {}
 try { if (backupDir1) rmSync(backupDir1, { recursive: true, force: true }); } catch {}

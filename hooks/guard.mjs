@@ -69,31 +69,44 @@ function bashTokens(cmd) {
 }
 
 // ── 셸 명령에서 경로 후보(백업/민감 검사용) ──
+// [2026-07-27 수정] 예전엔 명령 전체를 통짜로 토큰화해 모든 세그먼트의 인자를 다 후보로 삼았다 —
+// "ls 실제폴더 && rm 파일" 같은 복합 명령에서 무관한 세그먼트(ls)의 인자(실제 존재하는 폴더)까지
+// 삭제 후보에 섞여 들어가, 그 폴더가 backupPaths()에서 skippedDirs로 잡히고 isDeleteCommand와
+// 맞물려 "폴더 통째 삭제"로 오탐 차단되는 버그가 실측됨(이 세션 자신의 진단 명령이 이렇게 막힘,
+// 최소 재현으로 확인). 이제 세그먼트별로 나눠(splitSegments — E-2와 동일 quote-aware 분할 재사용)
+// 그 세그먼트 자체가 위험(risky/catastrophic) 분류일 때만 경로 후보를 뽑는다 — 순수 조회성
+// 세그먼트(ls·cat·pwd 등)는 후보에서 제외. 데이터싱크(echo 등) 세그먼트는 E-2와 동일하게
+// 인용부호 내용을 먼저 걷어내고 분류한다(따옴표 안 "rm -rf" 언급이 위험으로 오분류되지 않도록).
 const SHELL_OPS = new Set(["|", "||", "&&", ";", "&", ">", ">>", "<", "2>", "2>>"]);
 function commandPaths(cmd) {
   const out = [];
-  const toks = bashTokens(cmd);
-  for (let i = 0; i < toks.length; i++) {
-    if (i === 0) continue; // 명령어 자체 제외
-    // git -C <경로> / -c <key=val> 의 '값'은 삭제 대상이 아니라 옵션 인자 → 경로 후보에서 제외(실측 2026-06-21)
-    const prevTok = (toks[i - 1] || "").replace(/^["']+|["']+$/g, "");
-    if (/^-[Cc]$/.test(prevTok)) continue;
-    // git 서브커맨드 이름(예: "git rm"의 "rm")은 경로가 아니라 명령어 문법의 일부 → 경로 후보에서 제외.
-    // 안 그러면 존재하지 않는 이 토큰이 cwd=홈 루트일 때 dirname 폴백(realOf)이 홈 자체를 가리켜
-    // 민감위치 오탐 deny가 난다(실측 2026-07-26 — 이 세션의 자기 진단 명령이 실제로 이렇게 막힘).
-    if (i === 1 && (toks[0] || "").toLowerCase() === "git") continue;
-    // 경로에 셸 구분기호(;,&,|)·따옴표가 붙어오면 정리 (예: "x.txt"; → x.txt) — 백업 누락 방지(실측 2026-06-21)
-    const t = toks[i].replace(/^["';|&]+|["';|&]+$/g, "");
-    if (!t) continue;
-    if (t.startsWith("-")) continue; // 플래그 제외
-    if (t.startsWith("/")) {
-      // posix 절대경로는 경로, windows 플래그(/s 등)는 제외
-      if (!WIN) out.push(t);
-      else if (/[\\/].+/.test(t.slice(1))) out.push(t); // /foo/bar 형태만
-      continue;
+  for (const { text: seg } of splitSegments(cmd)) {
+    if (!seg.trim()) continue;
+    const segForClass = isDataSinkSegment(seg) ? stripQuotesSafe(seg) : seg;
+    if (classify(normalizeForClassify(segForClass)) === "safe") continue; // 이 세그먼트 자체는 위험이 아님 → 인자를 삭제후보로 안 삼음
+    const toks = bashTokens(seg);
+    for (let i = 0; i < toks.length; i++) {
+      if (i === 0) continue; // 이 세그먼트의 명령어 자체 제외
+      // git -C <경로> / -c <key=val> 의 '값'은 삭제 대상이 아니라 옵션 인자 → 경로 후보에서 제외(실측 2026-06-21)
+      const prevTok = (toks[i - 1] || "").replace(/^["']+|["']+$/g, "");
+      if (/^-[Cc]$/.test(prevTok)) continue;
+      // git 서브커맨드 이름(예: "git rm"의 "rm")은 경로가 아니라 명령어 문법의 일부 → 경로 후보에서 제외.
+      // 안 그러면 존재하지 않는 이 토큰이 cwd=홈 루트일 때 dirname 폴백(realOf)이 홈 자체를 가리켜
+      // 민감위치 오탐 deny가 난다(실측 2026-07-26 — 이 세션의 자기 진단 명령이 실제로 이렇게 막힘).
+      if (i === 1 && (toks[0] || "").toLowerCase() === "git") continue;
+      // 경로에 셸 구분기호(;,&,|)·따옴표가 붙어오면 정리 (예: "x.txt"; → x.txt) — 백업 누락 방지(실측 2026-06-21)
+      const t = toks[i].replace(/^["';|&]+|["';|&]+$/g, "");
+      if (!t) continue;
+      if (t.startsWith("-")) continue; // 플래그 제외
+      if (t.startsWith("/")) {
+        // posix 절대경로는 경로, windows 플래그(/s 등)는 제외
+        if (!WIN) out.push(t);
+        else if (/[\\/].+/.test(t.slice(1))) out.push(t); // /foo/bar 형태만
+        continue;
+      }
+      if (SHELL_OPS.has(t)) continue;
+      out.push(t);
     }
-    if (SHELL_OPS.has(t)) continue;
-    out.push(t);
   }
   return out;
 }
@@ -495,8 +508,10 @@ function isDataSinkSegment(seg) {
   }
   return false;
 }
-// 셸 세그먼트 분할(따옴표 밖의 ; && || | & 에서만 — quote-aware). 세퍼레이터는 보존해 재조합한다
+// 셸 세그먼트 분할(따옴표 밖의 ; && || | & 개행 에서만 — quote-aware). 세퍼레이터는 보존해 재조합한다
 // (없애면 `curl x | grep -d` 처럼 세퍼레이터가 경계인 패턴에서 새 오탐이 생김).
+// [2026-07-27] 개행(\n)도 ;과 동등한 문장 구분자로 추가 — 안 그러면 "ls 폴더\nrm 파일" 같은 여러 줄
+// 명령이 한 세그먼트로 뭉쳐져 commandPaths()의 세그먼트별 위험분류가 이 경우엔 못 걸러낸다(실측).
 function splitSegments(cmd) {
   const segs = [];
   let buf = "", quote = null;
@@ -506,7 +521,7 @@ function splitSegments(cmd) {
     if (ch === '"' || ch === "'") { quote = ch; buf += ch; continue; }
     const two = cmd.slice(i, i + 2);
     if (two === "&&" || two === "||") { segs.push({ text: buf, sep: two }); buf = ""; i++; continue; }
-    if (ch === ";" || ch === "|" || ch === "&") { segs.push({ text: buf, sep: ch }); buf = ""; continue; }
+    if (ch === ";" || ch === "|" || ch === "&" || ch === "\n") { segs.push({ text: buf, sep: ch }); buf = ""; continue; }
     buf += ch;
   }
   segs.push({ text: buf, sep: "" });
