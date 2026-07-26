@@ -463,6 +463,14 @@ const RISKY = [
   /\bunlink\b/i,
   /\bremove-item\b/i, // PowerShell
   /\b(ri|rd)\b\s/i, // PowerShell 별칭
+  // [2026-07-27 실측 발견] mv/move/Move-Item — cp와 달리 원본(source)이 그 자리에서 사라진다.
+  // 목적지가 폴더면 writeDestinations()가 "폴더 자체"만 대상으로 잡아 owExisting(파일 여부)에서
+  // 걸러지고, level이 risky가 아니면 commandPaths()도 원본을 후보에 안 넣어 원본이 백업 없이
+  // 통째로 통과되던 버그(D:\Test_Dev\test1 실사용 중 실제 발생). isDeleteCommand()에는 넣지 않아
+  // "폴더를 목적지로 언급"만으로 FOLDER_DENY 오차단은 나지 않는다(commandPaths·47번 회귀와 동일 원리).
+  /\bmv\b/i,
+  /\bmove\b/i,
+  /\bmove-item\b/i, // PowerShell
   // [2026-07-03 정밀화] 일반 git push는 로컬 데이터를 잃지 않음(원격에 더하기) → risky 아님.
   // 파괴적 변형만 잡는다: --force/-f(강제), --delete/-d·":refspec"(원격 브랜치 삭제), +refspec(강제 문법), --mirror/--prune.
   // 근거: .PRD/09_CONSTRAINT_RELAXATION.md §1 E1 · 11_PRECISION_TUNING_LOG.md

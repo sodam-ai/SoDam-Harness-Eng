@@ -966,6 +966,39 @@ if (WIN) {
   check("47d: 진짜 재귀삭제(-rf)는 여전히 즉시 deny(무관)", r47d.decision === "deny", JSON.stringify(r47d));
 }
 
+// 48) [신규·2026-07-27 실측 발견·심각] mv/move/Move-Item의 원본(source)이 삭제 후보·백업 대상 어디에도
+//     안 잡혀, 목적지가 폴더면 원본이 백업 없이 통째로 사라지던 버그(D:\Test_Dev\test1 실사용 중 발견 —
+//     guard가 mv를 risky로 분류하지 않아 level==="safe"가 되고, writeDestinations()가 잡은 대상은
+//     "폴더 자체"라 existsSync+isFile()에서 걸러져 owExisting도 비어, 결국 전체가 passThrough됨).
+{
+  const m48 = path.join(work, "m48.txt");
+  writeFileSync(m48, "원본내용");
+  const r48a = run("Bash", { command: `mv m48.txt "${aDir}"` }, work);
+  check("48a: mv 원본파일→실제폴더 → 더는 통과 아님(ask, 원본 보호)", r48a.decision === "ask", JSON.stringify(r48a));
+  check("48a-폴더오탐없음: 목적지가 폴더여도 FOLDER_DENY로 오차단 안 됨(mv는 삭제명령 아님)", r48a.decision !== "deny", JSON.stringify(r48a));
+  const scoped = listBackups(300, { pathPrefix: work });
+  const backedUp = scoped.find((b) => {
+    try {
+      const mf = JSON.parse(readFileSync(path.join(b.dir, "manifest.json"), "utf8"));
+      return mf.files.some((f) => path.resolve(f.source) === path.resolve(m48));
+    } catch { return false; }
+  });
+  check("48a-원본경로일치: m48.txt가 실제로 백업 매니페스트에 source로 기록됨", !!backedUp, JSON.stringify(scoped.map((b) => b.dir).slice(0, 5)));
+
+  // PowerShell Move-Item도 동일하게 보호돼야 함 — 위치인자 형태(Path/Destination 플래그 없음)라
+  // writeDestinations()의 -Destination 플래그 매칭을 안 타고 "마지막 경로=폴더" 분기를 그대로 탄다.
+  const m48b = path.join(work, "m48b.txt");
+  writeFileSync(m48b, "원본내용2");
+  const r48b = run("PowerShell", { command: `Move-Item m48b.txt "${aDir}"` }, work);
+  check("48b: PowerShell Move-Item(위치인자)도 ask(원본 보호)", r48b.decision === "ask", JSON.stringify(r48b));
+
+  // 대조군 — cp(복사)는 원본이 안 사라지므로 이번 수정 대상 아님(회귀 없음 확인)
+  const m48c = path.join(work, "m48c.txt");
+  writeFileSync(m48c, "복사용");
+  const r48c = run("Bash", { command: `cp m48c.txt "${aDir}"` }, work);
+  check("48c(대조군): cp는 원본이 안 사라지므로 기존 동작 그대로(통과, 회귀 아님)", r48c.decision === null, JSON.stringify(r48c));
+}
+
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)
 try { rmSync(bwork, { recursive: true, force: true }); } catch {}
 try { if (backupDir1) rmSync(backupDir1, { recursive: true, force: true }); } catch {}
