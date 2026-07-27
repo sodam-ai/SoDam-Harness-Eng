@@ -1,6 +1,6 @@
 # SoDamHarness — 개발자 문서 (DEVELOPMENT)
 
-> 이 문서는 **개발·기여·내부 동작**을 다룹니다. 사용자용 안내는 [README.md](./README.md)·[GUIDE.md](./GUIDE.md), 검증 방법은 [TESTING.md](./TESTING.md)를 보세요.
+> 이 문서는 **개발·기여·내부 동작**을 다룹니다. 사용자용 안내는 [README.md](./README.md), 검증 방법은 [TESTING.md](./TESTING.md)를 보세요.
 > 설계 근거·요구사항 전체는 비공개 설계 문서 `.PRD/`(01_PRD ~ 06_CORE_DRAFTS)에 있습니다.
 
 ---

@@ -5,6 +5,22 @@
 
 ---
 
+## [Unreleased] — 2026-07-27 (6) — README 종합 문서화 + GUIDE 문서 제거
+
+### 문서 — README.md/README.en.md를 단일 종합 문서로 재작성, GUIDE.md/GUIDE.en.md 제거
+- **무엇**: 그동안 README(요약)와 GUIDE(상세)로 나뉘어 있던 사용자 문서를, 설치·사전준비물·다운로드·
+  아키텍처·워크플로우·보안/데이터흐름·명령어·문제해결·FAQ·라이선스를 모두 담은 **README.md(한국어
+  기본)·README.en.md(영어) 단일 문서**로 통합했다. 같은 소스로 README.html/README.en.html도 재생성.
+  GUIDE.md·GUIDE.en.md·GUIDE.html·GUIDE.en.html은 내용이 README로 흡수되어 제거했다.
+- **반영**: mv/Move-Item 안전 수정((5)번 항목)을 위험 동작 표·워크플로우·업데이트 요약에 반영, 자가검증
+  개수를 최신치(162개)로 갱신, "현재 배포 상태(PRIVATE)" 사실 고지 신설.
+- **정리**: GUIDE.md를 가리키던 `AGENTS.md`·`DEVELOPMENT.md`의 링크를 README.md로 정정, `.gitignore`의
+  `!/GUIDE.html`·`!/GUIDE.en.html` 예외 규칙 제거.
+- 관련: `README.md`, `README.en.md`, `README.html`, `README.en.html`, `AGENTS.md`, `DEVELOPMENT.md`,
+  `.gitignore`
+
+---
+
 ## [Unreleased] — 2026-07-27 (5) — 심각: mv/move/Move-Item 원본이 백업 없이 사라지던 안전 바닥 결함
 
 ### 수정 — mv/move/Move-Item의 원본(source)이 삭제 후보·백업 대상 어디에도 안 잡히던 버그
