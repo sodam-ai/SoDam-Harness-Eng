@@ -111,9 +111,27 @@ function commandPaths(cmd) {
   return out;
 }
 
+// 목적지가 "이미 존재하는 폴더"면, cp/mv(및 Copy-Item/Move-Item)는 원본 파일명을 유지한 채 그 폴더
+// 안으로 넣는다 — 그 폴더 안에 원본과 같은 이름의 파일이 이미 있으면 그게 실제 덮어쓰기 대상(피해자)이다.
+// [2026-08-02 실측 발견] 기존 로직은 "폴더 자체"만 후보로 잡아 existsSync+isFile()에서 걸러지고, 그
+// 안의 진짜 피해자 파일은 후보에 아예 없어 백업·확인 어디에도 안 잡히고 조용히 사라졌다(mv도 예외
+// 아니었음 — RISKY 승격은 원본만 지켰을 뿐, 목적지 피해자는 여전히 무방비였다). source는 basename
+// 계산에만 쓰고 그 경로 자체를 후보에 넣지는 않는다(기존 "source는 읽기일 뿐" 원칙 유지).
+function collisionVictim(root, srcTok, destTok) {
+  if (!srcTok || !destTok) return null;
+  try {
+    const destAbs = resolveLoose(root, String(destTok).replace(/^["';|&]+|["';|&]+$/g, ""));
+    if (!existsSync(destAbs) || !statSync(destAbs).isDirectory()) return null;
+    const base = path.basename(String(srcTok).replace(/^["';|&]+|["';|&]+$/g, ""));
+    if (!base) return null;
+    return path.join(destAbs, base);
+  } catch {
+    return null;
+  }
+}
 // ── 셸 명령의 '쓰기/덮어쓰기/이동 대상' 경로 후보 (존재 여부 무관) ──
 // 06_CORE_DRAFTS 명세의 "덮어쓰기: > 리다이렉트 / cp·mv / Copy-Item·Move-Item / Out-File"를 구현.
-// 삭제(rm)와 달리 '대상'만 위험하다(원본 source는 읽기일 뿐) → source는 넣지 않는다.
+// 삭제(rm)와 달리 '대상'만 위험하다(원본 source는 읽기일 뿐) → source 경로 자체는 후보에 안 넣는다.
 // 한계(정직): 따옴표 없는 공백 포함 경로·python open(w)·node writeFileSync·tee 등은 못 잡음(§8.8).
 function writeDestinations(cmd, cwd) {
   const root = cwd || process.cwd();
@@ -123,22 +141,31 @@ function writeDestinations(cmd, cwd) {
   const reDir = /(?:^|[^>\d])1?>(?!>)\s*("[^"]+"|'[^']+'|[^\s;&|>]+)/g;
   let m;
   while ((m = reDir.exec(cmd))) cand.add(clean(m[1]));
-  // 2) cp / mv / copy / move : 마지막 비-플래그 인자 = 대상
+  // 2) cp / mv / copy / move : 첫 비-플래그 인자=원본(피해자 basename 계산용) / 마지막 비-플래그 인자=대상
   const toks = bashTokens(cmd);
   const c0 = (toks[0] || "").toLowerCase();
   if (/^(cp|mv|copy|move)$/.test(c0)) {
-    for (let i = toks.length - 1; i >= 1; i--) {
+    let srcTok = null, destTok = null;
+    for (let i = 1; i < toks.length; i++) {
       const t = toks[i];
       if (!t || t.startsWith("-") || SHELL_OPS.has(t)) continue;
       // posix 절대경로(/home·/Users..)는 덮어쓰기 대상, windows 단일 플래그(/s 등)만 제외 (commandPaths와 동일 규칙)
       if (t.startsWith("/") && WIN && !/[\\/].+/.test(t.slice(1))) continue;
-      cand.add(clean(t));
-      break;
+      if (srcTok === null) { srcTok = t; continue; } // 첫 비-플래그 토큰 = 원본
+      destTok = t; // 이후 토큰마다 갱신 → 결국 마지막 비-플래그 토큰(기존 동작과 100% 동일)
+    }
+    if (destTok) {
+      cand.add(clean(destTok));
+      const victim = collisionVictim(root, srcTok, destTok);
+      if (victim) cand.add(victim);
+    } else if (srcTok) {
+      cand.add(clean(srcTok)); // 인자가 하나뿐인 예외 케이스 — 기존 동작 보존
     }
   }
-  // 3) PowerShell Copy-Item / Move-Item / Out-File : -Destination/-FilePath/-Path 값, 없으면 마지막 경로
-  if (/\b(copy-item|move-item|out-file)\b/i.test(cmd)) {
-    const md = cmd.match(/-(?:Destination|FilePath|Path|LiteralPath)\s+("[^"]+"|'[^']+'|\S+)/i);
+  // 3) PowerShell Out-File : -FilePath/-LiteralPath/-Path 값(없으면 마지막 경로) = 그 자체가 목적지.
+  //    Out-File은 원본 개념이 없다(입력이 파이프라인) — 피해자 계산 대상 아님.
+  if (/\bout-file\b/i.test(cmd)) {
+    const md = cmd.match(/-(?:FilePath|LiteralPath|Path)\s+("[^"]+"|'[^']+'|\S+)/i);
     if (md) {
       cand.add(clean(md[1]));
     } else {
@@ -148,6 +175,34 @@ function writeDestinations(cmd, cwd) {
         cand.add(clean(t));
         break;
       }
+    }
+  }
+  // 4) PowerShell Copy-Item / Move-Item : -Destination=목적지, -Path/-LiteralPath=원본 을 각각 정확히
+  //    구분해서 찾는다. [2026-08-02 버그 발견·수정] 예전엔 4개 플래그를 한 정규식으로 뭉뚱그려 찾아서
+  //    "-Path X -Destination Y"처럼 -Path가 먼저 나오면 원본(X)을 목적지로 오인했다(실측 RED로 발견).
+  //    이름있는 플래그로 못 채운 쪽만 남은 위치인자로 보충(순서 무관, 이미 소비된 값 토큰은 제외).
+  if (/\b(copy-item|move-item)\b/i.test(cmd)) {
+    const destMatch = cmd.match(/-Destination\s+("[^"]+"|'[^']+'|\S+)/i);
+    const srcMatch = cmd.match(/-(?:Path|LiteralPath)\s+("[^"]+"|'[^']+'|\S+)/i);
+    let destTok = destMatch ? destMatch[1] : null;
+    let srcTok = srcMatch ? srcMatch[1] : null;
+    if (!destTok || !srcTok) {
+      const leftover = [];
+      for (let i = 1; i < toks.length; i++) {
+        const t = toks[i];
+        if (!t || t.startsWith("-") || SHELL_OPS.has(t)) continue;
+        const prev = toks[i - 1] || "";
+        if (/^-(Destination|Path|LiteralPath)$/i.test(prev)) continue; // 방금 이름있는 플래그가 소비한 값
+        leftover.push(t);
+      }
+      let li = 0;
+      if (!srcTok) srcTok = leftover[li++] || null;
+      if (!destTok) destTok = leftover[li++] || null;
+    }
+    if (destTok) {
+      cand.add(clean(destTok));
+      const victim = collisionVictim(root, srcTok, destTok);
+      if (victim) cand.add(victim);
     }
   }
   return Array.from(cand)
@@ -471,6 +526,15 @@ const RISKY = [
   /\bmv\b/i,
   /\bmove\b/i,
   /\bmove-item\b/i, // PowerShell
+  // [2026-08-02 실측 발견] ren/rename/Rename-Item — mv와 동일하게 원본이 그 자리에서 사라진다.
+  // mv와 달리 writeDestinations() 수정은 불필요: level이 risky가 되면 commandPaths()가 이 세그먼트의
+  // 위치 인자(원본명+새이름)를 전부 백업 후보로 잡아 원본(존재하는 쪽)이 자동으로 backupPaths()에 들어간다
+  // (backup.mjs가 존재하지 않는 새 이름은 조용히 걸러냄 — existsSync 필터, 에러 아님).
+  // isDeleteCommand()(DELETE_SIGNAL, 폴더 통째삭제 deny 게이트)에는 넣지 않음 — mv와 동일 이유,
+  // "이름변경 대상이 폴더"만으로 FOLDER_DENY 오차단이 나지 않게 하기 위함.
+  /\bren\b/i, // cmd.exe(및 PowerShell 별칭)
+  /\brename\b/i, // cmd.exe 동의어 / Linux rename 유틸
+  /\brename-item\b/i, // PowerShell 네이티브 cmdlet
   // [2026-07-03 정밀화] 일반 git push는 로컬 데이터를 잃지 않음(원격에 더하기) → risky 아님.
   // 파괴적 변형만 잡는다: --force/-f(강제), --delete/-d·":refspec"(원격 브랜치 삭제), +refspec(강제 문법), --mirror/--prune.
   // 근거: .PRD/09_CONSTRAINT_RELAXATION.md §1 E1 · 11_PRECISION_TUNING_LOG.md

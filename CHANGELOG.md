@@ -5,6 +5,66 @@
 
 ---
 
+## [Unreleased] — 2026-08-02 (8) — 심각: cp/mv/Copy-Item/Move-Item이 목적지의 동명 기존 파일을 백업 없이 덮어쓰던 결함
+
+### 수정 — 목적지 폴더 안 동명 기존 파일(피해자)이 백업·확인 어디에도 안 잡히던 버그
+- **무엇**: `cp 파일 폴더`·`mv 파일 폴더`(및 PowerShell `Copy-Item`·`Move-Item`)가 **이미 존재하는 폴더**로
+  향하고, 그 폴더 안에 **원본과 같은 이름의 파일이 이미 있으면**, 그 기존 파일(피해자)이 **백업 없이
+  조용히 덮어써지던** 버그. `mv`는 (5)번에서 원본은 이미 보호했지만, **목적지의 피해자는 그때도 여전히
+  무방비**였다 — 서로 다른 대상(원본 vs 목적지 피해자)이라 (5)번 수정이 커버하지 못했다.
+- **어떻게 발견**: (7)번 ren 수정을 제안하며 "cp는 원본이 안 사라지므로 심각도가 낮다"고 적었던 판단을
+  다시 깊게 검토하는 과정에서, "원본은 안 사라져도 목적지의 기존 파일은 사라질 수 있다"는 점을 재인식.
+  격리된 임시 폴더에서 `guard.mjs`를 직접 호출해 재현 — cp/mv/Copy-Item/Move-Item **4종 전부**에서
+  목적지의 동명 기존 파일이 백업 매니페스트에 전혀 안 잡힘을 확인(cp/Copy-Item은 확인창조차 없이 완전
+  통과, mv/Move-Item은 확인창은 떴으나 원본만 백업되고 피해자는 누락).
+- **근본 원인(코드 직접 추적, 확인됨)**: `writeDestinations()`가 목적지로 "폴더 자체"만 후보로 잡는데,
+  `owExisting` 필터가 `existsSync && isFile()`만 통과시켜 폴더는 걸러진다. 그 폴더 **안**의 실제 덮어쓰기
+  대상(원본과 동일한 파일명)은 애초에 후보 목록에 들어간 적이 없었다 — "폴더로 향하는 cp/mv"라는 대상
+  자체가 부정확하게 모델링돼 있었다.
+- **수정**: 목적지가 실제 존재하는 폴더면 `path.join(목적지폴더, basename(원본))`을 추가 후보로 계산하는
+  `collisionVictim()` 신설, `writeDestinations()`의 cp/mv/copy/move 분기와 PowerShell Copy-Item/Move-Item
+  분기에 적용. Out-File은 원본 개념이 없어(파이프라인 입력) 대상 아님.
+- **TDD 과정에서 발견한 2차 결함(같은 세션에 즉시 수정)**: PowerShell 분기 구현 중 `Copy-Item -Path X
+  -Destination Y` 순서로 회귀 테스트가 실패(RED) — 원인을 추적한 결과, 기존 코드가 `-Destination`·
+  `-FilePath`·`-Path`·`-LiteralPath` 4개 플래그를 **하나의 정규식으로 뭉뚱그려** 문자열에서 먼저 나오는
+  것을 목적지로 취급하고 있어, `-Path`가 `-Destination`보다 앞에 오면 **원본을 목적지로 오인**하는
+  사전부터 있던 결함이 드러났다. `-Destination`(목적지)과 `-Path`/`-LiteralPath`(원본)를 별도 정규식으로
+  정확히 구분하고, 부족한 쪽만 남은 위치인자로 보충하도록 재작성(순서 무관하게 정확).
+- **검증**: `_selftest.mjs`에 회귀 테스트 6건 신설(50a~f — mv·cp·Move-Item·Copy-Item 각각 피해자 백업
+  확인, 동명 파일 없을 때 과잉차단 없는 대조군, Out-File 무관 대조군) → **178 PASS / 0 FAIL**(기존 168 +
+  신규 6, 회귀 0). 기존 mv/ren 보호((5)(7)번)와 완전히 공존 확인. `guard.mjs --selfcheck` 정상.
+- 관련: `hooks/guard.mjs`, `hooks/_selftest.mjs`, `.PRD/CHECKPOINT.md`(AE섹션 갱신)
+
+---
+
+## [Unreleased] — 2026-08-02 (7) — 심각: ren/rename/Rename-Item 원본이 백업 없이 사라지던 안전 바닥 결함
+
+### 수정 — ren/rename/Rename-Item의 원본(source)이 백업·확인 어디에도 안 잡히던 버그
+- **무엇**: `ren 파일 새이름`(cmd.exe) · `Rename-Item -Path 파일 -NewName 새이름`(PowerShell) ·
+  `rename 파일 새이름`(동의어 유틸)이 **백업도, 확인(ask)도 없이 통째로 통과(passThrough)** 되던 버그.
+  `mv`는 (5)번에서 이미 고쳤는데, 이름변경 계열은 같은 유형의 무방비 경로로 남아 있었다.
+- **어떻게 발견**: (5)번 mv 수정 이후 남은 안전 구멍을 점검하는 과정에서, 격리된 임시 폴더 안
+  `guard.mjs`를 직접 서브프로세스로 호출해 재현 — `ren`·`Rename-Item`·`rename` 3종 전부 판정 없이
+  통과됨을 확인(대조군 `mv`·`cp`는 정상적으로 ask+백업).
+- **근본 원인(코드 직접 추적, 확인됨)**: `RISKY` 배열에 이름변경 계열 패턴이 없어 `classify()`가
+  `"safe"`를 반환 → `level==="safe"`라 `commandPaths()`가 호출되지 않아 원본이 삭제 후보에도 안
+  들어갔다((5)번 mv 버그와 동일한 회로).
+- **수정**: `RISKY`에 `/\bren\b/i`·`/\brename\b/i`·`/\brename-item\b/i` 3개 추가. `writeDestinations()`
+  수정은 **불필요** — `level`이 risky가 되면 `commandPaths()`가 위험 세그먼트의 위치 인자(원본명+새이름)를
+  전부 후보로 잡아, 존재하는 쪽(원본)이 자동으로 `backupPaths()`에 들어간다(존재 안 하는 새 이름은
+  `existsSync` 필터로 조용히 걸러짐, 에러 아님). `isDeleteCommand()`(폴더-차단 게이트용 DELETE_SIGNAL)에는
+  **의도적으로 추가하지 않음** — mv와 동일 이유로, "폴더를 이름변경 대상으로 언급"만으로 FOLDER_DENY
+  오차단이 나지 않게 하기 위함.
+- **검증**: `_selftest.mjs`에 회귀 테스트 6건 신설(49a~e — cmd ren·PowerShell Rename-Item·rename 유틸
+  3종 각각 ask+원본 백업 확인, 폴더 대상 언급 시 FOLDER_DENY 오차단 없음 확인, 진짜 재귀삭제는 무관하게
+  여전히 deny인 대조군) → **168 PASS / 0 FAIL**(기존 162 + 신규 6, 회귀 0). `guard.mjs --selfcheck` 정상.
+- **범위 밖(알려진 한계, 이번엔 손대지 않음)**: `cp`/`Copy-Item`이 목적지 폴더 안 동명 기존 파일을
+  덮어쓸 때 백업이 누락되는 갭은 (5)번부터 이미 문서화된 별개 항목(원본은 안 사라지므로 심각도 낮음) —
+  이번 수정과 분리, 별도 착수 예정.
+- 관련: `hooks/guard.mjs`, `hooks/_selftest.mjs`, `.PRD/CHECKPOINT.md`(AE섹션)
+
+---
+
 ## [Unreleased] — 2026-07-27 (6) — README 종합 문서화 + GUIDE 문서 제거
 
 ### 문서 — README.md/README.en.md를 단일 종합 문서로 재작성, GUIDE.md/GUIDE.en.md 제거

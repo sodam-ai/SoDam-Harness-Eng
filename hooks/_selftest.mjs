@@ -999,6 +999,109 @@ if (WIN) {
   check("48c(대조군): cp는 원본이 안 사라지므로 기존 동작 그대로(통과, 회귀 아님)", r48c.decision === null, JSON.stringify(r48c));
 }
 
+// 49) [신규·2026-08-02 실측 발견] ren/rename/Rename-Item — mv와 동일한 원본-소실 패턴(48과 같은 원리).
+//     원본이 그 자리에서 사라지는데 RISKY 미포함이라 level==="safe"가 되어 백업·확인 없이 통과되던 버그.
+{
+  const n49a = path.join(work, "n49a.txt");
+  writeFileSync(n49a, "이름변경대상A");
+  const r49a = run("Bash", { command: `ren n49a.txt n49a-renamed.txt` }, work);
+  check("49a: cmd ren → 더는 통과 아님(ask, 원본 보호)", r49a.decision === "ask", JSON.stringify(r49a));
+  const scoped49a = listBackups(300, { pathPrefix: work });
+  const backedUp49a = scoped49a.find((b) => {
+    try {
+      const mf = JSON.parse(readFileSync(path.join(b.dir, "manifest.json"), "utf8"));
+      return mf.files.some((f) => path.resolve(f.source) === path.resolve(n49a));
+    } catch { return false; }
+  });
+  check("49a-원본경로일치: n49a.txt가 실제로 백업 매니페스트에 source로 기록됨", !!backedUp49a, JSON.stringify(scoped49a.map((b) => b.dir).slice(0, 5)));
+
+  const n49b = path.join(work, "n49b.txt");
+  writeFileSync(n49b, "이름변경대상B");
+  const r49b = run("PowerShell", { command: `Rename-Item -Path n49b.txt -NewName n49b-renamed.txt` }, work);
+  check("49b: PowerShell Rename-Item도 ask(원본 보호)", r49b.decision === "ask", JSON.stringify(r49b));
+
+  const n49c = path.join(work, "n49c.txt");
+  writeFileSync(n49c, "이름변경대상C");
+  const r49c = run("Bash", { command: `rename n49c.txt n49c-renamed.txt` }, work);
+  check("49c: rename 유틸(동의어)도 ask(원본 보호)", r49c.decision === "ask", JSON.stringify(r49c));
+
+  // 폴더오탐없음 — mv(48a)와 동일 원리: ren/rename은 DELETE_SIGNAL에 없어 FOLDER_DENY 오차단 안 남
+  const r49d = run("Bash", { command: `ren folder1 folder1-renamed` }, work);
+  check("49d-폴더오탐없음: 폴더를 이름변경 대상으로 언급해도 FOLDER_DENY로 오차단 안 됨(rename은 삭제명령 아님)", r49d.decision !== "deny", JSON.stringify(r49d));
+
+  // 대조군 — 진짜 폴더 재귀삭제는 이 변경과 무관하게 여전히 즉시 deny(안전바닥 불변)
+  const r49e = run("Bash", { command: `rm -rf folder1` }, work);
+  check("49e(대조군): 진짜 재귀삭제(-rf)는 이 변경과 무관하게 여전히 즉시 deny", r49e.decision === "deny", JSON.stringify(r49e));
+}
+
+// 50) [신규·2026-08-02 실측 발견] cp/mv/Copy-Item/Move-Item이 "이미 존재하는 폴더"로 향할 때,
+//     그 폴더 안의 동명 기존 파일(피해자)이 백업·확인 어디에도 안 잡히고 조용히 사라지던 버그.
+//     mv도 예외 아니었음 — RISKY 승격(48번)은 원본만 지켰을 뿐 목적지 피해자는 여전히 무방비였다.
+{
+  const collideDir = path.join(work, "collideDir");
+  mkdirSync(collideDir, { recursive: true });
+
+  function victimBackedUp(victimPath) {
+    const scoped = listBackups(300, { pathPrefix: work });
+    return scoped.some((b) => {
+      try {
+        const mf = JSON.parse(readFileSync(path.join(b.dir, "manifest.json"), "utf8"));
+        return mf.files.some((f) => path.resolve(f.source) === path.resolve(victimPath));
+      } catch { return false; }
+    });
+  }
+
+  // (a) mv — 원본은 이미 48번에서 보호됨, 이번엔 목적지 피해자도 함께 보호되는지 확인
+  const src50a = path.join(work, "collide50a.txt");
+  writeFileSync(src50a, "원본A");
+  const victim50a = path.join(collideDir, "collide50a.txt");
+  writeFileSync(victim50a, "피해자A-원래내용");
+  const r50a = run("Bash", { command: `mv collide50a.txt collideDir` }, work);
+  check("50a: mv, 목적지에 동명 피해자 있어도 여전히 ask(회귀 없음)", r50a.decision === "ask", JSON.stringify(r50a));
+  check("50a-피해자보호: 목적지 동명 파일(피해자)이 실제로 백업됨(신규 보호)", victimBackedUp(victim50a), "피해자 백업 누락");
+
+  // (b) cp — 이전엔 완전 통과(passThrough)였는데, 이제 ask+백업으로 전환돼야 함(work는 git 저장소 아님)
+  const src50b = path.join(work, "collide50b.txt");
+  writeFileSync(src50b, "원본B");
+  const victim50b = path.join(collideDir, "collide50b.txt");
+  writeFileSync(victim50b, "피해자B-원래내용");
+  const r50b = run("Bash", { command: `cp collide50b.txt collideDir` }, work);
+  check("50b: cp, 더는 무방비 통과 아님(ask로 전환)", r50b.decision === "ask", JSON.stringify(r50b));
+  check("50b-피해자보호: cp 목적지 동명 파일(피해자)이 실제로 백업됨(신규 보호)", victimBackedUp(victim50b), "피해자 백업 누락");
+
+  // (c) PowerShell Move-Item — 위치인자 형태
+  const src50c = path.join(work, "collide50c.txt");
+  writeFileSync(src50c, "원본C");
+  const victim50c = path.join(collideDir, "collide50c.txt");
+  writeFileSync(victim50c, "피해자C-원래내용");
+  const r50c = run("PowerShell", { command: `Move-Item collide50c.txt collideDir` }, work);
+  check("50c: PowerShell Move-Item도 여전히 ask(회귀 없음)", r50c.decision === "ask", JSON.stringify(r50c));
+  check("50c-피해자보호: PowerShell Move-Item 피해자도 백업됨(신규 보호)", victimBackedUp(victim50c), "피해자 백업 누락");
+
+  // (d) PowerShell Copy-Item — -Destination 플래그 형태
+  const src50d = path.join(work, "collide50d.txt");
+  writeFileSync(src50d, "원본D");
+  const victim50d = path.join(collideDir, "collide50d.txt");
+  writeFileSync(victim50d, "피해자D-원래내용");
+  const r50d = run("PowerShell", { command: `Copy-Item -Path collide50d.txt -Destination collideDir` }, work);
+  check("50d: PowerShell Copy-Item(-Destination)도 ask로 전환", r50d.decision === "ask", JSON.stringify(r50d));
+  check("50d-피해자보호: PowerShell Copy-Item 피해자도 백업됨(신규 보호)", victimBackedUp(victim50d), "피해자 백업 누락");
+
+  // (e) 대조군 — 목적지 폴더 안에 동명 파일이 "없으면"(진짜 새 파일) 과잉차단 없이 기존 동작 유지
+  const src50e = path.join(work, "collide50e.txt");
+  writeFileSync(src50e, "원본E-충돌없음");
+  const r50e = run("Bash", { command: `cp collide50e.txt collideDir` }, work);
+  check("50e(대조군): 목적지에 동명 파일 없으면 cp는 기존처럼 무해 통과(과잉차단 없음)", r50e.decision === null, JSON.stringify(r50e));
+
+  // (f) 대조군 — Out-File은 원본 개념이 없어 이번 수정 대상 아님(회귀 없음, 기존 동작 그대로)
+  const outDir = path.join(work, "outDir");
+  mkdirSync(outDir, { recursive: true });
+  const outVictim = path.join(outDir, "out50f.txt");
+  writeFileSync(outVictim, "OutFile 목적지 기존내용");
+  const r50f = run("PowerShell", { command: `"hello" | Out-File -FilePath "${outVictim}"` }, work);
+  check("50f(대조군): Out-File은 원본 개념이 없어 이번 변경과 무관 — 기존 동작(ask, 직접 대상 지정) 그대로", r50f.decision === "ask", JSON.stringify(r50f));
+}
+
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)
 try { rmSync(bwork, { recursive: true, force: true }); } catch {}
 try { if (backupDir1) rmSync(backupDir1, { recursive: true, force: true }); } catch {}
