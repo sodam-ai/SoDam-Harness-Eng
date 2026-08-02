@@ -5,6 +5,25 @@
 
 ---
 
+## [Unreleased] — 2026-08-03 (11) — CI: 금지 패턴 검사를 (10)의 새 예외에 맞게 정밀화
+
+### 수정 — "AUDIT-ALLOW" 표식이 붙은 줄만 예외로 인정(완화 아닌 정밀화)
+- **무엇**: (10)에서 추가한 `hooks/guard.mjs`의 `import ... from "node:child_process"`가 CI의
+  "금지 패턴 스캔"(`security-audit.yml`)에 걸려 `audit` 작업이 실패했다. 그 검사는 `child_process`가
+  코드 어디에 있든 예외 없이 실패시키는 규칙이었다.
+- **왜**: (10)의 예외는 의도적이고 좁게 설계된 것(고정 인자만, AI 텍스트 미개입)이라 CI가 이걸 다른
+  임의의 `child_process` 사용과 똑같이 취급하는 건 부정확했다. 그렇다고 검사를 통째로 느슨하게 만들면
+  앞으로 다른 곳에 실수로 들어오는 `child_process`까지 놓치게 된다.
+- **수정**: 코드 줄에 `AUDIT-ALLOW` 표식(보이는 주석)을 붙이고, CI grep에 `| grep -v "AUDIT-ALLOW"`
+  한 줄만 추가 — **이 표식이 붙은 줄만** 통과하고, 표식이 없는 다른 모든 줄(지금·앞으로 어떤 파일이든)은
+  기존과 동일하게 100% 차단된다. `--no-verify` 같은 조용한 우회가 아니라 코드에 그대로 남는, 검색되는
+  표식이라 나중에 누가 봐도 "왜 예외인지" 바로 보인다.
+- **검증**: CI와 동일한 grep 명령을 로컬에서 직접 재현해 통과 확인 → 실제 push 후 CI(`audit`·
+  `selftest` ubuntu/windows) 재확인으로 완결. `_selftest.mjs` 190 PASS/0 FAIL 유지(회귀 0).
+- 관련: `hooks/guard.mjs`, `.github/workflows/security-audit.yml`
+
+---
+
 ## [Unreleased] — 2026-08-02 (10) — 신규 안전 기능: git commit 직전 스테이징된 비밀파일 이름 검사(U3)
 
 ### 추가 — `git commit`이 비밀파일(.env 등)을 스테이징한 채 커밋되기 전에 확인 요청

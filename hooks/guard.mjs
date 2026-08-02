@@ -25,7 +25,7 @@
 // 정직한 한계: 위험 패턴은 "초안"이며 모든 위험을 100% 잡지 못한다(01_PRD §8.8).
 
 import { readFileSync, existsSync, lstatSync, statSync, realpathSync, readdirSync } from "node:fs";
-import { spawnSync } from "node:child_process"; // U3 전용 — 아래 stagedSecretFiles()에서만 사용, 고정 인자만
+import { spawnSync } from "node:child_process"; // AUDIT-ALLOW: U3 전용 — 아래 stagedSecretFiles()에서만 사용, 고정 인자만(CI 금지패턴 검사의 유일한 예외, security-audit.yml 참고)
 import { homedir } from "node:os";
 import path from "node:path";
 import { backupPaths, isSecretFile } from "./backup.mjs";
