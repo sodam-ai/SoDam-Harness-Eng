@@ -914,7 +914,11 @@ if (WIN) {
         cwd: fakeHome46,
       }),
       encoding: "utf8",
-      env: { ...process.env, USERPROFILE: fakeHome46, ...extraEnv },
+      // HOME(POSIX)·USERPROFILE(Windows) 둘 다 지정 — os.homedir()가 플랫폼별로 다른 변수를 읽어서
+      // 하나만 오버라이드하면 다른 플랫폼에서 격리가 안 먹힌다(2026-08-02 ubuntu CI 실측 발견:
+      // USERPROFILE만 override해 Windows에선 우연히 통과했으나 Linux에선 실제 홈 디렉터리를 계속
+      // 사용해 markerPath를 영영 못 찾는 테스트 자체의 결함이었음 — guard.mjs/backup.mjs는 무결함).
+      env: { ...process.env, HOME: fakeHome46, USERPROFILE: fakeHome46, ...extraEnv },
     });
     let dec = null;
     try { dec = JSON.parse((r.stdout || "").trim()).hookSpecificOutput.permissionDecision; } catch {}

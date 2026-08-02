@@ -5,6 +5,28 @@
 
 ---
 
+## [Unreleased] — 2026-08-02 (9) — CI: ubuntu selftest가 6일째 실패 중이던 것 발견·수정(테스트 전용 결함)
+
+### 수정 — 46번(백업정리 스로틀) 테스트가 Linux에서 격리 안 되던 버그
+- **무엇**: `_selftest.mjs`의 46번 블록이 가짜 홈 디렉터리로 `USERPROFILE` 환경변수만 override했는데,
+  Node.js `os.homedir()`는 **Windows에선 `USERPROFILE`, POSIX(Linux/Mac)에선 `HOME`**을 읽는다 —
+  Linux에서는 override가 전혀 먹히지 않아 실제 CI 러너의 홈 디렉터리를 계속 사용, 격리된 가짜
+  마커 파일 경로를 영영 못 찾아 테스트가 실패했다.
+- **어떻게 발견**: (8)번 수정을 push한 뒤 CI 결과를 확인하는 과정에서 `selftest (ubuntu-latest)`가
+  실패함을 발견. 실행 이력을 역추적한 결과 **스로틀 기능이 도입된 첫 push(2026-07-26 17:21,
+  `30212389000`)부터 지금까지 6일 내내 ubuntu에서 실패하고 있었음**을 확인 — 이번 세션의 ren/cp/mv
+  수정과는 무관한, 훨씬 이전부터 있던 미발견 결함(그 사이 CI는 결제 문제로도 막혀 있어 아무도
+  로그를 자세히 못 봤을 가능성이 높음).
+- **중요**: `guard.mjs`·`backup.mjs`(제품 코드)는 **무결함** — 결함은 테스트의 격리 메커니즘 자체에만
+  있었다. Windows에서는 우연히 통과해왔을 뿐(로컬 검증이 전부 Windows였던 이유와 일치).
+- **수정**: `runWrite()`의 env override에 `HOME`도 함께 지정(`USERPROFILE`과 나란히) — 플랫폼 무관하게
+  격리 작동.
+- **검증**: 로컬(Windows) 178 PASS/0 FAIL 유지(회귀 0, `HOME` 추가가 Windows 동작에 영향 없음 확인).
+  실제 Linux 검증은 이 커밋 push 후 CI 재확인으로 완료.
+- 관련: `hooks/_selftest.mjs`
+
+---
+
 ## [Unreleased] — 2026-08-02 (8) — 심각: cp/mv/Copy-Item/Move-Item이 목적지의 동명 기존 파일을 백업 없이 덮어쓰던 결함
 
 ### 수정 — 목적지 폴더 안 동명 기존 파일(피해자)이 백업·확인 어디에도 안 잡히던 버그

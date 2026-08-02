@@ -1,6 +1,6 @@
 # SoDamHarness — 구현 체크포인트 (PRD 적합성 + 전체 구현 로드맵)
 
-> **📍 최신 섹션 안내(2026-08-02, AF섹션에서 갱신)**: 이 문서는 append-only라 섹션이 작성 시간순이 아님(예: S·T·U가 M~R보다 파일상 앞에 있음). **가장 최신 상태는 알파벳(Z 다음은 AA, AB, AC, AD, AE, AF)이 가장 뒤인 섹션**을 확인할 것 — 현재 최신은 **AF**. 각 섹션의 "현재 수치"·"최신" 문구는 그 섹션 작성 당시 기준이며 이후 섹션이 갱신할 수 있음.
+> **📍 최신 섹션 안내(2026-08-02, AG섹션에서 갱신)**: 이 문서는 append-only라 섹션이 작성 시간순이 아님(예: S·T·U가 M~R보다 파일상 앞에 있음). **가장 최신 상태는 알파벳(Z 다음은 AA, AB, AC, AD, AE, AF, AG)이 가장 뒤인 섹션**을 확인할 것 — 현재 최신은 **AG**. 각 섹션의 "현재 수치"·"최신" 문구는 그 섹션 작성 당시 기준이며 이후 섹션이 갱신할 수 있음.
 >
 > 작성: 2026-06-23 · 근거: PRD 00~08 전체 + 코드 직접 검증 + `node hooks/_selftest.mjs` **56 PASS / 0 FAIL** + 보안 grep 위반 0 + `dependencies:{}`.
 > **[2026-07-07 당시] selftest = 92 PASS / 0 FAIL** (정밀화 1·2차 커밋 `1239c54` 포함). `claude plugin validate --strict` → `✔ Validation passed`(매니페스트 버그 수정 후, A표 배선行 참조). live 훅 발화 확인: `rm -rf ~` 실제 deny. **진짜 현재 수치는 L섹션·K섹션 참고(117 PASS).**
@@ -862,3 +862,30 @@ CI(`security-audit.yml`)와 동일한 기준으로 재실행:
 
 **모순 확인 결과: 0건**(AE의 "cp만 낮은 심각도" 판단을 AF가 재평가로 정정한 것은 흔들림이 아니라 새 데이터[4종 교차 재현] 기반 정정 — 일관성 원칙 그대로 적용).
 **다음 세션 재개 순서**: (1) 이번 세션 4개 파일 커밋·push 여부 확인. (2) 그 외 A(1~4)·6·7번은 사용자가 먼저 꺼내지 않는 한 재제안하지 않음.
+
+---
+
+## AG. 상태 갱신 — 2026-08-02 (커밋·push 완료 + push 직후 CI에서 6일 묵은 회귀 발견·수정 · 이 섹션이 최신)
+
+> AF 직후 진행. 사용자 승인으로 AF까지의 변경분(4개 파일)을 커밋(`7aa9146`)·push 완료 → CI 결과를 확인하는 과정에서 **이번 세션과 무관한, 6일 전부터 있던 실제 회귀**를 발견해 함께 처리했다.
+
+### 커밋·push 완료 (사실)
+- `7aa9146`: `hooks/guard.mjs`·`hooks/_selftest.mjs`·`CHANGELOG.md`·`.PRD/CHECKPOINT.md`(AE·AF) — ren/rename/Rename-Item 수정 + cp/mv/Copy-Item/Move-Item 목적지 피해자 보호 수정, 337줄. `git push origin feat/phase1-mvp` 성공(`064da87..7aa9146`), fast-forward, 충돌 없음.
+- `.PRD` 추적 파일(`CHECKPOINT.md`)에 대한 `git add`가 `.gitignore` 매칭으로 경고+exit 1을 냈으나, **이미 추적 중인 파일이라 실제로는 정상 스테이징됐음**을 `git diff --cached --stat`으로 직접 확인 후 커밋 — `.PRD` 추적 해제라는 기존 미결정 사항 자체는 건드리지 않음.
+
+### 🔴 push 직후 CI 확인 중 발견 — `selftest (ubuntu-latest)`가 6일째 실패 중이었음 (이번 세션과 무관, 실측 확인)
+- **재현 경위(추측 아님)**: push 후 `gh run list`로 직전 실행들을 확인하다 최근 2개(064da87·스케줄 실행)가 "실패"로 표시된 것을 발견 → `gh run view --log-failed`로 상세 확인 결과, 이 2건은 **GitHub 계정 결제 문제로 잡 자체가 시작도 못 함**("recent account payments have failed")이었음(코드와 무관, 사람 몫으로 분류). 그런데 **제 이번 push(`7aa9146`)는 결제 문제가 해소돼 실제로 잡이 돌았고, `selftest (ubuntu-latest)`가 진짜로 실패**함을 확인.
+- **역추적(사실)**: `gh run list --json`으로 이력을 더 거슬러 올라간 결과, **스로틀링 기능이 처음 추가된 push(`30212389000`, 2026-07-26 17:21, `perf(backup): cleanupBackups 자동 호출을 매번이 아니라 스로틀링`)부터 지금까지 ubuntu가 한 번도 통과한 적이 없었음**을 확인(6일간 7회 연속 실패, 그중 최근 2회는 결제문제로 잡 자체가 안 돎·나머지는 이번에 확인한 것과 동일한 원인으로 추정). Y섹션(2026-07-27)이 "153 PASS"라 기록한 검증은 **전부 로컬 Windows 실행 기준**이었고, 이 회귀가 CI에서 실제로 드러난 적이 없었다.
+- **근본 원인(코드 직접 확인)**: `_selftest.mjs` 46번 블록(스로틀 테스트)이 가짜 홈 디렉터리 격리를 위해 `USERPROFILE` 환경변수만 override했는데, `backup.mjs`의 `baseDir()`가 쓰는 Node.js `os.homedir()`는 **Windows에선 `USERPROFILE`, POSIX(Linux/Mac)에선 `HOME`**을 읽는다(Node 공식 동작) — Linux에서는 override가 전혀 안 먹혀 테스트가 CI 러너의 진짜 홈 디렉터리를 계속 참조, 가짜 마커 파일을 영영 못 찾아 실패했다.
+- **중요(정직 명시)**: `guard.mjs`·`backup.mjs`(실제 제품 코드)는 **무결함** — 결함은 테스트 격리 메커니즘 자체에만 있었다. 실제 안전 로직(스로틀링 자체)이 Linux에서 잘못 동작한다는 증거는 없음(테스트가 애초에 격리된 조건을 못 만들어서 그 조건을 검증한 적이 없었을 뿐).
+- **수정**: `runWrite()`의 env override에 `HOME`도 `USERPROFILE`과 나란히 추가 — 플랫폼 무관 격리.
+- **검증**: 로컬(Windows) 178 PASS/0 FAIL 유지(회귀 0, `HOME` 추가가 Windows `os.homedir()` 판정에 영향 없음 확인 — Windows는 `USERPROFILE`만 봄). Linux 실제 검증은 이 수정을 커밋·push한 뒤 CI 재확인으로 완결.
+
+### 미완료 — 우선순위순
+1. 🔵 **미커밋 3개 파일**(`hooks/_selftest.mjs`·`CHANGELOG.md`·`.PRD/CHECKPOINT.md`, 이번 AG 발견분) — 커밋·push는 진행 중(이 섹션 작성 직후 실행 예정).
+2. 🔴 `.PRD` git 추적 해제 — 변경 없음.
+3. 🆕 `/plugin` 로드 오류 원문·활성 config deny 승격·백업 2만개+ 정리 — 변경 없음.
+4. ⚪ **[신규·선택]** CI 결제 문제 — 사람 전담(GitHub Billing & plans 설정), 현재는 해소된 것으로 보이나(이번 push는 정상 실행됨) 재발 시 재확인 필요.
+
+**모순 확인 결과: 0건**(Y섹션의 "153 PASS"는 로컬 기준이라는 걸 명시 안 했던 것이 이번에 드러났을 뿐, Y섹션 자체가 틀린 건 아님 — 범위를 명확히 한 정정).
+**다음 세션 재개 순서**: (1) 이번 AG 수정 커밋·push 완료 여부 및 CI ubuntu 그린 여부 확인. (2) 그 외 항목은 사용자가 먼저 꺼내지 않는 한 재제안하지 않음.
