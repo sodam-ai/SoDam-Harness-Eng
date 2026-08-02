@@ -32,7 +32,7 @@
 | 위험 패턴 세부 목록 확정 | 07_AUDIT C1 | 첫 실테스트 | ✅ **[2026-07-15 정정]** 완료 — 민감위치 코드 수정 + 데이터화(safety-rules.json) 모두 완료(2026-06-23 M1, 07_AUDIT C1 참고) |
 | **safety-rules.json 데이터화**(위험패턴·민감위치 외부화) | 08 §1 | C1 완성·확장 시 | ✅ **[2026-07-15 정정]** 완료(2026-06-23, M1) |
 | **세션 화이트리스트(D1, ask 피로 완화)** | 07_AUDIT D1 | **① safety-rules.json 데이터화 후 + ② 실초보 베타에서 ask 피로 실측 시** (둘 다 충족) | ✅ 완료(2026-06-23, hooks/whitelist.mjs + trust 명령, 72 테스트 PASS) |
-| **권한모드 자동감지 경고(D2 정밀화)** | 07_AUDIT D2 | 훅이 `permission_mode`를 실제로 제공하는지 확인 후 | 🔶 부분(status에서 **무조건 안내**로 대체 완료 / 자동감지는 보류) |
+| **권한모드 자동감지 경고(D2 정밀화)** | 07_AUDIT D2 | 훅이 `permission_mode`를 실제로 제공하는지 확인 후 | ✅ **[2026-08-02 정정]** 완료 — 이 표가 "자동감지는 보류"로 낡게 기록돼 있었으나, 훅 입력이 실제로 `permission_mode`를 제공함을 확인하고 `guard.mjs:700~705`(`BYPASS_WARN`, ask 메시지 2곳에 배선)로 이미 구현돼 있었음을 코드로 확인. 회귀 테스트 부재(0건)만 진짜 갭이었음 — `_selftest.mjs` 51번 블록(51a~f, bypassPermissions·acceptEdits·기본모드 대조·필드부재 대조·다른 호출지점·deny 불변 대조군) 신설로 폐쇄, 184 PASS/0 FAIL |
 | 공유코어(백업·undo·말투) 형제 제공 | 07_AUDIT A1·A2 | 2번째 형제 빌드 전(선결) | 대기 |
 | **과잉 제약 완화**(일반 push·기존편집 ask 마찰 제거 + `relax` 데이터화) | [[09_CONSTRAINT_RELAXATION]] | ask 피로 실측 시 | 🔶 **1차 정밀화 완료**(2026-07-03: 일반 push·git저장소 편집, 85 테스트 PASS — [[11_PRECISION_TUNING_LOG]]) / `relax` 데이터화·rm은 대기 |
 

@@ -1106,6 +1106,54 @@ if (WIN) {
   check("50f(대조군): Out-File은 원본 개념이 없어 이번 변경과 무관 — 기존 동작(ask, 직접 대상 지정) 그대로", r50f.decision === "ask", JSON.stringify(r50f));
 }
 
+// 51) [신규·2026-08-02, D2 회귀 테스트 신설] 자동승인 모드(permission_mode) 감지 경고 — guard.mjs 700~705행에
+//     이미 구현·배선(BYPASS_WARN, 812·873행 2곳)돼 있었으나 지금까지 이를 검증하는 테스트가 0건이었다.
+//     08_EXTENSIBILITY_AND_UPGRADE.md가 "자동감지는 보류"로 잘못 기록해 둔 상태 — 이 테스트로 실제 동작을 증거로 고정한다.
+{
+  function runPM(tool_name, tool_input, cwd, permission_mode) {
+    const payload = JSON.stringify({ tool_name, tool_input, cwd, permission_mode });
+    const r = spawnSync(process.execPath, [GUARD], { input: payload, encoding: "utf8" });
+    const out = (r.stdout || "").trim();
+    if (!out) return { decision: null, reason: null };
+    try {
+      const o = JSON.parse(out).hookSpecificOutput || {};
+      return { decision: o.permissionDecision || null, reason: o.permissionDecisionReason || "" };
+    } catch {
+      return { decision: "PARSE_ERROR", reason: out };
+    }
+  }
+
+  // (a) risky 셸 명령(mv) + bypassPermissions → ask이되 경고 문구 포함
+  writeFileSync(path.join(work, "d2-51a.txt"), "51a");
+  const r51a = runPM("Bash", { command: "mv d2-51a.txt d2-51a-moved.txt" }, work, "bypassPermissions");
+  check("51a: risky+bypassPermissions → ask 유지 + 경고 문구 포함", r51a.decision === "ask" && r51a.reason.includes("자동승인"), JSON.stringify(r51a));
+
+  // (b) 같은 risky 명령 + acceptEdits → 마찬가지로 경고 문구 포함
+  writeFileSync(path.join(work, "d2-51b.txt"), "51b");
+  const r51b = runPM("Bash", { command: "mv d2-51b.txt d2-51b-moved.txt" }, work, "acceptEdits");
+  check("51b: risky+acceptEdits → ask 유지 + 경고 문구 포함", r51b.decision === "ask" && r51b.reason.includes("자동승인"), JSON.stringify(r51b));
+
+  // (c) 대조군 — 기본 권한모드(정상)면 경고 문구가 붙지 않아야 함(과잉경고 방지)
+  writeFileSync(path.join(work, "d2-51c.txt"), "51c");
+  const r51c = runPM("Bash", { command: "mv d2-51c.txt d2-51c-moved.txt" }, work, "default");
+  check("51c(대조군): risky+기본 권한모드 → ask이되 경고 문구 없음(과잉경고 0)", r51c.decision === "ask" && !r51c.reason.includes("자동승인"), JSON.stringify(r51c));
+
+  // (d) permission_mode 필드 자체가 없을 때도 크래시 없이 안전 기본값(경고 없음)으로 처리
+  writeFileSync(path.join(work, "d2-51d.txt"), "51d");
+  const r51d = run("Bash", { command: "mv d2-51d.txt d2-51d-moved.txt" }, work); // run()은 permission_mode 미포함
+  check("51d(대조군): permission_mode 필드 부재 → 크래시 없이 ask, 경고 문구 없음", r51d.decision === "ask" && !r51d.reason.includes("자동승인"), JSON.stringify(r51d));
+
+  // (e) 파일 쓰기 계열(Write 덮어쓰기, 873행 경로)도 동일하게 경고 문구가 연결되는지 — 다른 호출지점 커버
+  const src51e = path.join(work, "d2-51e.txt");
+  writeFileSync(src51e, "원래내용");
+  const r51e = runPM("Write", { file_path: src51e, content: "새내용" }, work, "bypassPermissions");
+  check("51e: 파일 덮어쓰기+bypassPermissions → ask 유지 + 경고 문구 포함(다른 호출지점도 배선 확인)", r51e.decision === "ask" && r51e.reason.includes("자동승인"), JSON.stringify(r51e));
+
+  // (f) 안전바닥 대조군 — 치명 명령은 자동승인 모드여도 여전히 deny(경고 문구와 무관하게 완전 차단 불변)
+  const r51f = runPM("Bash", { command: "rm -rf ~" }, work, "bypassPermissions");
+  check("51f(안전바닥 대조군): 치명 명령은 자동승인 모드여도 여전히 deny(우회 불가 불변)", r51f.decision === "deny" && !r51f.reason.includes("자동승인"), JSON.stringify(r51f));
+}
+
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)
 try { rmSync(bwork, { recursive: true, force: true }); } catch {}
 try { if (backupDir1) rmSync(backupDir1, { recursive: true, force: true }); } catch {}
