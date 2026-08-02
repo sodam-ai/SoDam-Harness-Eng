@@ -9,6 +9,14 @@
 //   · 토큰·인증파일·비밀값에 접근/저장하지 않는다.
 //   · 외부로 아무것도 전송하지 않는다.  · 경로는 os.homedir() 기준(하드코딩 금지).
 //
+// [2026-08-02, 좁은 예외 하나 — U3] 위 "절대 실행 안 함"에 유일한 예외가 있다: git commit 직전
+// "git diff --cached --name-only"(스테이징된 파일 '이름'만 조회, 내용은 안 봄) 호출.
+// 인자는 전부 고정값이고 AI가 만든 텍스트는 이 호출에 전혀 섞이지 않는다.
+// "요청받은 명령을 실행 전에 검사만 한다"는 이 파일의 핵심 설계와는 다른 층위라 정직하게 밝혀둔다.
+// 이유: 01_PRD §8.6(가장 중요하게 여기는 위협 — 인증정보 유출)을 막으려면 "무엇이 올라가려는지"를
+// 알아야 하는데, 그건 git 자신에게 물어보는 것 외엔 방법이 없다(findGitRoot()는 파일 존재만 봄).
+// 상세: stagedSecretFiles() 함수 주석·.PRD/11_PRECISION_TUNING_LOG.md U3 참고.
+//
 // 설계(2026-06-20 실측 반영): "켠 폴더(cwd) 밖이면 무조건 차단"은 과잉 차단이라 폐기.
 //   대신 ① 진짜 민감 위치(시스템 폴더·홈 루트·드라이브 루트·자격증명 폴더)면 deny,
 //        ② 위험/치명 명령이면 deny 또는 백업+ask, ③ 기존 파일 덮어쓰기면 백업+ask,
@@ -17,6 +25,7 @@
 // 정직한 한계: 위험 패턴은 "초안"이며 모든 위험을 100% 잡지 못한다(01_PRD §8.8).
 
 import { readFileSync, existsSync, lstatSync, statSync, realpathSync, readdirSync } from "node:fs";
+import { spawnSync } from "node:child_process"; // U3 전용 — 아래 stagedSecretFiles()에서만 사용, 고정 인자만
 import { homedir } from "node:os";
 import path from "node:path";
 import { backupPaths, isSecretFile } from "./backup.mjs";
@@ -679,6 +688,41 @@ function opClassOf(cmd, isOverwrite) {
   return "other";
 }
 
+// ── U3: git commit 직전 스테이징된 비밀파일 이름 확인 (실행 0 원칙의 유일한 예외, 파일 상단 주석 참고) ──
+// 인자는 전부 고정("git","diff","--cached","--name-only") — AI가 만든 어떤 문자열도 여기 안 섞인다.
+// 반환된 건 "파일 이름"뿐(git이 diff 내용을 stdout에 안 실었으니 우리도 내용은 절대 못 본다·안 봄).
+// 범위(의도적): commit 시점만 본다. push 시점은 "무엇이 이미 커밋됐는지" 판단이 더 복잡해(업스트림
+// 브랜치 필요·새 브랜치엔 없을 수 있음) 이번 범위 밖 — 대신 commit에서 막으면 로컬 기록에도 아예
+//안 들어가므로 더 이른 시점의 보호다(11_PRECISION_TUNING_LOG.md U3 참고).
+function stagedSecretFiles(cwd) {
+  try {
+    const r = spawnSync("git", ["diff", "--cached", "--name-only"], {
+      cwd: cwd || process.cwd(),
+      encoding: "utf8",
+      timeout: 5000,
+      windowsHide: true,
+    });
+    if (r.error || typeof r.status !== "number" || r.status !== 0) {
+      const why = (r.error && r.error.message) || (r.stderr && String(r.stderr).trim()) || "git diff 실행 실패";
+      return { ok: false, files: [], error: why };
+    }
+    const files = String(r.stdout || "")
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .filter((f) => isSecretFile(f));
+    return { ok: true, files };
+  } catch (e) {
+    return { ok: false, files: [], error: String((e && e.message) || e) };
+  }
+}
+function isGitCommitCommand(cmd) {
+  return splitSegments(cmd).some((s) => {
+    const toks = bashTokens(normalizeForClassify(s.text));
+    return (toks[0] || "").toLowerCase() === "git" && (toks[1] || "").toLowerCase() === "commit";
+  });
+}
+
 // ── 메인 ──
 function main() {
   warnAllowlistIfRisky(); // C1: allowedTools 무결성 확인 (경고만, 차단 아님)
@@ -721,6 +765,28 @@ function main() {
     const cmdForClass = stripInertQuotedData(cmd);
     const level = classify(normalizeForClassify(cmdForClass));
     const dests = writeDestinations(cmd, cwd); // 쓰기/덮어쓰기/이동 대상(원본 기준 — 실제 대상은 그대로 잡음)
+
+    // U3: git commit 이면 스테이징된 파일 중 비밀파일 이름이 있는지 먼저 확인(01_PRD §8.6 최우선 위협)
+    // level(safe/risky) 분류와 무관하게 독립 검사 — 화이트리스트·L3 자동승인으로도 건너뛰지 않는다
+    // (비밀 유출은 05_HAND_SIMULATION 등 다른 항목보다 되돌리기가 훨씬 어려워 더 엄격하게 다룸).
+    if (isGitCommitCommand(cmdForClass)) {
+      const staged = stagedSecretFiles(cwd);
+      if (!staged.ok) {
+        decide(
+          "ask",
+          `커밋하려는 파일 중에 비밀 파일이 있는지 확인하지 못했어요(사유: ${staged.error}). 안전을 위해 먼저 확인할게요. 정말 커밋할까요?${BYPASS_WARN}`,
+        );
+        return;
+      }
+      if (staged.files.length > 0) {
+        decide(
+          "ask",
+          `커밋하려는 파일 중에 비밀번호나 키가 들어있을 수 있는 파일이 보여요: ${staged.files.join(", ")}. ` +
+          `한 번 커밋되면 되돌리기 어려우니 신중하게 확인해 주세요. 진짜 비밀이 아니면(예: 예시 파일) 그대로 진행해도 돼요. 정말 커밋할까요?${BYPASS_WARN}`,
+        );
+        return;
+      }
+    }
 
     // 안전 명령 + 쓰기 대상도 없음(읽기·조회 등) → 통과
     if (level === "safe" && dests.length === 0) {

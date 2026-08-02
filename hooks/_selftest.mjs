@@ -194,9 +194,14 @@ console.log("SoDamHarness guard 자가 테스트");
   check("git -C <dir> reset --hard → ask", r.decision === "ask", JSON.stringify(r));
 }
 // 21) [정밀화 2026-07-03] 자동커밋(git add . + commit + push) → 통과 (일반 push는 로컬 데이터를 잃지 않음)
+// [2026-08-02, U3 신설로 실제 git 저장소로 이전] git commit이 이제 실제로 `git diff --cached`를
+// 실행해 스테이징 파일을 확인하므로(51번 이후 신설 검사), 진짜 저장소가 아니면 "확인 실패"로
+// ask가 돼 이 테스트의 원래 의도(정상 커밋은 안 막힘)를 더는 검증 못 한다 — 전용 저장소로 이전.
+const gwork = mkdtempSync(path.join(tmpdir(), "sdh-git-"));
+spawnSync("git", ["init"], { cwd: gwork });
 {
-  const r = run("Bash", { command: `git add . && git commit -m "msg" && git push` }, work);
-  check("자동커밋(git add . + push) → 통과(정밀화)", r.decision === null, JSON.stringify(r));
+  const r = run("Bash", { command: `git add . && git commit -m "msg" && git push` }, gwork);
+  check("자동커밋(git add . + push) → 통과(정밀화, 비밀파일 없음)", r.decision === null, JSON.stringify(r));
 }
 // 21b) [정밀화 회귀] 파괴적 push 변형은 전부 여전히 ask — 이 블록이 깨지면 안전 바닥 붕괴
 {
@@ -483,7 +488,11 @@ if (MAC) {
   d = dec('echo "rm -rf ~"');                     check('E2 echo "rm -rf ~" → 통과', d === null, String(d));
   d = dec(`grep "rm -rf" "${aFile}"`);            check('E2 grep "rm -rf" 파일 → 통과', d === null, String(d));
   d = dec("grep -rn 'rm -rf' .");                 check("E2 grep -rn 'rm -rf' . → 통과", d === null, String(d));
-  d = dec('git commit -m "refactor rm -rf now"'); check('E2 git commit -m "..rm -rf.." → 통과', d === null, String(d));
+  // [2026-08-02, U3 신설로 이전] git commit은 이제 별도로 실제 git diff --cached를 실행해 스테이징
+  // 파일을 확인하므로(52번 참고), work(non-git)에선 "확인 실패"로 ask가 된다 — 이 테스트의 관심사(따옴표
+  // 안 "rm -rf" 텍스트가 위험 분류에 안 걸리는지)와는 무관한 이유라 실제 저장소(gwork, 비밀파일 없음)로 이전.
+  d = run("Bash", { command: 'git commit -m "refactor rm -rf now"' }, gwork).decision;
+  check('E2 git commit -m "..rm -rf.." → 통과', d === null, String(d));
   d = dec('printf "rm -rf /"');                    check('E2 printf "rm -rf /" → 통과', d === null, String(d));
   // (b) 탐지 유지(안전 바닥): 인용 내용을 실행하는 명령·비인용 세그먼트는 여전히 차단 — 깨지면 탐지 구멍
   d = dec('bash -c "rm -rf ~"');                   check('E2 bash -c "rm -rf ~" → deny(실행자 유지)', d === 'deny', String(d));
@@ -1154,9 +1163,39 @@ if (WIN) {
   check("51f(안전바닥 대조군): 치명 명령은 자동승인 모드여도 여전히 deny(우회 불가 불변)", r51f.decision === "deny" && !r51f.reason.includes("자동승인"), JSON.stringify(r51f));
 }
 
+// 52) [신규·2026-08-02, U3] git commit 직전 스테이징된 비밀파일 이름 검사 — 01_PRD §8.6 최우선 위협
+//     대응. guard.mjs가 처음으로 "git diff --cached --name-only"(고정 인자, 파일명만)를 직접 실행하는
+//     유일한 예외 지점 — 이 블록이 그 새 동작을 회귀 잠금한다.
+{
+  // (a) 비밀파일(.env)이 스테이징된 채 커밋 시도 → ask + 파일명 언급, 그러나 실제 비밀값은 노출 안 함
+  writeFileSync(path.join(gwork, ".env"), "SECRET_TOKEN=abc123XYZ");
+  spawnSync("git", ["add", ".env"], { cwd: gwork });
+  const r52a = run("Bash", { command: `git commit -m "add env"` }, gwork);
+  check("52a: 스테이징된 .env가 있으면 커밋 전 ask", r52a.decision === "ask", JSON.stringify(r52a));
+  check("52a-파일명언급: ask 사유에 .env 파일명이 나옴", r52a.reason.includes(".env"), r52a.reason);
+  check("52a-내용비노출: ask 사유에 실제 비밀값(abc123XYZ)은 절대 안 나옴(파일명만 봄, 내용 0)", !r52a.reason.includes("abc123XYZ"), r52a.reason);
+  spawnSync("git", ["reset"], { cwd: gwork }); // 다음 케이스를 위해 스테이징 원복(파일 자체는 안 지움)
+
+  // (b) 대조군 — 비밀 아닌 평범한 파일만 스테이징 → 기존처럼 통과(과잉차단 0)
+  writeFileSync(path.join(gwork, "readme.txt"), "그냥 문서");
+  spawnSync("git", ["add", "readme.txt"], { cwd: gwork });
+  const r52b = run("Bash", { command: `git commit -m "add readme"` }, gwork);
+  check("52b(대조군): 비밀 아닌 파일만 스테이징 → 통과(과잉차단 없음)", r52b.decision === null, JSON.stringify(r52b));
+
+  // (c) 대조군 — git commit이 아예 없는 명령(git push 단독)은 이 검사와 무관 — 여전히 통과
+  const r52c = run("Bash", { command: `git push` }, gwork);
+  check("52c(대조군): commit 없는 git push 단독은 이 검사 대상 아님(무관하게 통과)", r52c.decision === null, JSON.stringify(r52c));
+
+  // (d) fail-closed 대조군 — git 저장소가 아닌 곳에서 git commit 시도 → 검사 자체가 실패해 안전하게 ask
+  //     (스테이징 유무를 확인 못 하면 "괜찮다"고 조용히 통과시키지 않는다 — 07_AUDIT B1과 같은 원리)
+  const r52d = run("Bash", { command: `git commit -m "msg"` }, work); // work = 이 파일의 기본 non-git 폴더
+  check("52d(fail-closed 대조군): git 저장소 아닌 곳에서 commit → 확인 실패로 안전하게 ask(조용한 통과 금지)", r52d.decision === "ask" && !r52d.reason.includes(".env"), JSON.stringify(r52d));
+}
+
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)
 try { rmSync(bwork, { recursive: true, force: true }); } catch {}
 try { if (backupDir1) rmSync(backupDir1, { recursive: true, force: true }); } catch {}
+try { rmSync(gwork, { recursive: true, force: true }); } catch {}
 
 // ── 정리 ──
 rmSync(work, { recursive: true, force: true });
