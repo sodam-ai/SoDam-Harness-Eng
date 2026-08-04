@@ -87,7 +87,7 @@ SoDamHarness sorts every AI action into one of three categories:
 | Tier | Name | What happens | Examples |
 |------|------|--------------|---------|
 | 🟢 **Safe** | Passes through | Action runs immediately, no interruption | Creating a new file, reading a file, editing lines of code, listing folders |
-| 🟡 **Risky** | Backup + Confirmation | A backup copy is made first, then you are asked "Really do this?" | Deleting a single file, overwriting a file, **moving a file** (`mv`/`move`/`Move-Item`), deploying code, sending data out |
+| 🟡 **Risky** | Backup + Confirmation | A backup copy is made first, then you are asked "Really do this?" | Deleting a single file, overwriting a file, **moving** (`mv`/`move`/`Move-Item`) or **renaming** (`ren`/`rename`/`Rename-Item`) a file, an existing file getting overwritten by a copy/move, `git commit` with a secret-looking filename staged, deploying code, sending data out |
 | 🔴 **Catastrophic** | Immediately blocked | Action is refused and never executed | Deleting an entire folder (`rm -rf`), deleting system folders, wiping large amounts of data at once |
 
 ### What each internal file does
@@ -413,20 +413,27 @@ During normal use, just work with the AI **as you normally would.** The seatbelt
 
 ### Safety behavior table
 
-| What the AI tries to do | The seatbelt's response |
-|---|---|
-| **Create** a new file | Proceeds normally ✅ — no interruption |
-| **Read** a file (view contents) | Proceeds normally ✅ — no interruption |
-| **Edit** a file (normal changes) | Proceeds normally ✅ — no interruption |
-| **Delete a whole folder** | 🛑 **Blocked** — refused entirely, never executed |
-| **Dangerous system commands** (like `rm -rf`) | 🛑 **Blocked** — refused entirely |
-| **Delete a single file** | 💾 **Auto-backup first** → ⚠️ Asks **"Really do this?"** |
-| **Overwrite a file** (replace its contents) | 💾 **Auto-backup first** → ⚠️ Asks **"Really do this?"** |
-| **Move a file** (`mv`/`move`/`Move-Item`) | 💾 **Auto-backup first** → ⚠️ Asks **"Really do this?"** |
-| **Deploy or publish** code to the internet | ⚠️ **Asks for confirmation** first |
-| **Passwords / tokens / auth files** | 🔒 **Not touched at all** — not read, not backed up, not logged |
+| What the AI tries to do | A concrete example | The seatbelt's response |
+|---|---|---|
+| **Create** a file | "Create a readme.txt file" | Proceeds normally ✅ |
+| **Read** a file | "Show me what's in this file" | Proceeds normally ✅ |
+| Normal **edit** | "Fix this code" | Proceeds normally ✅ |
+| **Create** a new folder | "Create a src folder" | Proceeds normally ✅ |
+| **Delete** a file | "Delete this file" | 💾 Backup → ⚠️ Asks for confirmation |
+| **Overwrite** a file | "Replace this file's entire contents" | 💾 Backup → ⚠️ Asks for confirmation |
+| **Move** a file | "Move this file to another folder" (`mv`/`move`/`Move-Item`) | 💾 Backup → ⚠️ Asks for confirmation |
+| **Rename** a file | "Rename this file" (`ren`/`rename`/`Rename-Item`) | 💾 Backup → ⚠️ Asks for confirmation |
+| An **existing file that would be overwritten** by a copy/move | The destination folder already has a file with the same name (even if you didn't know it was there) | 💾 That file is backed up too → ⚠️ Asks for confirmation |
+| **Deploy** command | "Push this to the server" | ⚠️ Asks for confirmation |
+| **Upload a file externally** | `curl`/`wget`/`scp` file transfer (prevents secret-key leaks) | ⚠️ Asks for confirmation |
+| **Mass delete / wipe** | `find … -delete`, `truncate -s 0` (zeroing out a file) | ⚠️ Asks for confirmation (🛑 if targeting home/system folders) |
+| **Delete an entire folder** | "Delete this whole project folder" | 🛑 Blocked — never executed |
+| Delete a **system folder** | Deleting Windows or Program Files | 🛑 Blocked — never executed |
+| `rm -rf` and similar | Forced recursive deletion commands | 🛑 Blocked — never executed |
+| Passwords / tokens / auth files | `.env`, `auth.json`, `*.pem`, etc. | 🔒 Never touched, never backed up |
+| A **secret-looking file staged for commit** | Right before `git commit`, a staged file has a name that looks like `.env` or similar | ⚠️ Asks for confirmation (checks the file **name only** — content is never read) |
 
-> 📌 **Moving a file (`mv`/`move`/`Move-Item`) is now protected exactly like deletion.** On 2026-07-27, a real-world incident revealed that moving a file could make the source vanish with no backup and no confirmation — this gap has been closed (see Section 10-1 for details).
+> 📌 **Moving a file (`mv`/`move`/`Move-Item`) is now protected exactly like deletion.** On 2026-07-27, a real-world incident revealed that moving a file could make the source vanish with no backup and no confirmation — this gap has been closed. **Renaming a file** and **an existing file getting silently overwritten by a copy/move** were the same kind of gap, closed together on 2026-08-02, and the **`git commit` secret-file check** was added new on 2026-08-02 (see Section 10-1 for details).
 
 ### Key facts
 
@@ -967,7 +974,7 @@ A: No. The wizard only adjusts **how often** the "Really do this?" prompt appear
 
 **Q19. What does "162 self-tests passing" mean?**
 
-A: During development, SoDamHarness ran 162 test cases (blocking dangerous actions, backups, undo, edge cases, adversarial bypass attempts, file-move protection, and the wizard's L1/L2/L3 behavior) and all of them passed. It confirms "the core features work as intended" — not "100% perfect in every situation."
+A: During development, SoDamHarness ran 190 test cases (blocking dangerous actions, backups, undo, edge cases, adversarial bypass attempts, file move/rename protection, `git commit` secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them passed. It confirms "the core features work as intended" — not "100% perfect in every situation."
 
 ---
 
@@ -975,6 +982,16 @@ A: During development, SoDamHarness ran 162 test cases (blocking dangerous actio
 
 <details>
 <summary><b>📌 Changes by version (click to expand)</b></summary>
+
+### 2026-08-02 — New: automatic secret-file check right before `git commit` (stricter only, no relaxation)
+- **What**: If a file with a name that looks like it holds a password or key (like `.env`) is about to be included in a `git commit`, SoDamHarness now notices automatically and asks "Really commit this?" first. It checks the file **name only** — it never reads the contents.
+- **Why**: This is exactly the kind of accident this tool cares about most (password/token leaks — see Section 5-1), and until now there was no check at all at the `git add` / `git commit` stage — a real blind spot.
+- **All 190 self-tests pass** (zero regressions).
+
+### 2026-08-02 — Rename protection + protection for existing files overwritten by copy/move (stricter only, no relaxation)
+- **Renaming is now protected exactly like deletion**: Using `ren`/`rename`/PowerShell `Rename-Item` to rename a file could previously make the original vanish with no backup and no confirmation. This was discovered while re-reviewing the exact same category of risk that "moving" (`mv`) had (fixed on 2026-07-27).
+- **Existing files silently overwritten by copy/move are now protected too**: When moving or copying a file, if the destination folder already contained a file with the same name (even one you didn't know was there), it could disappear without a backup. This is now fixed for `mv`/`cp`/PowerShell `Move-Item`/`Copy-Item` alike.
+- **All 178 self-tests pass** (zero regressions).
 
 ### 2026-07-27 — Protect file moves (mv) from silent data loss + false-block fixes + performance/messaging improvements (stricter only, no relaxation)
 - **Most important — fixed a gap where moving a file could make it vanish without backup**: When moving a file into an existing folder with `mv`/`move`/PowerShell `Move-Item`, the source file could pass through with **no backup and no confirmation prompt at all** — a more dangerous bypass than `rm` (delete), which was already backed up and confirmed. Discovered after a real data-loss incident during live use.
@@ -1118,7 +1135,7 @@ We want to be fully honest about what SoDamHarness can and cannot do.
 - **Verified on Windows; Mac is untested.** The code is written to be cross-platform, but Mac behavior has not been formally verified. Please report any Mac-specific issues to the developer.
 - Backups are file-by-file. Whole folders are never backed up as a unit (which is exactly why whole-folder deletion is blocked instead).
 - A full disk or missing permissions can cause a backup to fail.
-- **162/162 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts, file-move protection, and the custom wizard's L1/L2/L3 levels). This confirms the core features work as intended — it does not mean "100% perfect in every situation."
+- **190/190 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts, file move/rename protection, and the custom wizard's L1/L2/L3 levels). This confirms the core features work as intended — it does not mean "100% perfect in every situation."
 - For truly important data, **do not rely on this tool alone.** Use a dedicated backup solution (Windows Backup, Time Machine, cloud storage, an external drive, etc.) in addition to SoDamHarness.
 - **Think before you act.** The best safety measure is a moment of careful thought before asking the AI to do something irreversible.
 
