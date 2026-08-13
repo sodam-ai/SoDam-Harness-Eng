@@ -188,41 +188,41 @@ wearing a seatbelt greatly reduces harm when accidents happen.</p>
 <hr />
 <h2 id="table-of-contents">Table of Contents</h2>
 <ul>
-<li><a href="#0-what-is-this-understand-in-1-minute">0. What is this?
+<li><a href="#what-is-this-understand-in-1-minute">0. What is this?
 (Understand in 1 minute)</a></li>
 <li><a
-href="#0-1-how-does-it-work-internal-structure--architecture">0-1. How
+href="#how-does-it-work-internal-structure-architecture">0-1. How
 does it work? (Internal structure / architecture)</a></li>
-<li><a href="#1-prerequisites-programs-you-need">1. Prerequisites
+<li><a href="#prerequisites-programs-you-need">1. Prerequisites
 (Programs you need)</a></li>
-<li><a href="#1-1-how-to-download-sodamharness">1-1. How to download
+<li><a href="#how-to-download-sodamharness">1-1. How to download
 SoDamHarness</a></li>
-<li><a href="#1-2-how-to-install-claude-code">1-2. How to install Claude
+<li><a href="#how-to-install-claude-code">1-2. How to install Claude
 Code</a></li>
-<li><a href="#2-installation-step-by-step">2. Installation (Step by
+<li><a href="#installation-step-by-step">2. Installation (Step by
 step)</a></li>
-<li><a href="#3-quick-start-3-minutes">3. Quick start — first run (3
+<li><a href="#quick-start-3-minutes">3. Quick start — first run (3
 minutes)</a></li>
-<li><a href="#4-how-it-works-when-and-how-the-seatbelt-acts">4. How it
+<li><a href="#how-it-works-when-and-how-the-seatbelt-acts">4. How it
 works</a></li>
-<li><a href="#5-workflow-everyday-use">5. Workflow (Everyday
+<li><a href="#workflow-everyday-use">5. Workflow (Everyday
 use)</a></li>
-<li><a href="#5-1-security--data-flow-how-your-data-is-protected">5-1.
+<li><a href="#security-data-flow-how-your-data-is-protected">5-1.
 Security &amp; data flow</a></li>
-<li><a href="#5-2-optional-using-it-with-codex">5-2. (Optional) Using it
+<li><a href="#optional-using-it-with-codex">5-2. (Optional) Using it
 with Codex</a></li>
-<li><a href="#6-commands-what-to-use-and-when">6. Commands</a></li>
-<li><a href="#7-file-and-document-locations">7. File and document
+<li><a href="#commands-what-to-use-and-when">6. Commands</a></li>
+<li><a href="#file-and-document-locations">7. File and document
 locations</a></li>
-<li><a href="#8-troubleshooting-symptom--why--what-to-do">8.
+<li><a href="#troubleshooting-symptom-why-what-to-do">8.
 Troubleshooting</a></li>
-<li><a href="#9-uninstall-how-to-remove-sodamharness">9.
+<li><a href="#uninstall-how-to-remove-sodamharness">9.
 Uninstall</a></li>
-<li><a href="#10-faq-frequently-asked-questions">10. FAQ</a></li>
-<li><a href="#10-1-update-summary">10-1. Update summary</a></li>
-<li><a href="#11-license--copyright--commercial-use-strict-notice">11.
+<li><a href="#faq-frequently-asked-questions">10. FAQ</a></li>
+<li><a href="#update-summary">10-1. Update summary</a></li>
+<li><a href="#license-copyright-commercial-use-strict-notice">11.
 License · Copyright · Commercial use</a></li>
-<li><a href="#12-safety--limits-honest-notice">12. Safety &amp;
+<li><a href="#safety-limits-honest-notice">12. Safety &amp;
 limits</a></li>
 </ul>
 <hr />
@@ -1497,10 +1497,9 @@ etc.) for the same plain-language tone</td>
 </tr>
 <tr>
 <td><code>BETA.md</code> / <code>BETA_CHECKLIST.md</code></td>
-<td>External beta-tester recruitment/verification documents —
-<strong>currently inactive</strong> because the project is confirmed
-PRIVATE/solo-use; kept in the repo in case that decision is reversed
-later</td>
+<td>External beta-tester recruitment/verification documents — the repo
+is PUBLIC, but whether to actually launch external beta is under
+separate review</td>
 <td>(not applicable right now)</td>
 </tr>
 <tr>
@@ -1729,7 +1728,8 @@ possible risks.</strong> New or unusual danger patterns that we have not
 anticipated may not be caught. Think of it exactly like a seatbelt in a
 car: it greatly reduces harm but does not make driving 100% risk-free.
 For truly important work, always keep <strong>your own separate
-backup</strong> in addition to using this tool.</p>
+backup</strong> in addition to using this tool. No software can honestly
+promise “100% safe.”</p>
 <hr />
 <p><strong>Q2. Does it read or see my passwords or private
 files?</strong></p>
@@ -1755,24 +1755,20 @@ data anywhere, does not access the internet after installation, and does
 not modify system files. If you received it from the official source
 (the SoDam AI Studio GitHub page or directly from the developer), it is
 safe to install. As with any software, if you received it from an
-unknown or suspicious source, be cautious.</p>
+unknown or suspicious source, be cautious. Checking the open-source code
+yourself (or asking an IT professional to check it) is the safest
+approach.</p>
 <hr />
-<p><strong>Q5. Why do I need Node.js? Can I use SoDamHarness without
-it?</strong></p>
-<p>A: SoDamHarness’s safety hooks are written in JavaScript and require
-Node.js to run. Without Node.js, the hooks simply cannot execute —
-meaning the seatbelt will not work. Node.js is free, widely trusted, and
-installing it takes about 3–5 minutes. It runs quietly in the background
-and does not noticeably slow down your computer.</p>
+<p><strong>Q5. I accidentally deleted an important file. What do I
+do?</strong></p>
+<p>A: Run <code>/sodam-harness:undo</code> — a list of recent backups
+will appear. Pick the number you want to restore. Note that
+<strong>backups are made automatically right before the risky
+action</strong>, so if a file was deleted before SoDamHarness was
+installed, or if the backup itself failed, it cannot be restored this
+way. Always keep a separate backup of truly important files.</p>
 <hr />
-<p><strong>Q6. Does it slow down my computer or drain the
-battery?</strong></p>
-<p>A: No, not noticeably. SoDamHarness’s hooks run only when the AI
-takes an action — they do not run continuously in the background. Each
-check takes a fraction of a second. You will not notice any change in
-your computer’s speed or battery life.</p>
-<hr />
-<p><strong>Q7. I accidentally deleted an entire folder. Can I recover
+<p><strong>Q6. I accidentally deleted an entire folder. Can I recover
 it?</strong></p>
 <p>A: Unfortunately, no — entire folder deletion is not backed up
 because folders can contain hundreds of files. Instead, SoDamHarness
@@ -1782,13 +1778,27 @@ before deletion) can be restored with <code>/sodam-harness:undo</code>.
 If a folder was deleted anyway, this suggests the plugin was not active
 at that moment — run <code>/sodam-harness:status</code> to diagnose.</p>
 <hr />
-<p><strong>Q8. Does it work on Mac?</strong></p>
+<p><strong>Q7. Why do I need Node.js? I don’t code at all.</strong></p>
+<p>A: SoDamHarness’s safety features (the “guard,” backups, and logging)
+are built with Node.js — it is the engine that powers this tool. You do
+not need to know how to code at all; you only need to install Node.js
+once, and after that you never have to think about it again. It is
+completely free and takes about 3–5 minutes to install.</p>
+<hr />
+<p><strong>Q8. Does it slow down my computer or drain the
+battery?</strong></p>
+<p>A: No, not noticeably. SoDamHarness’s hooks run only when the AI
+takes an action — they do not run continuously in the background. Each
+check takes a fraction of a second, and CPU/memory usage is minimal. You
+will not notice any change in your computer’s speed or battery life.</p>
+<hr />
+<p><strong>Q9. Does it work on Mac?</strong></p>
 <p>A: SoDamHarness is written with cross-platform code and is designed
 to work on Mac. However, <strong>it has only been formally verified on
 Windows</strong> as of this writing. Mac is untested. If you use it on
 Mac and encounter any issues, please report them to the developer.</p>
 <hr />
-<p><strong>Q9. Does it provide the same protection in
+<p><strong>Q10. Does it provide the same protection in
 Codex?</strong></p>
 <p>A: No. The block / backup / undo features are <strong>Claude Code
 only.</strong> They will not activate in Codex. In Codex, you rely on
@@ -1796,7 +1806,7 @@ Codex’s own built-in safety features (the approval prompt and sandbox
 environment). See Section 5-2 for how to improve safety in Codex using
 the included <code>AGENTS.md</code> file.</p>
 <hr />
-<p><strong>Q10. What is “auto-approve mode” and should I use
+<p><strong>Q11. What is “auto-approve mode” and should I use
 it?</strong></p>
 <p>A: Claude Code has a mode (sometimes called “YOLO mode” or
 “auto-approve mode”) where it automatically approves all AI actions
@@ -1808,7 +1818,7 @@ also still apply. We recommend <strong>not</strong> using auto-approve
 mode unless you are an experienced developer who fully understands the
 risks.</p>
 <hr />
-<p><strong>Q11. What happens if a backup fails?</strong></p>
+<p><strong>Q12. What happens if a backup fails?</strong></p>
 <p>A: If SoDamHarness cannot create a backup — for example, because your
 disk is full or there are permission errors — the risky action is
 <strong>automatically cancelled.</strong> Nothing is deleted or
@@ -1816,7 +1826,7 @@ overwritten if the backup could not be made. You will see an error
 message explaining what went wrong. This is a safety-first design: no
 backup, no action.</p>
 <hr />
-<p><strong>Q12. How do I know the seatbelt is actually
+<p><strong>Q13. How do I know the seatbelt is actually
 working?</strong></p>
 <p>A: Run <code>/sodam-harness:status</code> — it reports the health of
 each component. For a quick live test: in a throwaway empty folder, ask
@@ -1824,16 +1834,18 @@ the AI “Please delete this entire folder.” If the seatbelt is working,
 you will immediately see a block message. See Section 3 (Quick start)
 for a step-by-step test procedure.</p>
 <hr />
-<p><strong>Q13. Can I use SoDamHarness with other AI coding tools
-besides Claude Code and Codex?</strong></p>
-<p>A: SoDamHarness uses Claude Code’s specific plugin and hook system,
-so the automatic blocking and backup features will not work with other
-tools (Cursor, GitHub Copilot, Gemini, etc.). However, the
-<code>AGENTS.md</code> file included in the plugin folder — which sets
-safety guidelines — can be copied into any project folder, and some AI
-tools may read and respect it.</p>
+<p><strong>Q14. Can I use SoDamHarness without Claude Code, or with
+other AI coding tools?</strong></p>
+<p>A: The automatic blocking, backup, and undo features rely directly on
+Claude Code’s plugin and hook system, so they do not work without Claude
+Code, and they do not activate in other tools (Cursor, GitHub Copilot,
+Gemini, etc.) either. However, the <code>AGENTS.md</code> file included
+in the plugin folder — which sets a plain-language tone — can be copied
+into any project folder, and some AI tools may read and respect it. That
+said, this is only a “tone guideline,” not the blocking/backup safety
+feature.</p>
 <hr />
-<p><strong>Q14. What if I do not understand a warning message or
+<p><strong>Q15. What if I do not understand a warning message or
 error?</strong></p>
 <p>A: Simply paste the message into Claude Code and say: “I see this
 message: [paste here]. What does it mean and what should I do?” The AI
@@ -1841,7 +1853,7 @@ will explain it in plain, friendly language. You can also run
 <code>/sodam-harness:fix</code> — it guides you through common problems
 step by step.</p>
 <hr />
-<p><strong>Q15. How long are my backups kept? Do they
+<p><strong>Q16. How long are my backups kept? Do they
 expire?</strong></p>
 <p>A: Most of the time they are cleaned up
 <strong>automatically</strong>. Backups are kept for the <strong>latest
@@ -1852,22 +1864,41 @@ backup files, and delete ones you no longer need. You can adjust the
 retention with <code>backupPolicy</code> (keepN · keepDays) in
 <code>~/.sodamharness/safety-rules.json</code>.</p>
 <hr />
-<p><strong>Q16. Is my data ever sent to SoDam AI Studio or anyone
+<p><strong>Q17. Is my data ever sent to SoDam AI Studio or anyone
 else?</strong></p>
 <p>A: No. No data — not your files, not your filenames, not your
 activity log, not anything — is ever sent to SoDam AI Studio or any
 external party. Everything stays on your computer. See Section 5-1 for
 the full data flow diagram and explanation.</p>
 <hr />
-<p><strong>Q17. Can I use this commercially — for client work, at a
-company, or in a product I sell?</strong></p>
-<p>A: Yes. The Apache License 2.0 allows commercial use. You may use it
-for client deliverables, internal company tools, products you sell, or
-services you run. You must keep the license and copyright notice, state
-your changes if you modify the code, and include the NOTICE file if
-present. See Section 11 for full details.</p>
+<p><strong>Q18. Can I use this commercially — for client work, at a
+company, or in a product I sell? Can I modify and redistribute or sell
+it?</strong></p>
+<p>A: Yes, to all of the above. The Apache License 2.0 allows commercial
+use, modification, redistribution, and sale. You may use it for client
+deliverables, internal company tools, products you sell, or services you
+run. You must keep the license and copyright notice, state your changes
+if you modify the code, and include the NOTICE file if present. See
+Section 11 and the <code>LICENSE</code> file for full details.</p>
 <hr />
-<p><strong>Q18. If I use <code>/sodam-harness:wizard</code> to reduce
+<p><strong>Q19. The seatbelt asks me too often. How do I make it ask
+less?</strong></p>
+<p>A: Use <code>/sodam-harness:trust</code> to register “don’t ask me
+again for this kind of action in this folder” — it lasts 12 hours per
+folder + action type, and it survives starting a new conversation
+(session). If you want to more fundamentally change how often prompts
+appear, try <code>/sodam-harness:wizard</code>. Turning on Claude Code’s
+auto-approve (YOLO) mode also skips confirmation prompts (backups still
+happen).</p>
+<hr />
+<p><strong>Q20. If I use <code>/sodam-harness:trust</code>, does that
+also remove the block on catastrophic actions?</strong></p>
+<p>A: No. <code>trust</code> only skips the <strong>“Really do
+this?”</strong> confirmation question. Hard blocks (🛑) and automatic
+backups (💾) both remain fully in effect even after using
+<code>trust</code>.</p>
+<hr />
+<p><strong>Q21. If I use <code>/sodam-harness:wizard</code> to reduce
 prompts, does that make it less safe?</strong></p>
 <p>A: No. The wizard only adjusts <strong>how often</strong> the “Really
 do this?” prompt appears. Blocking of catastrophic actions (whole-folder
@@ -1876,7 +1907,7 @@ deletion, system deletion) stays on at every level, secret files
 blocks the action. Fewer prompts does not mean fewer safeguards — the
 underlying protections are unchanged.</p>
 <hr />
-<p><strong>Q19. What does “162 self-tests passing” mean?</strong></p>
+<p><strong>Q22. What does “190 self-tests passing” mean?</strong></p>
 <p>A: During development, SoDamHarness ran 190 test cases (blocking
 dangerous actions, backups, undo, edge cases, adversarial bypass
 attempts, file move/rename protection, <code>git commit</code>

@@ -866,7 +866,7 @@ Uninstalling the plugin does **not** automatically delete your backup files or a
 
 **Q1. Is it truly safe? Can I trust this tool?**
 
-A: SoDamHarness blocks many common dangerous actions and creates backups before risky ones. However, it **cannot block 100% of all possible risks.** New or unusual danger patterns that we have not anticipated may not be caught. Think of it exactly like a seatbelt in a car: it greatly reduces harm but does not make driving 100% risk-free. For truly important work, always keep **your own separate backup** in addition to using this tool.
+A: SoDamHarness blocks many common dangerous actions and creates backups before risky ones. However, it **cannot block 100% of all possible risks.** New or unusual danger patterns that we have not anticipated may not be caught. Think of it exactly like a seatbelt in a car: it greatly reduces harm but does not make driving 100% risk-free. For truly important work, always keep **your own separate backup** in addition to using this tool. No software can honestly promise "100% safe."
 
 ---
 
@@ -884,95 +884,113 @@ A: No. You need the internet only **once** — when you first install SoDamHarne
 
 **Q4. Is this a virus? Is it safe to install?**
 
-A: SoDamHarness is not a virus. It is open-source software (Apache License 2.0) — every line of code is publicly readable. It does not send data anywhere, does not access the internet after installation, and does not modify system files. If you received it from the official source (the SoDam AI Studio GitHub page or directly from the developer), it is safe to install. As with any software, if you received it from an unknown or suspicious source, be cautious.
+A: SoDamHarness is not a virus. It is open-source software (Apache License 2.0) — every line of code is publicly readable. It does not send data anywhere, does not access the internet after installation, and does not modify system files. If you received it from the official source (the SoDam AI Studio GitHub page or directly from the developer), it is safe to install. As with any software, if you received it from an unknown or suspicious source, be cautious. Checking the open-source code yourself (or asking an IT professional to check it) is the safest approach.
 
 ---
 
-**Q5. Why do I need Node.js? Can I use SoDamHarness without it?**
+**Q5. I accidentally deleted an important file. What do I do?**
 
-A: SoDamHarness's safety hooks are written in JavaScript and require Node.js to run. Without Node.js, the hooks simply cannot execute — meaning the seatbelt will not work. Node.js is free, widely trusted, and installing it takes about 3–5 minutes. It runs quietly in the background and does not noticeably slow down your computer.
-
----
-
-**Q6. Does it slow down my computer or drain the battery?**
-
-A: No, not noticeably. SoDamHarness's hooks run only when the AI takes an action — they do not run continuously in the background. Each check takes a fraction of a second. You will not notice any change in your computer's speed or battery life.
+A: Run `/sodam-harness:undo` — a list of recent backups will appear. Pick the number you want to restore. Note that **backups are made automatically right before the risky action**, so if a file was deleted before SoDamHarness was installed, or if the backup itself failed, it cannot be restored this way. Always keep a separate backup of truly important files.
 
 ---
 
-**Q7. I accidentally deleted an entire folder. Can I recover it?**
+**Q6. I accidentally deleted an entire folder. Can I recover it?**
 
 A: Unfortunately, no — entire folder deletion is not backed up because folders can contain hundreds of files. Instead, SoDamHarness **blocks** folder deletion entirely, so it should not have happened if the plugin is active. Individual files (which are backed up before deletion) can be restored with `/sodam-harness:undo`. If a folder was deleted anyway, this suggests the plugin was not active at that moment — run `/sodam-harness:status` to diagnose.
 
 ---
 
-**Q8. Does it work on Mac?**
+**Q7. Why do I need Node.js? I don't code at all.**
+
+A: SoDamHarness's safety features (the "guard," backups, and logging) are built with Node.js — it is the engine that powers this tool. You do not need to know how to code at all; you only need to install Node.js once, and after that you never have to think about it again. It is completely free and takes about 3–5 minutes to install.
+
+---
+
+**Q8. Does it slow down my computer or drain the battery?**
+
+A: No, not noticeably. SoDamHarness's hooks run only when the AI takes an action — they do not run continuously in the background. Each check takes a fraction of a second, and CPU/memory usage is minimal. You will not notice any change in your computer's speed or battery life.
+
+---
+
+**Q9. Does it work on Mac?**
 
 A: SoDamHarness is written with cross-platform code and is designed to work on Mac. However, **it has only been formally verified on Windows** as of this writing. Mac is untested. If you use it on Mac and encounter any issues, please report them to the developer.
 
 ---
 
-**Q9. Does it provide the same protection in Codex?**
+**Q10. Does it provide the same protection in Codex?**
 
 A: No. The block / backup / undo features are **Claude Code only.** They will not activate in Codex. In Codex, you rely on Codex's own built-in safety features (the approval prompt and sandbox environment). See Section 5-2 for how to improve safety in Codex using the included `AGENTS.md` file.
 
 ---
 
-**Q10. What is "auto-approve mode" and should I use it?**
+**Q11. What is "auto-approve mode" and should I use it?**
 
 A: Claude Code has a mode (sometimes called "YOLO mode" or "auto-approve mode") where it automatically approves all AI actions without showing you any confirmation prompts. If this mode is on, the "Really do this?" prompts from SoDamHarness will be skipped. **Backups still happen automatically** even in auto-approve mode — that cannot be turned off. Hard blocks (catastrophic actions) also still apply. We recommend **not** using auto-approve mode unless you are an experienced developer who fully understands the risks.
 
 ---
 
-**Q11. What happens if a backup fails?**
+**Q12. What happens if a backup fails?**
 
 A: If SoDamHarness cannot create a backup — for example, because your disk is full or there are permission errors — the risky action is **automatically cancelled.** Nothing is deleted or overwritten if the backup could not be made. You will see an error message explaining what went wrong. This is a safety-first design: no backup, no action.
 
 ---
 
-**Q12. How do I know the seatbelt is actually working?**
+**Q13. How do I know the seatbelt is actually working?**
 
 A: Run `/sodam-harness:status` — it reports the health of each component. For a quick live test: in a throwaway empty folder, ask the AI "Please delete this entire folder." If the seatbelt is working, you will immediately see a block message. See Section 3 (Quick start) for a step-by-step test procedure.
 
 ---
 
-**Q13. Can I use SoDamHarness with other AI coding tools besides Claude Code and Codex?**
+**Q14. Can I use SoDamHarness without Claude Code, or with other AI coding tools?**
 
-A: SoDamHarness uses Claude Code's specific plugin and hook system, so the automatic blocking and backup features will not work with other tools (Cursor, GitHub Copilot, Gemini, etc.). However, the `AGENTS.md` file included in the plugin folder — which sets safety guidelines — can be copied into any project folder, and some AI tools may read and respect it.
+A: The automatic blocking, backup, and undo features rely directly on Claude Code's plugin and hook system, so they do not work without Claude Code, and they do not activate in other tools (Cursor, GitHub Copilot, Gemini, etc.) either. However, the `AGENTS.md` file included in the plugin folder — which sets a plain-language tone — can be copied into any project folder, and some AI tools may read and respect it. That said, this is only a "tone guideline," not the blocking/backup safety feature.
 
 ---
 
-**Q14. What if I do not understand a warning message or error?**
+**Q15. What if I do not understand a warning message or error?**
 
 A: Simply paste the message into Claude Code and say: "I see this message: [paste here]. What does it mean and what should I do?" The AI will explain it in plain, friendly language. You can also run `/sodam-harness:fix` — it guides you through common problems step by step.
 
 ---
 
-**Q15. How long are my backups kept? Do they expire?**
+**Q16. How long are my backups kept? Do they expire?**
 
 A: Most of the time they are cleaned up **automatically**. Backups are kept for the **latest 100 files + 30 days**; anything older is pruned automatically whenever a new backup is made (up to 200 per run). If you want to reduce them further, open `~/.sodamharness/backups/`, review the backup files, and delete ones you no longer need. You can adjust the retention with `backupPolicy` (keepN · keepDays) in `~/.sodamharness/safety-rules.json`.
 
 ---
 
-**Q16. Is my data ever sent to SoDam AI Studio or anyone else?**
+**Q17. Is my data ever sent to SoDam AI Studio or anyone else?**
 
 A: No. No data — not your files, not your filenames, not your activity log, not anything — is ever sent to SoDam AI Studio or any external party. Everything stays on your computer. See Section 5-1 for the full data flow diagram and explanation.
 
 ---
 
-**Q17. Can I use this commercially — for client work, at a company, or in a product I sell?**
+**Q18. Can I use this commercially — for client work, at a company, or in a product I sell? Can I modify and redistribute or sell it?**
 
-A: Yes. The Apache License 2.0 allows commercial use. You may use it for client deliverables, internal company tools, products you sell, or services you run. You must keep the license and copyright notice, state your changes if you modify the code, and include the NOTICE file if present. See Section 11 for full details.
+A: Yes, to all of the above. The Apache License 2.0 allows commercial use, modification, redistribution, and sale. You may use it for client deliverables, internal company tools, products you sell, or services you run. You must keep the license and copyright notice, state your changes if you modify the code, and include the NOTICE file if present. See Section 11 and the `LICENSE` file for full details.
 
 ---
 
-**Q18. If I use `/sodam-harness:wizard` to reduce prompts, does that make it less safe?**
+**Q19. The seatbelt asks me too often. How do I make it ask less?**
+
+A: Use `/sodam-harness:trust` to register "don't ask me again for this kind of action in this folder" — it lasts 12 hours per folder + action type, and it survives starting a new conversation (session). If you want to more fundamentally change how often prompts appear, try `/sodam-harness:wizard`. Turning on Claude Code's auto-approve (YOLO) mode also skips confirmation prompts (backups still happen).
+
+---
+
+**Q20. If I use `/sodam-harness:trust`, does that also remove the block on catastrophic actions?**
+
+A: No. `trust` only skips the **"Really do this?"** confirmation question. Hard blocks (🛑) and automatic backups (💾) both remain fully in effect even after using `trust`.
+
+---
+
+**Q21. If I use `/sodam-harness:wizard` to reduce prompts, does that make it less safe?**
 
 A: No. The wizard only adjusts **how often** the "Really do this?" prompt appears. Blocking of catastrophic actions (whole-folder deletion, system deletion) stays on at every level, secret files (passwords, tokens) always prompt again, and a failed backup always blocks the action. Fewer prompts does not mean fewer safeguards — the underlying protections are unchanged.
 
 ---
 
-**Q19. What does "162 self-tests passing" mean?**
+**Q22. What does "190 self-tests passing" mean?**
 
 A: During development, SoDamHarness ran 190 test cases (blocking dangerous actions, backups, undo, edge cases, adversarial bypass attempts, file move/rename protection, `git commit` secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them passed. It confirms "the core features work as intended" — not "100% perfect in every situation."
 
