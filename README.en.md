@@ -773,7 +773,7 @@ These files are in the SoDamHarness plugin folder:
 | `DEVELOPMENT.md` | Developer documentation — internal design and contribution notes | Contributors/developers |
 | `CONTRIBUTING.md` | Contribution guide | Contributors |
 | `AGENTS.md` | Optional file to copy into other AI tools (Codex, Cursor, Gemini, etc.) for the same plain-language tone | Codex/other-tool users |
-| `BETA.md` / `BETA_CHECKLIST.md` | External beta-tester recruitment/verification documents — **currently inactive** because the project is confirmed PRIVATE/solo-use; kept in the repo in case that decision is reversed later | (not applicable right now) |
+| `BETA.md` / `BETA_CHECKLIST.md` | External beta-tester recruitment/verification documents — the repo is PUBLIC, but whether to actually launch external beta is under separate review | (not applicable right now) |
 | `CHANGELOG.md` | The full, detailed change history (with dates, reasons, and evidence) | Developers/curious users |
 | `codex/CODEX_SETUP.md` | Detailed Codex setup guide | Codex users |
 | `codex/config.toml.example` | Template for Codex safety settings | Codex users |
