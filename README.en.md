@@ -990,9 +990,9 @@ A: No. The wizard only adjusts **how often** the "Really do this?" prompt appear
 
 ---
 
-**Q22. What does "190 self-tests passing" mean?**
+**Q22. What does "197 self-tests passing" mean?**
 
-A: During development, SoDamHarness ran 190 test cases (blocking dangerous actions, backups, undo, edge cases, adversarial bypass attempts, file move/rename protection, `git commit` secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them passed. It confirms "the core features work as intended" — not "100% perfect in every situation."
+A: During development, SoDamHarness ran 197 test cases (blocking dangerous actions, backups, undo, edge cases, adversarial bypass attempts, file move/rename protection, `git commit` secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them passed. It confirms "the core features work as intended" — not "100% perfect in every situation."
 
 ---
 
@@ -1000,6 +1000,14 @@ A: During development, SoDamHarness ran 190 test cases (blocking dangerous actio
 
 <details>
 <summary><b>📌 Changes by version (click to expand)</b></summary>
+
+### 2026-08-20~21 — Blocked 18 adversarial bypass paths + fixed an undo-honesty defect (stricter only, no relaxation)
+- **Closed several PowerShell bypass paths**: found and blocked `Clear-Content`/`Clear-Item` (short alias `clc`, silently empties a file's contents), `New-Item -Force` (alias `ni -Force`, silently overwrites an existing file), and the short aliases of `Move-Item`/`Copy-Item` (`mi`/`cpi`, which could move/copy a source file with no backup) — all of which had been slipping through undetected.
+- **Newly blocked whole-folder/drive destruction commands**: `robocopy /MIR`/`/PURGE` (mirrors a folder and wipes destination content), `Format-Volume`/`Clear-Disk`/`Remove-Partition`/`Initialize-Disk` (destroy a drive/partition), `.NET`'s `[System.IO.File]::WriteAllText`/`WriteAllBytes` (directly overwrites file content), and the legacy bulk-copy tool `xcopy` are now watched. Drive/partition destruction is classified as **catastrophic (blocked immediately, unrecoverable)**.
+- **Closed the most fundamental blind spot — "if we can't read what a command does, treat it as dangerous"**: execution methods that make it impossible for the safety belt to read the actual command content — `powershell -EncodedCommand` (hides the command as base64), `Invoke-Expression`/`iex`, and bash `eval` — are now treated as dangerous simply because their intent can't be inspected. This isn't a fix for one specific command; it closes the whole class of "evade inspection" tricks.
+- **Fixed a defect where undo reported a partial failure as a total failure**: when restoring several files at once, if even one file's restore failed (e.g., its parent folder had since been deleted), the tool used to wrongly report "0 files restored" — **discarding the files that had already been successfully restored**. It now counts successes accurately and honestly lists only the failed file(s) as "couldn't restore this one." No files were ever actually lost by this bug — it was a reporting-accuracy defect — but because it directly touches this product's core promise (undo), it was treated as a high-priority fix.
+- **Fixed a path-resolution defect in the guard (guard.mjs)**: for paths starting with `~` (home folder), deleting or overwriting a file correctly triggered the confirmation prompt (⚠️), but the **actual backup created was 0 files — a half-working protection**. This is now fixed so a real backup is made whenever the confirmation prompt appears.
+- **All 197 self-tests pass** (zero regressions). The undo-defect regression test reproduces a real failure — it actually creates files, backs them up, and deletes one file's entire parent folder — rather than simulating one.
 
 ### 2026-08-02 — New: automatic secret-file check right before `git commit` (stricter only, no relaxation)
 - **What**: If a file with a name that looks like it holds a password or key (like `.env`) is about to be included in a `git commit`, SoDamHarness now notices automatically and asks "Really commit this?" first. It checks the file **name only** — it never reads the contents.
@@ -1153,7 +1161,7 @@ We want to be fully honest about what SoDamHarness can and cannot do.
 - **Verified on Windows; Mac is untested.** The code is written to be cross-platform, but Mac behavior has not been formally verified. Please report any Mac-specific issues to the developer.
 - Backups are file-by-file. Whole folders are never backed up as a unit (which is exactly why whole-folder deletion is blocked instead).
 - A full disk or missing permissions can cause a backup to fail.
-- **190/190 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts, file move/rename protection, and the custom wizard's L1/L2/L3 levels). This confirms the core features work as intended — it does not mean "100% perfect in every situation."
+- **197/197 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts, file move/rename protection, and the custom wizard's L1/L2/L3 levels). This confirms the core features work as intended — it does not mean "100% perfect in every situation."
 - For truly important data, **do not rely on this tool alone.** Use a dedicated backup solution (Windows Backup, Time Machine, cloud storage, an external drive, etc.) in addition to SoDamHarness.
 - **Think before you act.** The best safety measure is a moment of careful thought before asking the AI to do something irreversible.
 
