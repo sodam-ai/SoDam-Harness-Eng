@@ -13,10 +13,46 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 아래 배포격차 검사가 이전 커밋과 diff해야 해서 전체 히스토리 필요
 
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      # [2026-08-20 신설, 실사고 근거] 이 세션에서 hooks/ 안전 수정 18건 이상이 커밋도 안 된 채
+      # 7일간 실제 설치된 플러그인엔 하나도 반영 안 되고 있었음을 뒤늦게 발견했다(CHECKPOINT §BK).
+      # 근본 원인 중 하나: `claude plugin update`는 .claude-plugin/plugin.json의 버전 번호로만
+      # 갱신 여부를 판단해서, hooks/*.mjs를 고쳐도 버전을 안 올리면 배포 자체가 안 일어난다.
+      # 사람의 기억에 맡기지 않고 CI가 강제하게 만든다 — hooks/ 변경 + 버전 미변경 조합이면 실패.
+      - name: hooks 변경 시 plugin.json 버전범프 확인 (배포 격차 재발 방지)
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE="${{ github.event.before }}"
+            HEAD="${{ github.sha }}"
+          fi
+          # 브랜치 최초 push 등으로 비교 대상 커밋이 없으면(전부 0) 검사할 게 없으니 건너뜀
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            echo "비교 대상 커밋 없음(최초 push 등) — 건너뜀"
+            exit 0
+          fi
+          HOOKS_CHANGED=$(git diff --name-only "$BASE" "$HEAD" -- hooks/ | wc -l)
+          VERSION_CHANGED=$(git diff --name-only "$BASE" "$HEAD" -- .claude-plugin/plugin.json | wc -l)
+          if [ "$HOOKS_CHANGED" -gt 0 ] && [ "$VERSION_CHANGED" -eq 0 ]; then
+            echo "오류: hooks/ 를 고쳤는데 .claude-plugin/plugin.json 버전을 안 올렸습니다."
+            echo "claude plugin update 는 버전 번호로만 갱신 여부를 판단해서, 버전을 안 올리면"
+            echo "실제 설치된 플러그인엔 이 수정이 절대 반영되지 않습니다."
+            echo "(2026-08-20 실제 사고: 안전 수정 18건 이상이 7일간 미배포로 방치됨)"
+            echo ""
+            echo "바뀐 hooks 파일:"
+            git diff --name-only "$BASE" "$HEAD" -- hooks/
+            exit 1
+          fi
+          echo "OK — hooks 변경 없음 또는 버전범프 확인됨"
 
       - name: npm audit (고위험 차단)
         run: npm audit --audit-level=high
