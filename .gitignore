@@ -13,6 +13,10 @@ node_modules/
 .remember/
 .pair-programming-session.md
 .plugin-config/
+# 2026-08-21 추가: 이 코드가 만든 파일이 아님(hooks/*.mjs 전수 검색 결과 0건) — 다른 플러그인이
+# 이 폴더를 작업 디렉터리로 쓰며 남긴 부산물로 추정. git add -A 실수 시 혼입 방지 목적.
+.failure-tracker.jsonl
+.sodam-re/
 
 # 테스트 임시 산출물
 *.tmp
