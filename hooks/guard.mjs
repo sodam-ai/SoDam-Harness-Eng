@@ -150,10 +150,12 @@ function writeDestinations(cmd, cwd) {
   const reDir = /(?:^|[^>\d])1?>(?!>)\s*("[^"]+"|'[^']+'|[^\s;&|>]+)/g;
   let m;
   while ((m = reDir.exec(cmd))) cand.add(clean(m[1]));
-  // 2) cp / mv / copy / move : 첫 비-플래그 인자=원본(피해자 basename 계산용) / 마지막 비-플래그 인자=대상
+  // 2) cp / mv / copy / move / xcopy : 첫 비-플래그 인자=원본(피해자 basename 계산용) / 마지막 비-플래그 인자=대상
+  // [2026-08-20 발견] xcopy가 빠져 있어 기존 파일을 덮어써도 백업 없이 조용히 통과하던 실제 통과 경로였음
+  // (copy와 인자 순서·의미가 동일해 같은 파싱 규칙을 그대로 재사용 — 새 코드 없이 정규식 1곳만 확장).
   const toks = bashTokens(cmd);
   const c0 = (toks[0] || "").toLowerCase();
-  if (/^(cp|mv|copy|move)$/.test(c0)) {
+  if (/^(cp|mv|copy|move|xcopy)$/.test(c0)) {
     let srcTok = null, destTok = null;
     for (let i = 1; i < toks.length; i++) {
       const t = toks[i];
@@ -190,7 +192,9 @@ function writeDestinations(cmd, cwd) {
   //    구분해서 찾는다. [2026-08-02 버그 발견·수정] 예전엔 4개 플래그를 한 정규식으로 뭉뚱그려 찾아서
   //    "-Path X -Destination Y"처럼 -Path가 먼저 나오면 원본(X)을 목적지로 오인했다(실측 RED로 발견).
   //    이름있는 플래그로 못 채운 쪽만 남은 위치인자로 보충(순서 무관, 이미 소비된 값 토큰은 제외).
-  if (/\b(copy-item|move-item)\b/i.test(cmd)) {
+  // [2026-08-20 발견] cpi/mi — Copy-Item/Move-Item의 PowerShell 짧은 별칭. 정식 이름은 이미 인식되는데
+  // 별칭은 빠져 있어 목적지 피해자(덮어쓸 기존 파일)가 잡히지 않던 실제 통과 경로였음.
+  if (/\b(copy-item|cpi|move-item|mi)\b/i.test(cmd)) {
     const destMatch = cmd.match(/-Destination\s+("[^"]+"|'[^']+'|\S+)/i);
     const srcMatch = cmd.match(/-(?:Path|LiteralPath)\s+("[^"]+"|'[^']+'|\S+)/i);
     let destTok = destMatch ? destMatch[1] : null;
@@ -213,6 +217,14 @@ function writeDestinations(cmd, cwd) {
       const victim = collisionVictim(root, srcTok, destTok);
       if (victim) cand.add(victim);
     }
+  }
+  // 5) .NET [System.IO.File]::WriteAllText/WriteAllBytes(경로, ...) : 첫 인자(따옴표 문자열)=목적지.
+  // [2026-08-20 발견] RISKY 목록에만 넣으면 ask는 뜨지만 목적지가 공백 없이 괄호·따옴표에 붙어 있어
+  // 일반 토크나이저(commandPaths)가 못 잡아 "확인은 뜨는데 실제 백업은 0개"인 반쪽짜리 보호가 됨
+  // — Out-File과 동일한 방식으로 여기서 직접 추출해 진짜 백업이 뜨게 한다.
+  if (/\[\s*(system\.)?io\.file\]::\s*writeall(text|bytes)/i.test(cmd)) {
+    const md = cmd.match(/writeall(?:text|bytes)\s*\(\s*("[^"]+"|'[^']+')/i);
+    if (md) cand.add(clean(md[1]));
   }
   return Array.from(cand)
     .filter(Boolean)
@@ -518,6 +530,17 @@ const CATASTROPHIC = [
   /:\(\)\s*\{[^}]*\}\s*;\s*:/, // fork bomb
   /\bdd\b[^|;&]*\bof=\/dev\/(sd|nvme|disk|hd)/i,
   />\s*\/dev\/(sd|nvme|disk|hd)/i,
+  // [2026-08-20 발견] robocopy /MIR(또는 /PURGE) — "미러"라는 이름과 달리 대상 폴더에만 있고
+  // 원본엔 없는 파일을 전부 지운다. 폴더 전체가 대상이라 RECURSIVE_DELETE처럼 "삭제 전 어떤 파일이
+  // 지워질지"를 미리 알 수 없어 사전 백업이 원천적으로 불가능 — rm -rf와 동일하게 즉시 차단(deny)한다.
+  /\brobocopy\b[^|;&]*\/(mir|purge)\b/i,
+  // [2026-08-20 발견] PowerShell 네이티브 드라이브/파티션 파괴 cmdlet 4종 — cmd.exe의 `format C:`·
+  // `mkfs`(위에서 이미 차단)와 파괴 범위·비가역성이 완전히 동일한데 문법만 달라 안 걸리고 있었음.
+  // 드라이브·파티션 전체가 대상이라 조건(플래그) 없이 무조건 즉시 차단(기존 format/mkfs와 동일 원칙).
+  /\bformat-volume\b/i,
+  /\bclear-disk\b/i,
+  /\bremove-partition\b/i,
+  /\binitialize-disk\b/i,
 ];
 // 위험: 삭제·강제·배포·외부 업로드 → 백업 후 ask
 const RISKY = [
@@ -535,6 +558,7 @@ const RISKY = [
   /\bmv\b/i,
   /\bmove\b/i,
   /\bmove-item\b/i, // PowerShell
+  /\bmi\b\s/i, // PowerShell 별칭(mv와 동일하게 원본이 사라짐 — 2026-08-20 발견, ri/rd와 동일한 안전장치로 trailing space 요구)
   // [2026-08-02 실측 발견] ren/rename/Rename-Item — mv와 동일하게 원본이 그 자리에서 사라진다.
   // mv와 달리 writeDestinations() 수정은 불필요: level이 risky가 되면 commandPaths()가 이 세그먼트의
   // 위치 인자(원본명+새이름)를 전부 백업 후보로 잡아 원본(존재하는 쪽)이 자동으로 backupPaths()에 들어간다
@@ -558,13 +582,36 @@ const RISKY = [
   /\btruncate\b[^|;&]*(-s|--size)[=\s]*0\b/i, // truncate -s 0 (파일 0-초기화 — 2026-07-07 감사)
   /\bchmod\s+-R\b/i,
   /\bset-content\b/i, // PowerShell 덮어쓰기
+  // [2026-08-20 발견] Clear-Content/Clear-Item — 삭제(delete)도 덮어쓰기(set-content)도 아니지만
+  // 파일 내용을 조용히 0바이트로 비운다(truncate와 동일한 파괴력). guard.mjs 자체를 이용한 격리
+  // 우회사냥(bypass-hunt)에서 RISKY·writeDestinations 양쪽 다 못 잡는 실제 통과(PASSTHROUGH) 확인.
+  /\bclear-content\b/i, // PowerShell 파일 내용 비우기
+  /\bclc\b\s/i, // Clear-Content 별칭(2026-08-20 발견, ri/rd와 동일하게 trailing space 요구)
+  /\bclear-item\b/i, // PowerShell 파일/레지스트리 항목 비우기(Clear-Content의 상위 호환)
+  // [2026-08-20 검토] Clear-Item의 별칭 cli는 일부러 추가하지 않는다 — "cli"는 Command Line Interface의
+  // 약자로 실제 파일명·패키지명(cli.js·vercel-cli 등)에 흔히 등장해 오탐 위험이 매우 커, 뒤에서 뺀 Set-Content
+  // 별칭 sc(Windows Service Control과 충돌)와 같은 이유로 제외한다(가치 있는 명령을 매번 막는 게 더 나쁨).
+  // New-Item 자체는 안전(대상 없으면 새로 만듦, 있으면 기본은 에러) — -Force가 있어야만
+  // 기존 파일을 조용히 덮어써 위험해진다. -Force 없는 New-Item까지 걸면 정상적인 "파일 새로 만들기"에
+  // 불필요한 확인이 매번 뜨는 마찰이 생기므로, 같은 세그먼트 안에 -Force가 있을 때만 잡는다.
+  /\bnew-item\b[^|;&]*-force\b/i, // PowerShell New-Item -Force(기존 파일 조용히 덮어쓰기)
+  /\bni\b[^|;&]*-force\b/i, // New-Item 별칭(2026-08-20 발견, 동일 조건)
   // 우회 삭제 방법들 (실측 2026-06-21: 1차 차단 시 AI가 다른 방법 시도 — 흔한 것은 잡는다, §8.8 한계 유지)
   /add-type[^;&|]*visualbasic/i, // PowerShell .NET(휴지통/삭제)
   /\[\s*(system\.)?io\.(file|directory)\]::\s*delete/i, // .NET IO 삭제
+  /\[\s*(system\.)?io\.file\]::\s*writealltext/i, // .NET IO 트렁케이트(2026-08-20 발견, Clear-Content와 동일 효과)
+  /\[\s*(system\.)?io\.file\]::\s*writeallbytes/i, // .NET IO 트렁케이트(바이트 배열 버전)
   /\.(rmtree|removedirs)\s*\(/i, // python shutil.rmtree
   /\bos\.(remove|unlink|rmdir)\s*\(/i, // python os 삭제
   /\bfs\.(rm|rmsync|unlink|unlinksync|rmdir|rmdirsync)\b/i, // node fs 삭제(fs.rm...)
   /\b(rmsync|unlinksync|rmdirsync)\s*\(/i, // node 삭제(require('fs').rmSync(...) 형태)
+  // [2026-08-20 발견] "내용을 텍스트로 읽을 수 없는 명령" — 지금까지의 항목은 전부 "이 명령을 몰라서"
+  // 생긴 구멍이었지만, 이건 알아도 안 보이게 만들 수 있는 더 근본적인 사각지대다. 완벽한 디코딩·동적
+  // 분석은 시도하지 않고(끝없는 군비경쟁, §8.8), "내용을 못 읽으면 무조건 위험 취급"이라는 단순한
+  // fail-safe 원칙만 적용한다(git 확인 실패 시 ask로 떨어지는 기존 원칙과 동일 철학).
+  /\b(powershell|pwsh)(\.exe)?\b[^|;&]*\s-(e|en|enc|encodedcommand)\b/i, // -EncodedCommand(base64로 명령 숨김, -e/-enc 축약형 포함)
+  /\b(iex|invoke-expression)\b/i, // PowerShell 동적 실행(변수 내용을 명령으로 실행 — 텍스트만으론 뭘 하는지 알 수 없음)
+  /\beval\b/i, // bash/sh 동적 실행(위와 동일한 사각지대)
 ];
 // git 전역 옵션(-C <경로>, -c <key=val>)을 떼어 "git <명령>" 형태로 정규화한다.
 // 없으면 `git -C <폴더> push`(reset --hard·clean -f·push --force 포함)가 위험 분류를 통째로 빠져나간다(실측 2026-06-21).
@@ -894,13 +941,21 @@ function main() {
     }
   }
   // 기존 파일 덮어쓰기만 위험(새 파일 생성은 안전 — 어느 폴더든 통과)
-  const overwrites = targets.filter((t) => {
-    try {
-      return existsSync(path.resolve(cwd, t));
-    } catch {
-      return false;
-    }
-  });
+  // [2026-08-20 발견·2차 수정] 처음엔 존재 확인만 resolveLoose로 고쳤는데, 그러면 overwrites 배열엔
+  // 여전히 원본(~·/c/... 등 미변환) 문자열이 담겨 그대로 backupPaths()에 넘어간다 — backup.mjs는
+  // resolveLoose를 모르고 path.resolve()만 쓰므로 "확인은 뜨는데 실제 백업은 0개"인 반쪽짜리 보호가
+  // 됐다(직접 재현: ask는 떴지만 res.count=0). writeDestinations()가 이미 하는 것과 동일하게, 여기서도
+  // resolveLoose로 변환된 절대경로 자체를 배열에 담아 이후 모든 단계(백업·재귀검사·표시)가 같은
+  // 값을 쓰게 통일한다.
+  const overwrites = targets
+    .map((t) => resolveLoose(cwd, t))
+    .filter((abs) => {
+      try {
+        return existsSync(abs);
+      } catch {
+        return false;
+      }
+    });
   if (overwrites.length > 0) {
     const res = backupPaths(overwrites, cwd, sessionId);
     if (!res.ok) {

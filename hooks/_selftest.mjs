@@ -1192,6 +1192,39 @@ if (WIN) {
   check("52d(fail-closed 대조군): git 저장소 아닌 곳에서 commit → 확인 실패로 안전하게 ask(조용한 통과 금지)", r52d.decision === "ask" && !r52d.reason.includes(".env"), JSON.stringify(r52d));
 }
 
+// 53) [신규·2026-08-20] Write/Edit 도구의 "~"(홈 디렉터리 축약) file_path — 933행(민감위치 검사)은
+//     resolveLoose를 쓰는데 덮어쓰기 존재검사(옛 946행)는 path.resolve만 써서 "존재 안 함(새 파일)"으로
+//     오판 → 백업·확인을 건너뛸 뻔한 실제 코드 결함을 회귀 잠금. 1차 수정(존재검사만 resolveLoose로)
+//     후 재현에서 "ask는 뜨는데 백업 0개"인 반쪽짜리였음을 직접 발견해 2차로 overwrites 배열 자체를
+//     resolveLoose 결과로 채우도록 수정 — 그 반쪽짜리 상태로 되돌아가지 않는지까지 함께 잠근다.
+if (WIN) {
+  const fakeHome53 = path.join(work, "fakehome53");
+  mkdirSync(fakeHome53, { recursive: true });
+  const targetName53 = "sdh_tilde_test_53.txt";
+  writeFileSync(path.join(fakeHome53, targetName53), "원본 내용");
+  const fakeEnv53 = { ...process.env, USERPROFILE: fakeHome53 };
+
+  const r53 = spawnSync(process.execPath, [GUARD], {
+    input: JSON.stringify({
+      tool_name: "Edit",
+      tool_input: { file_path: `~${path.sep}${targetName53}`, old_string: "원본", new_string: "변경" },
+      cwd: work, // cwd는 fakeHome과 무관한 폴더 — "~" 확장이 cwd가 아니라 홈(USERPROFILE)을 봐야 함을 증명
+    }),
+    encoding: "utf8",
+    env: fakeEnv53,
+  });
+  let dec53 = null, reason53 = "";
+  try {
+    const o = JSON.parse((r53.stdout || "").trim()).hookSpecificOutput;
+    dec53 = o.permissionDecision;
+    reason53 = o.permissionDecisionReason || "";
+  } catch {}
+  check("53a: ~/기존파일 Edit → 새 파일로 오판하지 않고 ask(백업 후 확인)", dec53 === "ask", JSON.stringify(dec53));
+  check("53b: ask 사유에 실제 백업 개수가 0개가 아님(반쪽짜리 보호 재발 방지)", /백업해 뒀어요\(파일 [1-9]/.test(reason53), reason53.slice(0, 40));
+} else {
+  console.log("  SKIP  53) ~ file_path 덮어쓰기 검사 (Windows 전용 USERPROFILE override로만 구현·검증)");
+}
+
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)
 try { rmSync(bwork, { recursive: true, force: true }); } catch {}
 try { if (backupDir1) rmSync(backupDir1, { recursive: true, force: true }); } catch {}

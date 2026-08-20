@@ -22,7 +22,9 @@ export function baseDir() {
   return path.join(homedir(), ".sodamharness");
 }
 export function backupsRoot() {
-  return path.join(baseDir(), "backups");
+  // whitelist.mjs(SODAM_WHITELIST_FILE)·profile.mjs(SODAM_PROFILE_FILE)와 동일한 관례.
+  // 2026-08-19: 이 override가 없어 검증 중 실제 백업 폴더가 지워진 사고가 있었음(CHECKPOINT §AW).
+  return process.env.SODAM_BACKUPS_ROOT || path.join(baseDir(), "backups");
 }
 
 // 시각 의존 — 테스트는 SODAM_NOW_MS로 고정 가능(whitelist.mjs·profile.mjs와 동일 관례)
@@ -415,14 +417,21 @@ if (invokedDirect) {
       console.log(JSON.stringify(restore(dir), null, 2));
     }
   } else if (arg === "--cleanup") {
-    const keepN = parseInt(process.argv[3], 10);
-    const keepDays = parseInt(process.argv[4], 10);
+    // 최소 바닥(keepN≥10·keepDays≥7) — readBackupPolicy()가 자동 정리 경로는 이미 이 바닥을
+    // 강제하지만, CLI로 cleanupBackups()를 직접 호출하는 이 경로는 무방비였다(2026-08-19 발견:
+    // `--cleanup 0 0`을 격리 테스트로 재현하면 문서화된 "실수로 0 넣어도 안전"과 달리 백업이
+    // 전멸함을 확인). cleanupBackups() 자체는 테스트 등 내부 호출에서 낮은 값을 의도적으로 쓰므로
+    // 건드리지 않고, 여기(CLI 입력 경계)에서만 readBackupPolicy()와 동일한 바닥을 적용한다.
+    // 폴백값은 readBackupPolicy()의 실제 기본 정책(keepN=100·keepDays=30)과 일치시킨다
+    // (2026-08-19: 여기서 임의로 50/14를 썼다가 실제 백업 폴더에 그 값이 적용돼, 문서화된
+    // 기본 30일 보존보다 짧게 잘려나간 사고가 있었음 — 반드시 한 곳의 기준만 따르게 함).
+    let keepN = parseInt(process.argv[3], 10);
+    let keepDays = parseInt(process.argv[4], 10);
+    if (!Number.isFinite(keepN) || keepN < 10) keepN = 100;
+    if (!Number.isFinite(keepDays) || keepDays < 7) keepDays = 30;
     console.log(
       JSON.stringify(
-        cleanupBackups(
-          Number.isFinite(keepN) ? keepN : 50,
-          Number.isFinite(keepDays) ? keepDays : 14,
-        ),
+        cleanupBackups(keepN, keepDays),
         null,
         2,
       ),

@@ -13,6 +13,12 @@ import path from "node:path";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 
 const TTL_MS = 12 * 60 * 60 * 1000; // 12시간
+// [2026-08-20 발견] pending은 session_id 무관(위 6~8행 이유)이라, "방금 이 세션에서 물어본 것"이 아니라
+// 며칠 전 다른 세션에서 응답 안 하고 남겨둔 낡은 pending도 그대로 승격될 수 있었다(trustLast()가 나이를
+// 전혀 안 봄 — 격리 테스트 중 실제로 재현: 무관한 옛 세션의 delete pending이 승격됨). 세션-무관 정책은
+// 유지하되(그게 P3의 목적), "방금 물어본 것에 대한 응답"이라는 전제만 지킨다 — 실제 대화 흐름에서
+// 물어보고 답하는 데 걸리는 시간보다 넉넉하게 잡아 정상 사용은 절대 막지 않는다.
+const PENDING_FRESH_MS = 30 * 60 * 1000; // 30분
 
 function baseDir() {
   return path.join(homedir(), ".sodamharness");
@@ -60,6 +66,9 @@ export function recordPending(session_id, folder, opClass) {
 export function trustLast() {
   const p = readJson(pendingFile());
   if (!p || !p.folder || !p.opClass) return { ok: false, error: "최근에 물어본(확인한) 작업이 없어요." };
+  if (typeof p.at !== "number" || nowMs() - p.at > PENDING_FRESH_MS) {
+    return { ok: false, error: "그 확인이 너무 오래돼서(30분 지남) 다시 물어봐야 해요. 방금 물어본 작업이 있을 때만 신뢰할 수 있어요." };
+  }
   const list = readJson(wlFile()) || [];
   list.push({
     session_id: p.session_id || null, // 감사용 기록 — 매칭엔 안 씀
