@@ -300,17 +300,24 @@ export function restore(dir) {
     const data = JSON.parse(readFileSync(mf, "utf8"));
     let restored = 0;
     const overwritten = []; // 지금 있고 내용이 다른 파일을 덮어쓴 경우 보고(undo가 미리 경고했어야 함)
+    // [2026-08-20 발견] copyFileSync가 파일 하나(예: 그 사이 폴더가 지워짐)에서 실패하면 예전엔
+    // try/catch 밖이라 함수 전체가 바깥 catch로 튕겨나가 "restored: 0"으로 보고됐다 — 그 앞서
+    // 이미 실제로 복구된 파일이 있어도 "0개 복구"라고 거짓 보고하는 결함. restorePlan()·
+    // cleanupBackups()가 이미 쓰는 "파일 하나 실패해도 나머지는 계속" 패턴으로 통일한다.
+    const failed = [];
     for (const f of data.files || []) {
       if (!existsSync(f.backup)) continue;
       try {
         if (existsSync(f.source) && !readFileSync(f.backup).equals(readFileSync(f.source))) {
           overwritten.push(f.source);
         }
-      } catch {}
-      copyFileSync(f.backup, f.source);
-      restored++;
+        copyFileSync(f.backup, f.source);
+        restored++;
+      } catch (e) {
+        failed.push({ source: f.source, error: e.message });
+      }
     }
-    return { ok: true, restored, overwritten };
+    return { ok: true, restored, overwritten, failed };
   } catch (e) {
     return { ok: false, restored: 0, error: e.message };
   }

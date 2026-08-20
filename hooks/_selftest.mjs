@@ -1225,6 +1225,38 @@ if (WIN) {
   console.log("  SKIP  53) ~ file_path 덮어쓰기 검사 (Windows 전용 USERPROFILE override로만 구현·검증)");
 }
 
+// 54) [신규·2026-08-20] restore()가 여러 파일 중 하나만 실패해도(예: 그 사이 폴더가 사라짐) 전체를
+//     "0개 복구"로 오보하지 않고, 성공한 파일은 성공한 대로 정확히 세는지 회귀 잠금.
+//     restorePlan()·cleanupBackups()가 이미 쓰는 "파일 하나 실패해도 나머지는 계속" 패턴과 통일했는지 확인.
+{
+  const rfWork = mkdtempSync(path.join(tmpdir(), "sdh-restorefail-"));
+  const sub1 = path.join(rfWork, "sub1");
+  const sub2 = path.join(rfWork, "sub2");
+  mkdirSync(sub1, { recursive: true });
+  mkdirSync(sub2, { recursive: true });
+  const fileA = path.join(sub1, "a.txt");
+  const fileB = path.join(sub2, "b.txt");
+  writeFileSync(fileA, "A-원본");
+  writeFileSync(fileB, "B-원본");
+
+  const bp = backupPaths([fileA, fileB], rfWork);
+  check("54-사전조건: 두 파일 다 백업됨", bp.ok && bp.count === 2, JSON.stringify(bp));
+
+  // 되돌리기 전, 두 원본 다 지우고 + fileB의 부모 폴더(sub2) 자체를 통째로 지움
+  // (copyFileSync(backup, source)가 부모 폴더 없으면 실패하는 실제 상황 재현 — 목업 아님)
+  rmSync(fileA, { force: true });
+  rmSync(sub2, { recursive: true, force: true });
+
+  const r54 = restore(bp.dir);
+  check("54a: 부분 실패해도 ok=true(전체 실패 아님)", r54.ok === true, JSON.stringify(r54));
+  check("54b: 실제 성공한 1개만 정확히 셈(0개 오보 아님)", r54.restored === 1, JSON.stringify(r54));
+  check("54c: 실패한 파일이 failed 목록에 정직하게 기록됨", Array.isArray(r54.failed) && r54.failed.length === 1 && r54.failed[0].source === fileB, JSON.stringify(r54.failed));
+  check("54d: 성공한 파일(A)은 실제로 디스크에 복구됨", existsSync(fileA) && readFileSync(fileA, "utf8") === "A-원본", existsSync(fileA) ? readFileSync(fileA, "utf8") : "없음");
+
+  try { rmSync(rfWork, { recursive: true, force: true }); } catch {}
+  try { rmSync(bp.dir, { recursive: true, force: true }); } catch {}
+}
+
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)
 try { rmSync(bwork, { recursive: true, force: true }); } catch {}
 try { if (backupDir1) rmSync(backupDir1, { recursive: true, force: true }); } catch {}
