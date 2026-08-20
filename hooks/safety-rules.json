@@ -12,10 +12,12 @@
       "mkfs",
       ":(){:};: (fork bomb)",
       "dd of=/dev/sd|nvme|disk",
-      "> /dev/sd|nvme|disk"
+      "> /dev/sd|nvme|disk",
+      "robocopy /MIR 또는 /PURGE (폴더 미러 파괴, 2026-08-20 추가)",
+      "Format-Volume / Clear-Disk / Remove-Partition / Initialize-Disk (PowerShell 드라이브·파티션 파괴, 2026-08-20 추가)"
     ],
     "risky": [
-      "rm / del / erase / rmdir / unlink / Remove-Item",
+      "rm / del / erase / rmdir / unlink / Remove-Item(별칭 ri/rd 포함)",
       "git push --force",
       "git reset --hard",
       "git clean -f",
@@ -29,7 +31,12 @@
       "Add-Type VisualBasic (우회 삭제)",
       "[System.IO.File/Directory]::Delete (.NET)",
       "shutil.rmtree / os.remove / os.unlink / os.rmdir (Python)",
-      "fs.rm / fs.unlink / fs.rmdir (Node.js)"
+      "fs.rm / fs.unlink / fs.rmdir (Node.js)",
+      "Clear-Content / Clear-Item(별칭 clc) — PowerShell 파일 내용 비우기(2026-08-20 추가)",
+      "New-Item -Force(별칭 ni -Force) — 기존 파일 조용히 덮어쓰기(2026-08-20 추가)",
+      "Move-Item(별칭 mi) / Copy-Item·Move-Item(별칭 cpi) / xcopy — 원본 소실·목적지 덮어쓰기(2026-08-20 추가)",
+      "[System.IO.File]::WriteAllText/WriteAllBytes — .NET 파일 내용 트렁케이트(2026-08-20 추가)",
+      "-EncodedCommand / Invoke-Expression·iex / bash eval — 내용을 못 읽는 명령은 무조건 위험 취급(2026-08-20 추가)"
     ]
   },
   "catastrophic": [],
