@@ -1257,6 +1257,98 @@ if (WIN) {
   try { rmSync(bp.dir, { recursive: true, force: true }); } catch {}
 }
 
+// 55) [신규·2026-08-31 BU-1] writeDestinations()가 원본 cmd를 그대로 스캔해 인용부(따옴표) 안의 '>'를
+//     실제 리다이렉트로 오인하던 결함 회귀 잠금. 확인된 사실: §BU가 적어둔 원문 재현 명령(화살표 함수
+//     v=>v>1 안에서 민감경로를 그냥 언급만 하는 경우)은 이번에 직접 재현해보니 실제로는 오탐이 안 났다
+//     (§BU 문서 자체의 부정확한 기록 — 정규식이 캡처하는 건 그 경우 무해한 조각("v")뿐이었음, 스크립트로
+//     직접 검증). 대신 '>' 바로 뒤에 공백 없이(또는 따옴표로 감싸) 민감경로가 곧장 이어지는 실제 계산식
+//     (예: if(1>0){...'<민감경로>'...})에서는 진짜로 오탐 deny가 재현됨을 확인 — 그 실결함만 정밀 수정.
+//     방식: 따옴표 안 문자를 중립문자로 치환한 "마스크" 버전에서 '>' 연산자 위치만 찾고(따옴표 안 '>'는
+//     매칭 안 됨), 실제 대상 텍스트는 원본에서 그대로 추출(maskQuoted, 위치 1:1 대응이라 값 훼손 없음).
+{
+  const fakeHome55 = mkdtempSync(path.join(tmpdir(), "sdh-bu1-home-"));
+  mkdirSync(path.join(fakeHome55, ".claude"), { recursive: true });
+  const sensPath55 = path.join(fakeHome55, ".claude", "settings.local.json");
+  writeFileSync(sensPath55, "{}");
+  const sensPosix55 = sensPath55.replace(/\\/g, "/");
+  const fakeEnv55 = { ...process.env, USERPROFILE: fakeHome55, HOME: fakeHome55 };
+  const work55 = mkdtempSync(path.join(tmpdir(), "sdh-bu1-work-"));
+
+  function run55(command) {
+    const r = spawnSync(process.execPath, [GUARD], {
+      input: JSON.stringify({ tool_name: "Bash", tool_input: { command }, cwd: work55 }),
+      encoding: "utf8",
+      env: fakeEnv55,
+    });
+    const out = (r.stdout || "").trim();
+    try { return JSON.parse(out).hookSpecificOutput?.permissionDecision ?? null; } catch { return null; }
+  }
+
+  check(
+    "55a: if(1>0) 뒤 공백없는 경로 언급 → 오탐 deny 없이 통과",
+    run55(`node -e "if(1>0){console.log('${sensPosix55}')}"`) === null,
+  );
+  check(
+    "55b: '>' 바로 뒤 공백없는 경로(따옴표 없음) → 통과",
+    run55(`node -e "1>${sensPosix55}"`) === null,
+  );
+  check(
+    "55c: x=1>'경로'(따옴표로 감싼 경로가 '>' 바로 뒤) → 통과",
+    run55(`node -e "x=1>'${sensPosix55}'"`) === null,
+  );
+  check(
+    "55d(안전바닥 대조군): 같은 민감경로를 진짜 리다이렉트로 덮어쓰면 여전히 deny",
+    run55(`echo pwned > "${sensPosix55}"`) === "deny",
+  );
+
+  try { rmSync(fakeHome55, { recursive: true, force: true }); } catch {}
+  try { rmSync(work55, { recursive: true, force: true }); } catch {}
+}
+
+// 56) [신규·2026-08-31, BU-1 후속] maskQuoted()가 따옴표를 끝까지 못 닫은(비정상) 명령을 만나면
+//     그 지점부터 문자열 끝까지를 통째로 "안전하게 마스킹된 것"으로 오인해, 그 안에 있는 진짜 '>' 리다이렉트
+//     탐지를 놓치던 경계값 결함 회귀 잠금(자동화 스위트 밖 수동 경계값 점검 중 발견). 안 닫힌 따옴표
+//     시작점부터는 마스킹을 신뢰하지 않고 원본 그대로 되돌리도록 수정 — 정상적으로 닫힌 따옴표(§55의
+//     기존 케이스들)는 전혀 영향 없음을 함께 확인한다.
+{
+  const fakeHome56 = mkdtempSync(path.join(tmpdir(), "sdh-bu1b-home-"));
+  mkdirSync(path.join(fakeHome56, ".claude"), { recursive: true });
+  const sensPath56 = path.join(fakeHome56, ".claude", "settings.local.json");
+  writeFileSync(sensPath56, "{}");
+  const sensPosix56 = sensPath56.replace(/\\/g, "/");
+  const fakeEnv56 = { ...process.env, USERPROFILE: fakeHome56, HOME: fakeHome56 };
+  const work56 = mkdtempSync(path.join(tmpdir(), "sdh-bu1b-work-"));
+  const normalFile56 = path.join(work56, "normal56.txt");
+  writeFileSync(normalFile56, "원본");
+  const normalPosix56 = normalFile56.replace(/\\/g, "/");
+
+  function run56(command) {
+    const r = spawnSync(process.execPath, [GUARD], {
+      input: JSON.stringify({ tool_name: "Bash", tool_input: { command }, cwd: work56 }),
+      encoding: "utf8",
+      env: fakeEnv56,
+    });
+    const out = (r.stdout || "").trim();
+    try { return JSON.parse(out).hookSpecificOutput?.permissionDecision ?? null; } catch { return null; }
+  }
+
+  check(
+    "56a: 따옴표 안 닫힌 채 민감경로로 진짜 리다이렉트 → 탐지를 놓치지 않고 deny",
+    run56(`echo "unterminated > ${sensPosix56}`) === "deny",
+  );
+  check(
+    "56b: 따옴표 안 닫힌 채 기존 파일(비민감)로 진짜 리다이렉트 → ask(백업)로 여전히 감지",
+    run56(`echo "unterminated > ${normalPosix56}`) === "ask",
+  );
+  check(
+    "56c(회귀 대조군): 정상적으로 닫힌 따옴표(§55 케이스)는 이번 수정과 무관하게 여전히 통과",
+    run56(`node -e "if(1>0){console.log('${sensPosix56}')}"`) === null,
+  );
+
+  try { rmSync(fakeHome56, { recursive: true, force: true }); } catch {}
+  try { rmSync(work56, { recursive: true, force: true }); } catch {}
+}
+
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)
 try { rmSync(bwork, { recursive: true, force: true }); } catch {}
 try { if (backupDir1) rmSync(backupDir1, { recursive: true, force: true }); } catch {}

@@ -142,14 +142,49 @@ function collisionVictim(root, srcTok, destTok) {
 // 06_CORE_DRAFTS 명세의 "덮어쓰기: > 리다이렉트 / cp·mv / Copy-Item·Move-Item / Out-File"를 구현.
 // 삭제(rm)와 달리 '대상'만 위험하다(원본 source는 읽기일 뿐) → source 경로 자체는 후보에 안 넣는다.
 // 한계(정직): 따옴표 없는 공백 포함 경로·python open(w)·node writeFileSync·tee 등은 못 잡음(§8.8).
+// 따옴표(" 또는 ') 안의 문자를 중립 문자('x')로 치환한 같은 길이의 문자열을 반환한다.
+// 여는/닫는 따옴표 문자 자체는 보존(경계 판정용), 안쪽 내용만 가린다. 위치가 원본과 1:1 대응되므로
+// "마스크에서 연산자 위치만 찾고, 실제 텍스트는 원본에서 그대로 뽑는" 용도로 안전하게 쓸 수 있다.
+function maskQuoted(cmd) {
+  let out = "";
+  let quote = null;
+  let quoteStart = -1;
+  for (let i = 0; i < cmd.length; i++) {
+    const ch = cmd[i];
+    if (quote) {
+      out += ch === quote ? ch : "x";
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") { quote = ch; quoteStart = i; out += ch; continue; }
+    out += ch;
+  }
+  // [2026-08-31 경계값 발견] 따옴표가 끝까지 안 닫히면(비정상·잠재적 우회 입력) 그 마스킹을 신뢰하지 않는다.
+  // 안 닫힌 따옴표 시작점부터 끝까지는 마스킹하지 않고 원본 그대로 되돌려 놓아, 그 구간의 진짜 '>' 리다이렉트가
+  // 계속 탐지되게 한다(fail-safe: 판정 불가한 구간은 잡는 쪽으로 기움 — 07_AUDIT B1과 동일 원칙).
+  if (quote) out = out.slice(0, quoteStart) + cmd.slice(quoteStart);
+  return out;
+}
 function writeDestinations(cmd, cwd) {
   const root = cwd || process.cwd();
   const cand = new Set();
   const clean = (p) => String(p).replace(/^["';|&]+|["';|&]+$/g, "");
   // 1) 리다이렉트 덮어쓰기 '>' / '1>' (단, '>>' 추가는 데이터 안 잃어 제외, '2>' stderr 제외)
-  const reDir = /(?:^|[^>\d])1?>(?!>)\s*("[^"]+"|'[^']+'|[^\s;&|>]+)/g;
+  // [2026-08-31 BU-1 수정] 인용부(따옴표) 안의 '>'를 실제 리다이렉트로 오인하던 결함(§BU) 수정.
+  // 실측 확인(§BU 원문 재현 명령 자체는 현재 재현 안 됨 — 문서 부정확. 대신 '>' 바로 뒤에 공백 없이
+  // 민감경로가 이어지는 실제 계산식(예: node -e "if(1>0){console.log('<민감경로>')}" 류의 변형)에서
+  // 진짜로 재현됨을 스크립트로 직접 검증). 마스크(따옴표 안 '>' 무효화) 버전에서 연산자 위치만 찾고,
+  // 실제 대상 텍스트는 원본에서 그대로 추출한다(위치가 1:1 대응이라 값 훼손 없음). DATA_SINK(echo 등)
+  // 여부와 무관하게 항상 적용 — 어떤 명령이든 인용부 안 '>'는 리다이렉트가 아니기 때문
+  // (stripInertQuotedData·E-2와는 별개의, 더 근본적인 메커니즘).
+  const reDirOp = /(?:^|[^>\d])1?>(?!>)\s*/g;
+  const maskedForRedir = maskQuoted(cmd);
   let m;
-  while ((m = reDir.exec(cmd))) cand.add(clean(m[1]));
+  while ((m = reDirOp.exec(maskedForRedir))) {
+    const rest = cmd.slice(m.index + m[0].length);
+    const tm = rest.match(/^("[^"]+"|'[^']+'|[^\s;&|>]+)/);
+    if (tm) cand.add(clean(tm[1]));
+  }
   // 2) cp / mv / copy / move / xcopy : 첫 비-플래그 인자=원본(피해자 basename 계산용) / 마지막 비-플래그 인자=대상
   // [2026-08-20 발견] xcopy가 빠져 있어 기존 파일을 덮어써도 백업 없이 조용히 통과하던 실제 통과 경로였음
   // (copy와 인자 순서·의미가 동일해 같은 파싱 규칙을 그대로 재사용 — 새 코드 없이 정규식 1곳만 확장).
