@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>SoDamHarness README (English)</title>
+  <title>SoDamHarness README</title>
   <style>
     html {
       color: #1a1a1a;
@@ -170,7 +170,7 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">SoDamHarness README (English)</h1>
+<h1 class="title">SoDamHarness README</h1>
 </header>
 <h1
 id="sodamharness--an-ai-seatbelt-for-absolute-beginners">SoDamHarness —
@@ -1903,8 +1903,8 @@ deletion, system deletion) stays on at every level, secret files
 blocks the action. Fewer prompts does not mean fewer safeguards — the
 underlying protections are unchanged.</p>
 <hr />
-<p><strong>Q22. What does "197 self-tests passing" mean?</strong></p>
-<p>A: During development, SoDamHarness ran 197 test cases (blocking
+<p><strong>Q22. What does "204 self-tests passing" mean?</strong></p>
+<p>A: During development, SoDamHarness ran 204 test cases (blocking
 dangerous actions, backups, undo, edge cases, adversarial bypass
 attempts, file move/rename protection, <code>git commit</code>
 secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them
@@ -1915,6 +1915,28 @@ perfect in every situation."</p>
 <details>
 <summary><b>📌 Changes by version (click to expand)</b></summary>
 
+<h3
+id="2026-08-31--fixed-a-false-block-defect-that-stopped-safe-commands--closed-a-follow-up-gap-found-before-shipping-it">2026-08-31
+— Fixed a false-block defect that stopped safe commands + closed a
+follow-up gap found before shipping it</h3>
+<ul>
+<li><strong>Fixed: a quoted <code>&gt;</code> mistaken for a real
+redirect</strong>: When inspecting a command, the safety belt could
+mistake a <code>&gt;</code> character inside quotes (e.g., a comparison
+like <code>1&gt;0</code> in program code) for an actual "save to file"
+redirect — causing safe commands that merely read or mention a sensitive
+location to be wrongly blocked.</li>
+<li><strong>Also fixed a follow-up gap found while verifying that fix,
+before releasing it</strong>: for a malformed command with an
+unterminated quote, the same fix could fail to catch a genuinely
+dangerous redirect (one that really does overwrite a sensitive file)
+hiding after that point. Found during pre-release testing and closed
+immediately.</li>
+<li><strong>All 204 self-tests pass</strong> (zero regressions).
+Separately re-confirmed with a control case that a real dangerous
+redirect (one that actually overwrites a sensitive location) is still
+blocked after this fix.</li>
+</ul>
 <h3
 id="2026-08-2021--blocked-18-adversarial-bypass-paths--fixed-an-undo-honesty-defect-stricter-only-no-relaxation">2026-08-20~21
 — Blocked 18 adversarial bypass paths + fixed an undo-honesty defect
@@ -2347,7 +2369,7 @@ verified. Please report any Mac-specific issues to the developer.</li>
 unit (which is exactly why whole-folder deletion is blocked
 instead).</li>
 <li>A full disk or missing permissions can cause a backup to fail.</li>
-<li><strong>197/197 self-tests passing</strong> as of the current
+<li><strong>204/204 self-tests passing</strong> as of the current
 release — all known test cases pass (including adversarial bypass
 attempts, file move/rename protection, and the custom wizard's L1/L2/L3
 levels). This confirms the core features work as intended — it does not

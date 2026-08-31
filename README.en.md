@@ -990,9 +990,9 @@ A: No. The wizard only adjusts **how often** the "Really do this?" prompt appear
 
 ---
 
-**Q22. What does "197 self-tests passing" mean?**
+**Q22. What does "204 self-tests passing" mean?**
 
-A: During development, SoDamHarness ran 197 test cases (blocking dangerous actions, backups, undo, edge cases, adversarial bypass attempts, file move/rename protection, `git commit` secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them passed. It confirms "the core features work as intended" — not "100% perfect in every situation."
+A: During development, SoDamHarness ran 204 test cases (blocking dangerous actions, backups, undo, edge cases, adversarial bypass attempts, file move/rename protection, `git commit` secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them passed. It confirms "the core features work as intended" — not "100% perfect in every situation."
 
 ---
 
@@ -1000,6 +1000,11 @@ A: During development, SoDamHarness ran 197 test cases (blocking dangerous actio
 
 <details>
 <summary><b>📌 Changes by version (click to expand)</b></summary>
+
+### 2026-08-31 — Fixed a false-block defect that stopped safe commands + closed a follow-up gap found before shipping it
+- **Fixed: a quoted `>` mistaken for a real redirect**: When inspecting a command, the safety belt could mistake a `>` character inside quotes (e.g., a comparison like `1>0` in program code) for an actual "save to file" redirect — causing safe commands that merely read or mention a sensitive location to be wrongly blocked.
+- **Also fixed a follow-up gap found while verifying that fix, before releasing it**: for a malformed command with an unterminated quote, the same fix could fail to catch a genuinely dangerous redirect (one that really does overwrite a sensitive file) hiding after that point. Found during pre-release testing and closed immediately.
+- **All 204 self-tests pass** (zero regressions). Separately re-confirmed with a control case that a real dangerous redirect (one that actually overwrites a sensitive location) is still blocked after this fix.
 
 ### 2026-08-20~21 — Blocked 18 adversarial bypass paths + fixed an undo-honesty defect (stricter only, no relaxation)
 - **Closed several PowerShell bypass paths**: found and blocked `Clear-Content`/`Clear-Item` (short alias `clc`, silently empties a file's contents), `New-Item -Force` (alias `ni -Force`, silently overwrites an existing file), and the short aliases of `Move-Item`/`Copy-Item` (`mi`/`cpi`, which could move/copy a source file with no backup) — all of which had been slipping through undetected.
@@ -1161,7 +1166,7 @@ We want to be fully honest about what SoDamHarness can and cannot do.
 - **Verified on Windows; Mac is untested.** The code is written to be cross-platform, but Mac behavior has not been formally verified. Please report any Mac-specific issues to the developer.
 - Backups are file-by-file. Whole folders are never backed up as a unit (which is exactly why whole-folder deletion is blocked instead).
 - A full disk or missing permissions can cause a backup to fail.
-- **197/197 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts, file move/rename protection, and the custom wizard's L1/L2/L3 levels). This confirms the core features work as intended — it does not mean "100% perfect in every situation."
+- **204/204 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts, file move/rename protection, and the custom wizard's L1/L2/L3 levels). This confirms the core features work as intended — it does not mean "100% perfect in every situation."
 - For truly important data, **do not rely on this tool alone.** Use a dedicated backup solution (Windows Backup, Time Machine, cloud storage, an external drive, etc.) in addition to SoDamHarness.
 - **Think before you act.** The best safety measure is a moment of careful thought before asking the AI to do something irreversible.
 
