@@ -990,9 +990,9 @@ A: No. The wizard only adjusts **how often** the "Really do this?" prompt appear
 
 ---
 
-**Q22. What does "204 self-tests passing" mean?**
+**Q22. What does "210 self-tests passing" mean?**
 
-A: During development, SoDamHarness ran 204 test cases (blocking dangerous actions, backups, undo, edge cases, adversarial bypass attempts, file move/rename protection, `git commit` secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them passed. It confirms "the core features work as intended" — not "100% perfect in every situation."
+A: During development, SoDamHarness ran 210 test cases (blocking dangerous actions, backups, undo, edge cases, adversarial bypass attempts, file move/rename protection, `git commit` secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them passed. It confirms "the core features work as intended" — not "100% perfect in every situation."
 
 ---
 
@@ -1000,6 +1000,12 @@ A: During development, SoDamHarness ran 204 test cases (blocking dangerous actio
 
 <details>
 <summary><b>📌 Changes by version (click to expand)</b></summary>
+
+### 2026-09-01 — Fixed: a restore report could silently drop files whose backup itself was missing
+- **What**: When restoring several files at once, any file whose backup copy itself no longer existed (e.g., the backup folder was later cleaned up) used to vanish from the final report with no trace at all. Seeing "3 files restored" could make you think everything was recovered when it wasn't.
+- **Why**: The preview screen shown before restoring already warned about this case correctly — only the final report after running the restore was missing it. This conflicted with this product's core promise of "only report what was actually confirmed," so it was treated as high priority.
+- **Fix**: These files are now collected into a separate "skipped" list and reported honestly. The risk-judgment logic (what gets blocked) was not touched at all.
+- **All 210 self-tests pass** (204 existing + 6 new, zero regressions). Separately re-verified by running "restored + overwritten + failed + skipped" all at once in a single restore call, confirming none of the four get mixed up with each other.
 
 ### 2026-08-31 — Fixed a false-block defect that stopped safe commands + closed a follow-up gap found before shipping it
 - **Fixed: a quoted `>` mistaken for a real redirect**: When inspecting a command, the safety belt could mistake a `>` character inside quotes (e.g., a comparison like `1>0` in program code) for an actual "save to file" redirect — causing safe commands that merely read or mention a sensitive location to be wrongly blocked.
@@ -1166,7 +1172,7 @@ We want to be fully honest about what SoDamHarness can and cannot do.
 - **Verified on Windows; Mac is untested.** The code is written to be cross-platform, but Mac behavior has not been formally verified. Please report any Mac-specific issues to the developer.
 - Backups are file-by-file. Whole folders are never backed up as a unit (which is exactly why whole-folder deletion is blocked instead).
 - A full disk or missing permissions can cause a backup to fail.
-- **204/204 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts, file move/rename protection, and the custom wizard's L1/L2/L3 levels). This confirms the core features work as intended — it does not mean "100% perfect in every situation."
+- **210/210 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts, file move/rename protection, and the custom wizard's L1/L2/L3 levels). This confirms the core features work as intended — it does not mean "100% perfect in every situation."
 - For truly important data, **do not rely on this tool alone.** Use a dedicated backup solution (Windows Backup, Time Machine, cloud storage, an external drive, etc.) in addition to SoDamHarness.
 - **Think before you act.** The best safety measure is a moment of careful thought before asking the AI to do something irreversible.
 

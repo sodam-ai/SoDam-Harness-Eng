@@ -1903,8 +1903,8 @@ deletion, system deletion) stays on at every level, secret files
 blocks the action. Fewer prompts does not mean fewer safeguards — the
 underlying protections are unchanged.</p>
 <hr />
-<p><strong>Q22. What does "204 self-tests passing" mean?</strong></p>
-<p>A: During development, SoDamHarness ran 204 test cases (blocking
+<p><strong>Q22. What does "210 self-tests passing" mean?</strong></p>
+<p>A: During development, SoDamHarness ran 210 test cases (blocking
 dangerous actions, backups, undo, edge cases, adversarial bypass
 attempts, file move/rename protection, <code>git commit</code>
 secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them
@@ -1915,6 +1915,29 @@ perfect in every situation."</p>
 <details>
 <summary><b>📌 Changes by version (click to expand)</b></summary>
 
+<h3
+id="2026-09-01--fixed-a-restore-report-could-silently-drop-files-whose-backup-itself-was-missing">2026-09-01
+— Fixed: a restore report could silently drop files whose backup itself
+was missing</h3>
+<ul>
+<li><strong>What</strong>: When restoring several files at once, any
+file whose backup copy itself no longer existed (e.g., the backup folder
+was later cleaned up) used to vanish from the final report with no trace
+at all. Seeing "3 files restored" could make you think everything was
+recovered when it wasn't.</li>
+<li><strong>Why</strong>: The preview screen shown before restoring
+already warned about this case correctly — only the final report after
+running the restore was missing it. This conflicted with this product's
+core promise of "only report what was actually confirmed," so it was
+treated as high priority.</li>
+<li><strong>Fix</strong>: These files are now collected into a separate
+"skipped" list and reported honestly. The risk-judgment logic (what gets
+blocked) was not touched at all.</li>
+<li><strong>All 210 self-tests pass</strong> (204 existing + 6 new, zero
+regressions). Separately re-verified by running "restored + overwritten
++ failed + skipped" all at once in a single restore call, confirming
+none of the four get mixed up with each other.</li>
+</ul>
 <h3
 id="2026-08-31--fixed-a-false-block-defect-that-stopped-safe-commands--closed-a-follow-up-gap-found-before-shipping-it">2026-08-31
 — Fixed a false-block defect that stopped safe commands + closed a
@@ -2369,7 +2392,7 @@ verified. Please report any Mac-specific issues to the developer.</li>
 unit (which is exactly why whole-folder deletion is blocked
 instead).</li>
 <li>A full disk or missing permissions can cause a backup to fail.</li>
-<li><strong>204/204 self-tests passing</strong> as of the current
+<li><strong>210/210 self-tests passing</strong> as of the current
 release — all known test cases pass (including adversarial bypass
 attempts, file move/rename protection, and the custom wizard's L1/L2/L3
 levels). This confirms the core features work as intended — it does not
