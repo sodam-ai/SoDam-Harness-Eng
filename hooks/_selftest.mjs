@@ -1349,6 +1349,39 @@ if (WIN) {
   try { rmSync(work56, { recursive: true, force: true }); } catch {}
 }
 
+// 57) [신규·2026-09-01] restore()가 "백업 파일 자체가 없음"(restorePlan()의 nobackup과 같은 상태)을
+//     failed에도 어디에도 안 남기고 조용히 건너뛰던 결함 회귀 잠금. §54(copyFileSync 실패)와는 다른
+//     경로 — manifest에는 있지만 백업 파일 자체가 사라진 경우. 여러 파일 중 하나가 이 상태여도 나머지는
+//     정상 복구되고, 빠진 파일은 skipped로 정직하게 보고되는지 확인.
+{
+  const skWork = mkdtempSync(path.join(tmpdir(), "sdh-restoreskip-"));
+  const fileC = path.join(skWork, "c.txt");
+  const fileD = path.join(skWork, "d.txt");
+  writeFileSync(fileC, "C-원본");
+  writeFileSync(fileD, "D-원본");
+
+  const bp57 = backupPaths([fileC, fileD], skWork);
+  check("57-사전조건: 두 파일 다 백업됨", bp57.ok && bp57.count === 2, JSON.stringify(bp57));
+
+  // manifest.json은 그대로 두고, fileD의 백업 파일 자체만 지움(디스크에서 백업 사본이 사라진 상황 재현)
+  const manifest57 = JSON.parse(readFileSync(path.join(bp57.dir, "manifest.json"), "utf8"));
+  const entryD = manifest57.files.find((f) => f.source === fileD);
+  rmSync(entryD.backup, { force: true });
+
+  rmSync(fileC, { force: true });
+  rmSync(fileD, { force: true });
+
+  const r57 = restore(bp57.dir);
+  check("57a: 백업 없는 파일이 섞여 있어도 ok=true", r57.ok === true, JSON.stringify(r57));
+  check("57b: 백업 있던 파일(C)은 정확히 1개 복구됨", r57.restored === 1, JSON.stringify(r57));
+  check("57c: 백업 없던 파일(D)이 skipped에 정직하게 기록됨(조용히 사라지지 않음)", Array.isArray(r57.skipped) && r57.skipped.length === 1 && r57.skipped[0] === fileD, JSON.stringify(r57.skipped));
+  check("57d: failed에는 안 섞임(복사 실패가 아니라 백업 부재이므로 별개)", Array.isArray(r57.failed) && r57.failed.length === 0, JSON.stringify(r57.failed));
+  check("57e: 성공한 파일(C)은 실제로 디스크에 복구됨", existsSync(fileC) && readFileSync(fileC, "utf8") === "C-원본", existsSync(fileC) ? readFileSync(fileC, "utf8") : "없음");
+
+  try { rmSync(skWork, { recursive: true, force: true }); } catch {}
+  try { rmSync(bp57.dir, { recursive: true, force: true }); } catch {}
+}
+
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)
 try { rmSync(bwork, { recursive: true, force: true }); } catch {}
 try { if (backupDir1) rmSync(backupDir1, { recursive: true, force: true }); } catch {}

@@ -305,8 +305,12 @@ export function restore(dir) {
     // 이미 실제로 복구된 파일이 있어도 "0개 복구"라고 거짓 보고하는 결함. restorePlan()·
     // cleanupBackups()가 이미 쓰는 "파일 하나 실패해도 나머지는 계속" 패턴으로 통일한다.
     const failed = [];
+    // [2026-09-01 발견] 백업 파일 자체가 없는 경우(restorePlan()의 "nobackup") 조용히 건너뛰기만
+    // 하고 어디에도 기록이 안 남아, 여러 파일 중 일부가 이 상태면 "N개 복구했다"는 보고만 보고는
+    // 정확히 몇 개가 왜 빠졌는지 알 수 없었다. failed와 구분되는 skipped로 정직하게 보고한다.
+    const skipped = [];
     for (const f of data.files || []) {
-      if (!existsSync(f.backup)) continue;
+      if (!existsSync(f.backup)) { skipped.push(f.source); continue; }
       try {
         if (existsSync(f.source) && !readFileSync(f.backup).equals(readFileSync(f.source))) {
           overwritten.push(f.source);
@@ -317,7 +321,7 @@ export function restore(dir) {
         failed.push({ source: f.source, error: e.message });
       }
     }
-    return { ok: true, restored, overwritten, failed };
+    return { ok: true, restored, overwritten, failed, skipped };
   } catch (e) {
     return { ok: false, restored: 0, error: e.message };
   }
