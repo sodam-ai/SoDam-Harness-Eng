@@ -7,6 +7,8 @@
 
 ---
 
+> 🌸 One of the seven siblings of [SoDam Family](https://github.com/sodam-ai/SoDam-Family).
+
 ## Table of Contents
 
 - [0. What is this? (Understand in 1 minute)](#0-what-is-this-understand-in-1-minute)
