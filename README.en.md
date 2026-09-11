@@ -30,6 +30,7 @@
 - [10-1. Update summary](#10-1-update-summary)
 - [11. License · Copyright · Commercial use](#11-license--copyright--commercial-use-strict-notice)
 - [12. Safety & limits](#12-safety--limits-honest-notice)
+- [13. Developer / contributor notes (testing, env vars, build)](#13-developer--contributor-notes-testing-env-vars-build)
 
 ---
 
@@ -651,6 +652,8 @@ Which backup do you want to restore? Type a number (or "cancel"):
 ```
 
 > 💡 **Note:** Entire folders cannot be backed up individually — which is exactly why SoDamHarness **blocks** folder deletion entirely rather than asking for confirmation. Individual files can be restored.
+>
+> 🔁 **Multiple close-in-time candidates?** When several backups fall within the same minute, the one **closest to the moment of deletion** is shown first — this prevents accidentally restoring to an earlier (pre-edit) state instead of the actual pre-deletion state.
 
 ---
 
@@ -1003,6 +1006,12 @@ A: During development, SoDamHarness ran 210 test cases (blocking dangerous actio
 <details>
 <summary><b>📌 Changes by version (click to expand)</b></summary>
 
+### 2026-09-11 — Reduced a risk where restore could pick the wrong nearby backup
+- **What**: When several backup candidates fall within the same minute, restore could pick an earlier (pre-edit) backup instead of the one right before deletion. This was actually observed once during live use (caused by the guard's duplicate hook registration creating duplicate backups).
+- **Why**: The `/sodam-harness:undo` procedure had no rule for which candidate to prefer when several are close in time.
+- **Fix**: The procedure now picks the latest (closest to the moment of deletion) candidate when several are close together. The risk-judgment logic itself was not touched.
+- **All 210 self-tests still pass** (this change is an AI-instruction file, not executable code, so it isn't covered by the automated suite — zero regressions were separately reconfirmed).
+
 ### 2026-09-01 — Fixed: a restore report could silently drop files whose backup itself was missing
 - **What**: When restoring several files at once, any file whose backup copy itself no longer existed (e.g., the backup folder was later cleaned up) used to vanish from the final report with no trace at all. Seeing "3 files restored" could make you think everything was recovered when it wasn't.
 - **Why**: The preview screen shown before restoring already warned about this case correctly — only the final report after running the restore was missing it. This conflicted with this product's core promise of "only report what was actually confirmed," so it was treated as high priority.
@@ -1177,6 +1186,41 @@ We want to be fully honest about what SoDamHarness can and cannot do.
 - **210/210 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts, file move/rename protection, and the custom wizard's L1/L2/L3 levels). This confirms the core features work as intended — it does not mean "100% perfect in every situation."
 - For truly important data, **do not rely on this tool alone.** Use a dedicated backup solution (Windows Backup, Time Machine, cloud storage, an external drive, etc.) in addition to SoDamHarness.
 - **Think before you act.** The best safety measure is a moment of careful thought before asking the AI to do something irreversible.
+
+---
+
+## 13. Developer / contributor notes (testing, env vars, build)
+
+> This section is not needed if you're just using the tool as-is. It's only for people who want to open or modify the code.
+
+### Running the tests
+From the repository folder, run:
+```
+node hooks/_selftest.mjs
+```
+On success the last line reads something like `결과: 210 PASS / 0 FAIL` (the number may differ by version — "결과" means "result"). If even one test fails, it means a regression was introduced into the safety logic — do not ship the change.
+
+### Build
+**There is no separate build step.** This is plain Node.js, so there's no compile/bundle stage — edits take effect immediately (confirmed directly: `package.json` has no build script defined).
+
+### Environment variables (testing/isolation only — regular users never need to set these)
+These exist purely so the test suite can run against isolated, temporary files instead of touching your real data. Under normal use, none of these should be set.
+
+| Variable | Purpose |
+|---|---|
+| `SODAM_NOW_MS` | Fakes "the current time" with a fixed value during tests |
+| `SODAM_BACKUPS_ROOT` | Redirects the backup folder to a temporary test location |
+| `SODAM_ACTIVITY_FILE` | Redirects the activity log file to a test location |
+| `SODAM_RULES_FILE` | Points to a specific `safety-rules.json` (testing / advanced users) |
+| `SODAM_PROFILE_FILE` | Redirects the autonomy-level profile file to a test location |
+| `SODAM_WHITELIST_FILE` / `SODAM_PENDING_FILE` | Redirects session-whitelist-related files to test locations |
+| `SODAM_CLEANUP_THROTTLE_MS` | Speeds up the old-backup cleanup interval for tests |
+
+### How updates are released
+This repository has no separate CI/CD pipeline. New versions go out as **commit → bump the version in `plugin.json`/`package.json` → push to GitHub**. If you already have it installed, get the latest version with (see [2. Installation](#2-installation-step-by-step) for full install instructions):
+```
+claude plugin update sodam-harness@sodamharness-marketplace
+```
 
 ---
 
