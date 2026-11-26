@@ -1612,6 +1612,30 @@ if (WIN) {
     check("58r2 예외 파일 이름인데 비정상적으로 깊은 경로 → 해석 포기 대신 deny(fail-closed)", W(deepAl, AL).decision === "deny", JSON.stringify(W(deepAl, AL)));
   }
 
+  // ── [자동 보안 리뷰 반영] ~/.sodamharness 폴더 자체 교체 / Windows 8.3 짧은 이름으로 예외 파일 가리키기 ──
+  {
+    const sodamDir2 = path.join(fakeHome, ".sodamharness");
+    mkdirSync(sodamDir2, { recursive: true });
+    check("58s-1 폴더 바꿔치기: crafted 폴더를 ~/.sodamharness 자리로 mv → deny(~/.claude 폴더 자체가 민감한 것과 같은 등급)",
+      g58("Bash", { command: `mv "${path.join(fakeHome, "crafted")}" "${sodamDir2}"` }, undefined).decision === "deny", "");
+    check("58s-2 회귀 방지: ~/.sodamharness 안의 다른 새 파일(형제 플러그인의 safety-rules.json 등)은 계속 허용",
+      W(path.join(sodamDir2, "safety-rules.json")).decision === null, JSON.stringify(W(path.join(sodamDir2, "safety-rules.json"))));
+    if (WIN) {
+      const real83 = path.join(sodamDir2, "allowlist.json");
+      writeFileSync(real83, "{}");
+      const sp = spawnSync("powershell", ["-NoProfile", "-Command", `(New-Object -ComObject Scripting.FileSystemObject).GetFile('${real83}').ShortPath`], { encoding: "utf8" });
+      const short = (sp.stdout || "").trim();
+      if (short && short.toLowerCase() !== real83.toLowerCase() && /~\d/.test(short)) {
+        const ed = g58("Edit", { file_path: short, old_string: "{}", new_string: "{\"version\":1}" }, undefined);
+        check("58t 8.3 짧은 이름(…~1\\ALLOWL~1.JSO)으로 기존 예외 파일 Edit → deny", ed.decision === "deny", JSON.stringify(ed));
+        const wr = W(short);
+        check("58t2 8.3 짧은 이름으로 예외 파일 Write → deny", wr.decision === "deny", JSON.stringify(wr));
+      } else {
+        console.log("  SKIP  58t 8.3 짧은 이름(이 볼륨은 짧은 이름 생성 꺼짐/조회 실패)");
+      }
+    }
+  }
+
   try { rmSync(fakeHome, { recursive: true, force: true }); } catch {}
 }
 

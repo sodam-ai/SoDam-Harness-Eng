@@ -312,6 +312,10 @@ function isSensitiveRaw(absInput) {
   // [2026-11-26 BV-1] 예외 목록 파일 자신은 항상 민감 — AI가 자기 deny를 스스로 풀 수 없게 보호
   // (settings.json과 같은 등급·텍스트 기반이라 사고 방지용이지 악의적 우회 방지용은 아님, §8.8)
   if (isAllowlistFilePath(abs, a)) return true;
+  // 예외 파일이 들어 있는 ~/.sodamharness 폴더 "자체"를 통째로 옮기거나 바꿔치기(mv crafted ~/.sodamharness)해 예외
+  // 파일을 만들어 넣는 우회 차단 — ~/.claude 폴더 자체가 민감한 것과 같은 등급. 폴더 안의 다른 파일(형제 플러그인의
+  // safety-rules.json 등)은 이 줄이 막지 않는다(폴더 경로와 정확히 같을 때만).
+  if (a === toComparable(path.dirname(ALLOWLIST_DEFAULT))) return true;
 
   // Context 처방 예외 — ~/.claude/CLAUDE.md · AGENTS.md 는 Context가 처방하는 대상 파일.
   // settings.json 등 나머지 .claude/* 는 여전히 차단 (C1 보안 원칙).
@@ -542,8 +546,9 @@ function homeVariants() {
   if (HOME_VARIANTS) return HOME_VARIANTS;
   const h = homedir();
   const out = [h];
-  const r = realOf(h);
-  if (r && toComparable(r) !== toComparable(h)) out.push(r);
+  for (const r of [realOf(h), realOfNative(h)]) {
+    if (r && !out.some((x) => toComparable(x) === toComparable(r))) out.push(r);
+  }
   HOME_VARIANTS = out;
   return out;
 }
@@ -558,11 +563,18 @@ function canonPath(p) {
   CANON_CACHE.set(key, v);
   return v;
 }
+// realpath.native = OS가 직접 풀어 Windows 8.3 짧은 이름(CLAUDE~1)도 긴 이름으로 확장한다(JS realpath는 그대로 둠)
+function realOfNative(p) {
+  try {
+    return realpathSync.native(p);
+  } catch {}
+  return null;
+}
 function canonPathUncached(p) {
   let cur = path.resolve(p);
   const tail = [];
   for (let i = 0; i < 64; i++) {
-    const r = realOf(cur);
+    const r = realOfNative(cur);
     if (r) return toComparable(tail.length ? path.join(r, ...tail.reverse()) : r);
     const parent = path.dirname(cur);
     if (parent === cur) return null;
@@ -581,7 +593,7 @@ function isAllowlistFilePath(abs, a) {
   if (files.some((p) => s === toComparable(p))) return true;
   // 비용 가드(독립 재검토 지적 — 안 두면 깊고 없는 경로 여러 개가 섞인 명령에서 훅이 타임아웃까지 느려져
   // 뒤쪽 치명 deny에 도달 못 할 수 있음): 링크를 따라가는 비싼 해석은 마지막 이름이 예외 파일 이름과 같을 때만.
-  if (!files.some((p) => path.basename(s) === toComparable(path.basename(p)))) return false;
+  if (!files.some((p) => path.basename(s) === toComparable(path.basename(p))) && !/~\d/.test(s)) return false;
   if (s.split(path.sep).length > 64) return true; // 이름이 같은데 비정상적으로 깊음 → 해석 포기 대신 보호 쪽(fail-closed)
   const c = canonPath(strip(path.resolve(abs)));
   if (c === null) return false;
