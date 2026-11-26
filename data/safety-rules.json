@@ -1,5 +1,5 @@
 {
-  "_note": "【참고용 전용 — guard.mjs가 이 파일을 읽지 않습니다】 guard.mjs 코드 내 하드코딩 패턴의 데이터 복사본. 사용자 추가 규칙은 hooks/safety-rules.json 에 넣으세요.",
+  "_note": "【참고용 전용 — guard.mjs가 이 파일을 읽지 않습니다】 guard.mjs 코드 내 하드코딩 패턴의 데이터 복사본. 사용자 추가 규칙은 홈 폴더의 .sodamharness/safety-rules.json 에 넣으세요(플러그인 폴더의 hooks/safety-rules.json 은 배포 기본값이라 업데이트 때 덮어써집니다).",
   "catastrophic": [
     "rm\\s+-rf\\s+[~\\/]",
     "rm\\s+-rf\\s+\\.",

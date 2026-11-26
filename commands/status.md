@@ -8,7 +8,7 @@ SoDamHarness의 상태를 점검하고 **쉬운 한국어**로 "지금 상태 + 
 1. **Node.js**: `node --version` — 없으면 설치 안내(https://nodejs.org, LTS).
 2. **백업 폴더**: 사용자 홈의 `.sodamharness/backups/` 에 백업이 쌓여 있는지 확인합니다.
    - 확인 방법: `node "${CLAUDE_PLUGIN_ROOT}/hooks/backup.mjs" --list` (최근 백업 몇 개를 보여줌)
-   - 백업이 너무 많이 쌓였으면 "오래된 백업 정리"를 안내: `node "${CLAUDE_PLUGIN_ROOT}/hooks/backup.mjs" --cleanup` (최근 50개·14일 이내는 무조건 보존, 그보다 오래된 것만 정리).
+   - 백업이 너무 많이 쌓였으면 "오래된 백업 정리"를 안내: `node "${CLAUDE_PLUGIN_ROOT}/hooks/backup.mjs" --cleanup` (최근 100개·30일 이내는 무조건 보존, 그보다 오래된 것만 정리).
 3. **안전벨트 동작 여부 (자가 헬스체크)**: `node "${CLAUDE_PLUGIN_ROOT}/hooks/guard.mjs" --selfcheck` 를 실행해
    결과가 **"정상 ✅"** 인지 확인합니다. 위험 명령이 실제로 차단 판정되는지 스스로 점검하는 거예요(실제로 위험한 작업을 하진 않습니다).
    **"문제 발견 ⚠️"** 가 나오면 안전벨트가 약해진 상태이니 `/sodam-harness:fix` 를 안내하세요.

@@ -166,6 +166,71 @@
       vertical-align: middle;
     }
     .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
 </head>
 <body>
@@ -1408,11 +1473,81 @@ locations</h2>
 <code>/Users/YourName/.sodamharness/backups/</code> <em>(Replace
 <code>YourName</code> with your actual Mac username.)</em></li>
 </ul>
-<p>Two other files live next to the <code>backups\</code> folder in the
-same <code>.sodamharness\</code> directory: <code>activity.log</code>
-(see below) and <code>profile.json</code> (the confirmation-frequency
-level you picked with <code>/sodam-harness:wizard</code> —
-L1/L2/L3).</p>
+<p>Other files live next to the <code>backups\</code> folder in the same
+<code>.sodamharness\</code> directory:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>activity.log</code></td>
+<td>Record of what the AI did (see below)</td>
+</tr>
+<tr>
+<td><code>profile.json</code></td>
+<td>The confirmation-frequency level you picked with
+<code>/sodam-harness:wizard</code> (L1/L2/L3)</td>
+</tr>
+<tr>
+<td><code>whitelist.json</code></td>
+<td>Folders you trusted with "stop asking in this folder" (kept for 12
+hours)</td>
+</tr>
+<tr>
+<td><code>pending-trust.json</code></td>
+<td>The last thing the AI asked about, waiting for your trust approval
+(void after 30 minutes)</td>
+</tr>
+<tr>
+<td><code>safety-rules.json</code></td>
+<td><em>(Optional)</em> personal file where you add extra dangerous
+patterns to block</td>
+</tr>
+<tr>
+<td><code>allowlist.json</code></td>
+<td><em>(Optional, advanced)</em> folders you manually unlocked for the
+AI — see below</td>
+</tr>
+</tbody>
+</table>
+<h4
+id="optional-advanced-unlock-only-some-blocked-folders--the-exception-list-allowlistjson">(Optional,
+advanced) Unlock only some blocked folders — the exception list
+<code>allowlist.json</code></h4>
+<p>By default the AI cannot edit <strong>system / safety-setting
+locations</strong> such as <code>~/.claude</code> (🛑 blocked). If that
+also blocks ordinary working files (for example your own rules-document
+folder), <strong>you</strong> can create the file below to unlock just
+those folders. The safety belt protects this file, so <strong>the AI
+cannot create or edit it — only you can.</strong></p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span> <span class="dt">&quot;version&quot;</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span> <span class="dt">&quot;paths&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;C:</span><span class="ch">\\</span><span class="st">Users</span><span class="ch">\\</span><span class="st">YourName</span><span class="ch">\\</span><span class="st">.claude</span><span class="ch">\\</span><span class="st">rules&quot;</span><span class="ot">]</span> <span class="fu">}</span></span></code></pre></div>
+<ul>
+<li>Location: <code>.sodamharness\allowlist.json</code>. If the file
+does not exist, behavior is <strong>exactly as before</strong>.</li>
+<li>What can be unlocked: only <strong>sub-folders or files
+inside</strong> <code>~/.claude</code> or <code>~/.config</code> (not
+the folder itself). Absolute paths only; <code>*</code>, <code>..</code>
+and relative paths are invalid.</li>
+<li><strong>Never unlockable</strong>: <code>settings.json</code>,
+<code>settings.local.json</code>, <code>plugins</code>,
+<code>hooks</code>, credential folders (<code>.ssh</code>,
+<code>.aws</code>, …), system folders, and the home folder itself.
+Entries naming them are ignored.</li>
+<li>Even when unlocked, <strong>whole-folder deletion and
+catastrophic-command blocking, automatic backup, and confirmation
+prompts all stay in force</strong> — only the "blocked location" step is
+skipped.</li>
+<li>If the file is broken or odd, <strong>nothing is unlocked</strong>
+(same as today).</li>
+<li>Honest limit: this protection prevents <strong>accidents</strong>;
+it is not guaranteed against someone deliberately trying to evade
+it.</li>
+</ul>
 <blockquote>
 <p>💡 <strong>What is the "home directory"?</strong> It is the main
 personal folder for your account. On Windows:
@@ -1649,6 +1784,37 @@ and reinstall (Section 2).</td>
 <td>It automatically falls back to the safest default (L1, "always
 confirm"). Run <code>/sodam-harness:wizard</code> again to
 reconfigure.</td>
+</tr>
+<tr>
+<td>The AI <strong>asks every time it edits a settings
+file</strong></td>
+<td>Safety-setting files (Claude's <code>settings.json</code>, the
+plugin folder) and trust records (<code>profile.json</code>,
+<code>whitelist.json</code>, <code>pending-trust.json</code>) are
+<strong>never</strong> skipped by "stop asking in this folder" or L3 —
+they are always confirmed (0.1.8+)</td>
+<td>Approve it if you asked for that change; <strong>decline</strong> if
+you did not. This prompt intentionally has no "stop asking" hint.</td>
+</tr>
+<tr>
+<td>The AI <strong>cannot edit my own files inside
+<code>~/.claude</code></strong> (🛑)</td>
+<td>That folder holds safety settings, so it is blocked by default</td>
+<td>To unlock just a working folder, create the exception list
+<code>allowlist.json</code> yourself (see Section 7).</td>
+</tr>
+<tr>
+<td>I think another plugin or an existing hook
+<strong>conflicts</strong> (two prompts for one action, or two
+backups)</td>
+<td>Each installed plugin may ask/block on its own, or the same safety
+hook may be registered in two places</td>
+<td>Check with <code>/sodam-harness:status</code>. If the same safety
+hook is also <strong>registered directly in your own
+<code>settings.json</code></strong> (a <code>guard.mjs</code> path),
+keep only one — the AI cannot edit that file, so you must open and fix
+it <strong>yourself</strong>. Adjust other plugins' prompts in their own
+settings.</td>
 </tr>
 </tbody>
 </table>
@@ -1915,8 +2081,8 @@ deletion, system deletion) stays on at every level, secret files
 blocks the action. Fewer prompts does not mean fewer safeguards — the
 underlying protections are unchanged.</p>
 <hr />
-<p><strong>Q22. What does "210 self-tests passing" mean?</strong></p>
-<p>A: During development, SoDamHarness ran 210 test cases (blocking
+<p><strong>Q22. What does "295 self-tests passing" mean?</strong></p>
+<p>A: During development, SoDamHarness ran 295 test cases (blocking
 dangerous actions, backups, undo, edge cases, adversarial bypass
 attempts, file move/rename protection, <code>git commit</code>
 secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them
@@ -1927,6 +2093,50 @@ perfect in every situation."</p>
 <details>
 <summary><b>📌 Changes by version (click to expand)</b></summary>
 
+<h3
+id="2026-11-26-018--safety-setting-and-trust-record-files-are-always-confirmed-even-with-stop-asking-in-this-folder">2026-11-26
+(0.1.8) — Safety-setting and trust-record files are always confirmed,
+even with "stop asking in this folder"</h3>
+<ul>
+<li><strong>What</strong>: With a folder trusted (or at L3), the AI
+could edit the <strong>real Claude settings file
+(<code>settings.json</code>), the plugin folder, and the trust-record
+files (<code>profile.json</code>, <code>whitelist.json</code>,
+<code>pending-trust.json</code>)</strong> without a prompt, because
+trust is keyed to the <em>working folder</em> and so also covered target
+files outside it.</li>
+<li><strong>Fix</strong>: These files alone are now <strong>always
+confirmed first</strong>, regardless of trust, L3 or git-recoverability
+(it is a prompt, not a block, so legitimate requests still work).
+Ordinary files and the AI's memory files get <strong>no extra
+prompts.</strong> The settings-folder location follows the
+<code>CLAUDE_CONFIG_DIR</code> environment variable, and the exception
+list's never-unlockable set follows it too.</li>
+<li><strong>All 295 self-tests pass</strong> (29 new in this release,
+zero regressions).</li>
+</ul>
+<h3
+id="2026-11-26-017--new-exception-list-allowlistjson-relief-when-the-ai-could-not-edit-ordinary-working-files">2026-11-26
+(0.1.7) — New exception list <code>allowlist.json</code> (relief when
+the AI could not edit ordinary working files)</h3>
+<ul>
+<li><strong>What</strong>: You can unlock <strong>only the sub-folders
+you approve yourself</strong> inside the default-blocked locations
+(<code>~/.claude</code>, <code>~/.config</code>) so the AI can edit them
+(see Section 7). Whole-folder deletion and catastrophic-command
+blocking, backup and confirmation all stay in force.</li>
+<li><strong>Safety design</strong>: <code>settings.json</code>,
+<code>plugins</code>, <code>hooks</code>, credential folders and system
+folders can never be unlocked; the exception file itself cannot be
+created by the AI; a malformed file unlocks nothing. An independent
+security review found several bypass routes (stream names, folder links,
+whole-folder replacement, short names) and one slowdown — all closed and
+locked in with tests.</li>
+<li><strong>Known limit</strong>: Windows short names
+(<code>CLAUDE~1</code>) and hard links pointing at already-protected
+targets were not caught by the existing checks even before this change
+(a separate improvement candidate).</li>
+</ul>
 <h3
 id="2026-09-11--reduced-a-risk-where-restore-could-pick-the-wrong-nearby-backup">2026-09-11
 — Reduced a risk where restore could pick the wrong nearby backup</h3>
@@ -2423,7 +2633,7 @@ verified. Please report any Mac-specific issues to the developer.</li>
 unit (which is exactly why whole-folder deletion is blocked
 instead).</li>
 <li>A full disk or missing permissions can cause a backup to fail.</li>
-<li><strong>210/210 self-tests passing</strong> as of the current
+<li><strong>295/295 self-tests passing</strong> as of the current
 release — all known test cases pass (including adversarial bypass
 attempts, file move/rename protection, and the custom wizard's L1/L2/L3
 levels). This confirms the core features work as intended — it does not
@@ -2447,7 +2657,7 @@ only for people who want to open or modify the code.</p>
 <p>From the repository folder, run:</p>
 <pre><code>node hooks/_selftest.mjs</code></pre>
 <p>On success the last line reads something like
-<code>결과: 210 PASS / 0 FAIL</code> (the number may differ by version —
+<code>결과: 295 PASS / 0 FAIL</code> (the number may differ by version —
 "결과" means "result"). If even one test fails, it means a regression
 was introduced into the safety logic — do not ship the change.</p>
 <h3 id="build">Build</h3>
