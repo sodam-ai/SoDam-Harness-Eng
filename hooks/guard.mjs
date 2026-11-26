@@ -462,28 +462,44 @@ function neverAskFloor() {
   NEVER_ASK_FLOOR = { files: files.flatMap(forms), trees: trees.flatMap(forms) };
   return NEVER_ASK_FLOOR;
 }
+// 어느 폴더든 .claude/settings.json·settings.local.json — 훅·권한·disableAllHooks를 담아 그 프로젝트의 안전장치를 끌 수 있다
+function isDotClaudeSettings(f) {
+  const segs = f.split(path.sep);
+  const base = segs[segs.length - 1];
+  return segs[segs.length - 2] === ".claude" && (base === "settings.json" || base === "settings.local.json");
+}
 function isNeverAutoAskTarget(abs) {
   try {
-    // 덮어쓰기·삭제·이동으로 잃는 것은 '존재하는' 경로뿐 — 없는 경로는 비교 불필요(깊고 없는 경로가 많아도 비용 0)
-    if (!existsSync(abs)) return false;
     // NTFS 대체 스트림(file::$DATA)은 본문을 그대로 덮어쓰므로 떼고 비교
     const strip = (s) => (WIN ? s.replace(/(?<=[^\\]):[^\\]*$/, "") : s);
-    const forms = [strip(toComparable(path.resolve(abs)))];
-    const c = canonPath(abs); // 이름이 다른 junction·링크도 실제 위치로(존재 경로라 realpath 1회, 결과 캐시)
-    if (c !== null && !forms.includes(strip(c))) forms.push(strip(c));
-    // 값싼 사전 필터: 이름이 해당 파일/설정 폴더이거나 plugins·hooks 아래일 때만 영구 목록(비싼 쪽)을 계산
+    const lit = strip(toComparable(path.resolve(abs)));
+    const exists = existsSync(abs);
     const names = neverAskNames();
+    // 없는 경로는 "보호 파일을 새로 만드는 경우"만 따진다 — 이름이 다르면 즉시 제외(깊고 없는 경로가 많아도 비용 0)
+    if (!exists && !names.has(path.basename(lit))) return false;
+    const forms = [lit];
+    const c = canonPath(abs); // 이름이 다른 junction·링크도 실제 위치로(결과 캐시)
+    if (c !== null && !forms.includes(strip(c))) forms.push(strip(c));
+    if (forms.some(isDotClaudeSettings)) return true;
+    // 값싼 사전 필터: 이름이 해당 파일/설정 폴더이거나 plugins·hooks 아래일 때만 영구 목록(비싼 쪽)을 계산
     const looksRelevant = forms.some((f) => {
       const segs = f.split(path.sep);
       return names.has(segs[segs.length - 1]) || segs.includes("plugins") || segs.includes("hooks");
     });
     if (!looksRelevant) return false;
     const fl = neverAskFloor();
-    return forms.some((f) => fl.files.includes(f) || fl.trees.some((t) => f === t || f.startsWith(t + path.sep)));
+    // 파일 목록은 없는 파일(새로 만들기)도 해당, 폴더 트리(plugins·hooks)는 있는 파일만(새 파일 마찰 방지)
+    return forms.some((f) => fl.files.includes(f) || (exists && fl.trees.some((t) => f === t || f.startsWith(t + path.sep))));
   } catch {
     return true; // 판정 오류 → 건너뛰지 않음(ask 유지) = fail-closed
   }
 }
+// 보호 파일을 '새로' 만들려는 대상이 있는가(기존 흐름은 "새 파일은 안전"이라 그냥 통과시키므로 여기서 따로 확인)
+function createsGuardedFile(paths) {
+  return paths.some((p) => !existsSync(p) && isNeverAutoAskTarget(p));
+}
+const CREATE_GUARDED_MSG =
+  "안전장치 설정·신뢰 기록 파일을 새로 만들려고 해요(이 파일은 훅·권한·확인 빈도를 바꾸거나 안전장치를 끌 수 있어요). 이 폴더를 신뢰해 뒀어도 이런 파일은 항상 확인해요. 정말 만들까요?";
 function trustHintText(guardedCfg) {
   return guardedCfg
     ? " (⚠️ 안전장치 설정·신뢰 기록 파일이라, 이 폴더를 신뢰해 뒀어도 이런 파일은 항상 먼저 확인해요.)"
@@ -1150,6 +1166,10 @@ function main() {
     });
     // 안전 명령인데 덮어쓸 기존 파일이 없으면(전부 새 파일) → 통과 (과잉차단 0)
     if (level === "safe" && owExisting.length === 0) {
+      if (createsGuardedFile(dests)) {
+        decide("ask", CREATE_GUARDED_MSG + BYPASS_WARN);
+        return;
+      }
       passThrough();
       return;
     }
@@ -1273,6 +1293,10 @@ function main() {
       "ask",
       `기존 파일을 바꾸기 전에 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)}${selfProtectNote} 진행할까요? 잘못되면 "되돌려 줘"로 복구돼요.${trustHintText(guardedCfg)}${BYPASS_WARN}`,
     );
+    return;
+  }
+  if (createsGuardedFile(targets.map((t) => resolveLoose(cwd, t)))) {
+    decide("ask", CREATE_GUARDED_MSG + BYPASS_WARN);
     return;
   }
   passThrough(); // 새 파일 생성 등 — 안전

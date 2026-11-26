@@ -1778,6 +1778,42 @@ if (WIN) {
       g59("Bash", { command: `rm "${proj}${path.sep}*.log"` }).decision === null, "");
   }
 
+  // ── [2차 자동 보안 리뷰 반영] 설정·신뢰 파일 '새로 만들기' + 프로젝트 안 .claude/settings(.local).json ──
+  {
+    const pcl = path.join(proj, "sub", ".claude");
+    mkdirSync(pcl, { recursive: true });
+    const newLocal = path.join(pcl, "settings.local.json");
+    const r1 = Wr(newLocal);
+    check("59z1 프로젝트 .claude/settings.local.json 새로 만들기 → ask(훅·권한·disableAllHooks를 담을 수 있음)", r1.decision === "ask", JSON.stringify(r1));
+    const exProj = mk(path.join(pcl, "settings.json"), "{}");
+    const r2 = Wr(exProj);
+    check("59z2 신뢰 폴더의 프로젝트 .claude/settings.json 덮어쓰기 → ask", r2.decision === "ask", JSON.stringify(r2));
+    const grp = path.join(proj, "grepo");
+    mkdirSync(path.join(grp, ".git"), { recursive: true });
+    mkdirSync(path.join(grp, ".claude"), { recursive: true });
+    const gitProj = mk(path.join(grp, ".claude", "settings.json"), "{}");
+    check("59z3 git 저장소 안 프로젝트 .claude/settings.json 덮어쓰기(복구 가능 판정) → ask", Wr(gitProj).decision === "ask", JSON.stringify(Wr(gitProj)));
+    const shNew = path.join(proj, "sh", ".claude", "settings.json");
+    mkdirSync(path.dirname(shNew), { recursive: true });
+    check("59z4 셸 리다이렉트로 프로젝트 .claude/settings.json 새로 만들기 → ask", g59("Bash", { command: `echo x > "${shNew}"` }).decision === "ask", JSON.stringify(g59("Bash", { command: `echo x > "${shNew}"` })));
+    const absentCfgLocal = path.join(cfg, "settings.local.json");
+    check("59z5 실제 설정 폴더에 settings.local.json 새로 만들기 → ask", Wr(absentCfgLocal).decision === "ask", JSON.stringify(Wr(absentCfgLocal)));
+    rmSync(profF, { force: true });
+    const rp = Wr(profF);
+    check("59z6 없던 profile.json 새로 만들기(AI가 스스로 L3로 만드는 것 방지) → ask", rp.decision === "ask", JSON.stringify(rp));
+    rmSync(wlDefF, { force: true });
+    check("59z7 없던 whitelist.json 새로 만들기 → ask", Wr(wlDefF).decision === "ask", JSON.stringify(Wr(wlDefF)));
+    // ── 마찰이 늘면 안 되는 대조군 ──
+    check("59z8 일반 새 파일 → 통과", Wr(path.join(proj, "brand-new.txt")).decision === null, "");
+    check("59z9 .claude 아래 규칙 문서 새 파일(프로젝트) → 통과", Wr(path.join(proj, "sub", ".claude", "rules", "new.md")).decision === null, "");
+    check("59z10 .claude 아래가 아닌 이름만 settings.json 새 파일 → 통과", Wr(path.join(proj, "sub", "app", "settings.json")).decision === null, "");
+    const vs = path.join(proj, ".vscode");
+    mkdirSync(vs, { recursive: true });
+    check("59z11 .vscode/settings.json 기존 덮어쓰기(신뢰 폴더) → 통과", Wr(mk(path.join(vs, "settings.json"), "{}")).decision === null, "");
+    check("59z12 설정 폴더 메모리 새 파일 → 통과", Wr(path.join(cfg, "projects", "p", "memory", "new.md")).decision === null, "");
+    check("59z13 플러그인 폴더 안 새 파일 → 기존대로 통과(트리는 '있는 파일'만 확인)", Wr(path.join(cfg, "plugins", "cache", "new.txt")).decision === null, "");
+  }
+
   try { rmSync(fh, { recursive: true, force: true }); } catch {}
 }
 

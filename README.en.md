@@ -835,7 +835,7 @@ These files are in the SoDamHarness plugin folder:
 | **"claude" command not recognized** in terminal | Claude Code is not installed or not on the PATH | Install Claude Code (Section 1-2). Restart terminal after. |
 | **Installation command failed** | Many possible causes | Copy the exact error message and run `/sodam-harness:fix`, or start over from Section 2. |
 | **Wizard settings seem to misbehave** | `profile.json` is corrupted or has an invalid value | It automatically falls back to the safest default (L1, "always confirm"). Run `/sodam-harness:wizard` again to reconfigure. |
-| The AI **asks every time it edits a settings file** | Safety-setting files (Claude's `settings.json`, the plugin folder) and trust records (`profile.json`, `whitelist.json`, `pending-trust.json`) are **never** skipped by "stop asking in this folder" or L3 — they are always confirmed (0.1.8+) | Approve it if you asked for that change; **decline** if you did not. This prompt intentionally has no "stop asking" hint. |
+| The AI **asks every time it edits a settings file** | Safety-setting files (Claude's `settings.json`, the plugin folder, a project's `.claude/settings.json`) and trust records (`profile.json`, `whitelist.json`, `pending-trust.json`) are **never** skipped by "stop asking in this folder" or L3 — they are always confirmed (0.1.8+) | Approve it if you asked for that change; **decline** if you did not. This prompt intentionally has no "stop asking" hint. |
 | The AI **cannot edit my own files inside `~/.claude`** (🛑) | That folder holds safety settings, so it is blocked by default | To unlock just a working folder, create the exception list `allowlist.json` yourself (see Section 7). |
 | I think another plugin or an existing hook **conflicts** (two prompts for one action, or two backups) | Each installed plugin may ask/block on its own, or the same safety hook may be registered in two places | Check with `/sodam-harness:status`. If the same safety hook is also **registered directly in your own `settings.json`** (a `guard.mjs` path), keep only one — the AI cannot edit that file, so you must open and fix it **yourself**. Adjust other plugins' prompts in their own settings. |
 
@@ -1022,9 +1022,9 @@ A: No. The wizard only adjusts **how often** the "Really do this?" prompt appear
 
 ---
 
-**Q22. What does "295 self-tests passing" mean?**
+**Q22. What does "308 self-tests passing" mean?**
 
-A: During development, SoDamHarness ran 295 test cases (blocking dangerous actions, backups, undo, edge cases, adversarial bypass attempts, file move/rename protection, `git commit` secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them passed. It confirms "the core features work as intended" — not "100% perfect in every situation."
+A: During development, SoDamHarness ran 308 test cases (blocking dangerous actions, backups, undo, edge cases, adversarial bypass attempts, file move/rename protection, `git commit` secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them passed. It confirms "the core features work as intended" — not "100% perfect in every situation."
 
 ---
 
@@ -1035,8 +1035,8 @@ A: During development, SoDamHarness ran 295 test cases (blocking dangerous actio
 
 ### 2026-11-26 (0.1.8) — Safety-setting and trust-record files are always confirmed, even with "stop asking in this folder"
 - **What**: With a folder trusted (or at L3), the AI could edit the **real Claude settings file (`settings.json`), the plugin folder, and the trust-record files (`profile.json`, `whitelist.json`, `pending-trust.json`)** without a prompt, because trust is keyed to the *working folder* and so also covered target files outside it.
-- **Fix**: These files alone are now **always confirmed first**, regardless of trust, L3 or git-recoverability (it is a prompt, not a block, so legitimate requests still work). Ordinary files and the AI's memory files get **no extra prompts.** The settings-folder location follows the `CLAUDE_CONFIG_DIR` environment variable, and the exception list's never-unlockable set follows it too.
-- **All 295 self-tests pass** (29 new in this release, zero regressions).
+- **Fix**: These files alone are now **always confirmed first**, regardless of trust, L3 or git-recoverability (it is a prompt, not a block, so legitimate requests still work). **`.claude/settings.json` and `settings.local.json` inside any project folder** are covered too (they can change hooks and permissions or switch the safety belt off), and **creating** one of these settings or trust files is also confirmed. Ordinary files and the AI's memory files get **no extra prompts.** The settings-folder location follows the `CLAUDE_CONFIG_DIR` environment variable, and the exception list's never-unlockable set follows it too.
+- **All 308 self-tests pass** (42 new in this release, zero regressions).
 
 ### 2026-11-26 (0.1.7) — New exception list `allowlist.json` (relief when the AI could not edit ordinary working files)
 - **What**: You can unlock **only the sub-folders you approve yourself** inside the default-blocked locations (`~/.claude`, `~/.config`) so the AI can edit them (see Section 7). Whole-folder deletion and catastrophic-command blocking, backup and confirmation all stay in force.
@@ -1220,7 +1220,7 @@ We want to be fully honest about what SoDamHarness can and cannot do.
 - **Verified on Windows; Mac is untested.** The code is written to be cross-platform, but Mac behavior has not been formally verified. Please report any Mac-specific issues to the developer.
 - Backups are file-by-file. Whole folders are never backed up as a unit (which is exactly why whole-folder deletion is blocked instead).
 - A full disk or missing permissions can cause a backup to fail.
-- **295/295 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts, file move/rename protection, and the custom wizard's L1/L2/L3 levels). This confirms the core features work as intended — it does not mean "100% perfect in every situation."
+- **308/308 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts, file move/rename protection, and the custom wizard's L1/L2/L3 levels). This confirms the core features work as intended — it does not mean "100% perfect in every situation."
 - For truly important data, **do not rely on this tool alone.** Use a dedicated backup solution (Windows Backup, Time Machine, cloud storage, an external drive, etc.) in addition to SoDamHarness.
 - **Think before you act.** The best safety measure is a moment of careful thought before asking the AI to do something irreversible.
 
@@ -1235,7 +1235,7 @@ From the repository folder, run:
 ```
 node hooks/_selftest.mjs
 ```
-On success the last line reads something like `결과: 295 PASS / 0 FAIL` (the number may differ by version — "결과" means "result"). If even one test fails, it means a regression was introduced into the safety logic — do not ship the change.
+On success the last line reads something like `결과: 308 PASS / 0 FAIL` (the number may differ by version — "결과" means "result"). If even one test fails, it means a regression was introduced into the safety logic — do not ship the change.
 
 ### Build
 **There is no separate build step.** This is plain Node.js, so there's no compile/bundle stage — edits take effect immediately (confirmed directly: `package.json` has no build script defined).
