@@ -1639,6 +1639,148 @@ if (WIN) {
   try { rmSync(fakeHome, { recursive: true, force: true }); } catch {}
 }
 
+// 59) [신규·2026-11-26 BV-8] 안전장치 설정·신뢰 기록 파일은 "이 폴더 신뢰"·L3·git 복구 가능으로도 확인을 건너뛰지 않는다.
+//     (독립 조사: 실제 설정 폴더 %APPDATA%\claude-code\settings.json에는 훅이 있는데 ask뿐이라, 작업 폴더를 신뢰해 두면
+//      AI가 조용히 고칠 수 있었음 — 신뢰는 '작업 폴더' 기준이지 '대상 파일' 기준이 아님.) deny 승격이 아니라 ask 유지.
+//     일반 파일·메모리 파일에는 마찰을 늘리지 않는다(과잉확장 방지). 가짜 홈·가짜 설정 폴더로 격리해 실행.
+{
+  const fh = mkdtempSync(path.join(tmpdir(), "sdh-cfgask-"));
+  const cfg = path.join(fh, "cfg"); // CLAUDE_CONFIG_DIR로 주입할 가짜 실제 설정 폴더
+  const proj = path.join(fh, "proj"); // 신뢰해 둔 작업 폴더
+  const proj2 = path.join(fh, "proj2"); // 신뢰 안 한 작업 폴더
+  const sdm = path.join(fh, ".sodamharness");
+  for (const d of [cfg, proj, proj2, sdm, path.join(cfg, "projects", "p", "memory"), path.join(cfg, "plugins", "cache", "p", "1", "hooks")]) {
+    mkdirSync(d, { recursive: true });
+  }
+  const wlF = path.join(fh, "wl.json");
+  const nowT = Date.now();
+  writeFileSync(wlF, JSON.stringify(["overwrite", "other", "delete"].map((oc) => ({ folder: proj, opClass: oc, created_at: nowT }))));
+  const profL3 = path.join(fh, "prof-l3.json");
+  writeFileSync(profL3, JSON.stringify({ autonomy_level: "L3" }));
+  const mk = (p, c = "x") => { writeFileSync(p, c); return p; };
+  const settingsF = mk(path.join(cfg, "settings.json"), "{}");
+  const pluginGuard = mk(path.join(cfg, "plugins", "cache", "p", "1", "hooks", "guard.mjs"));
+  const memF = mk(path.join(cfg, "projects", "p", "memory", "m.md"));
+  const profF = mk(path.join(sdm, "profile.json"), "{}");
+  const wlDefF = mk(path.join(sdm, "whitelist.json"), "[]");
+  const pendF = mk(path.join(sdm, "pending-trust.json"), "{}");
+  const rulesF = mk(path.join(sdm, "safety-rules.json"), "{}");
+  const plain = mk(path.join(proj, "plain.txt"));
+  const srcF = mk(path.join(proj, "src.txt"));
+  const g59 = (tool, input, o = {}) => {
+    const env = {
+      ...process.env,
+      USERPROFILE: fh, HOME: fh,
+      SODAM_ALLOWLIST_FILE: o.al || path.join(fh, "no-al.json"),
+      SODAM_BACKUPS_ROOT: path.join(fh, "bk"),
+      SODAM_WHITELIST_FILE: wlF,
+      SODAM_PENDING_FILE: path.join(fh, "pend.json"),
+      SODAM_PROFILE_FILE: o.l3 ? profL3 : path.join(fh, "no-prof.json"),
+    };
+    if (o.cfgEnv === null) delete env.CLAUDE_CONFIG_DIR; else env.CLAUDE_CONFIG_DIR = o.cfgEnv || cfg;
+    const r = spawnSync(process.execPath, [GUARD], { input: JSON.stringify({ tool_name: tool, tool_input: input, cwd: o.cwd || proj }), encoding: "utf8", env });
+    if (r.status !== 0 && r.status !== null) return { decision: "CRASH", reason: r.stderr || "" };
+    const out = (r.stdout || "").trim();
+    if (!out) return { decision: null, reason: "" };
+    try { const h = JSON.parse(out).hookSpecificOutput || {}; return { decision: h.permissionDecision || null, reason: h.permissionDecisionReason || "" }; }
+    catch { return { decision: "PARSE_ERROR", reason: out }; }
+  };
+  const Wr = (file, o) => g59("Write", { file_path: file, content: "y" }, o);
+
+  // ── 마찰이 늘면 안 되는 대조군(수정 전후 모두 통과해야 함) ──
+  check("59a 신뢰 폴더의 일반 파일 덮어쓰기 → 조용히 통과(신뢰 기능 그대로)", Wr(plain).decision === null, JSON.stringify(Wr(plain)));
+  check("59l 설정 폴더 안 메모리 파일(AI가 매 세션 쓰는 곳) → 마찰 없음", Wr(memF).decision === null, JSON.stringify(Wr(memF)));
+  check("59n 안전 규칙 파일(safety-rules.json)은 이번 범위 밖 → 기존대로", Wr(rulesF).decision === null, JSON.stringify(Wr(rulesF)));
+  const gitRepo = path.join(proj, "gitrepo");
+  mkdirSync(path.join(gitRepo, ".git"), { recursive: true });
+  const repoFile = mk(path.join(gitRepo, "a.txt"));
+  check("59m git 저장소 안 일반 파일 덮어쓰기 → 기존대로 통과(백업+git)", Wr(repoFile).decision === null, JSON.stringify(Wr(repoFile)));
+  check("59m2 신뢰 폴더 일반 파일 rm → 기존대로 통과", g59("Bash", { command: `rm "${plain}"` }).decision === null, "");
+  mk(plain);
+
+  // ── 이번 변경 대상: 신뢰돼 있어도 항상 확인 ──
+  const rs = Wr(settingsF);
+  check("59b 신뢰 폴더에서도 실제 설정 파일(settings.json) 덮어쓰기 → ask", rs.decision === "ask", JSON.stringify(rs));
+  check("59o …그 ask는 '안 물어봐도 돼' 안내 없이 '항상 확인'을 알림(신뢰 승격 유도 금지)", rs.decision === "ask" && rs.reason.includes("항상") && !rs.reason.includes("안 물어봐도 돼"), rs.reason);
+  check("59c L3 + 신뢰 안 한 폴더에서도 settings.json → ask(L3가 건너뛰지 못함)", Wr(settingsF, { l3: true, cwd: proj2 }).decision === "ask", JSON.stringify(Wr(settingsF, { l3: true, cwd: proj2 })));
+  check("59d 플러그인 캐시(실행 중인 가드 사본) 덮어쓰기 → ask", Wr(pluginGuard).decision === "ask", JSON.stringify(Wr(pluginGuard)));
+  check("59f 신뢰 기록 profile.json 덮어쓰기 → ask", Wr(profF).decision === "ask", JSON.stringify(Wr(profF)));
+  check("59g whitelist.json(기본 위치) 덮어쓰기 → ask", Wr(wlDefF).decision === "ask", JSON.stringify(Wr(wlDefF)));
+  check("59h pending-trust.json 덮어쓰기 → ask", Wr(pendF).decision === "ask", JSON.stringify(Wr(pendF)));
+  check("59i 실제 읽는(주입) whitelist 경로 덮어쓰기 → ask", Wr(wlF).decision === "ask", JSON.stringify(Wr(wlF)));
+  check("59j 셸 리다이렉트로 settings.json 덮어쓰기 → ask", g59("Bash", { command: `echo x > "${settingsF}"` }).decision === "ask", JSON.stringify(g59("Bash", { command: `echo x > "${settingsF}"` })));
+  check("59k 셸 cp로 settings.json 덮어쓰기 → ask", g59("Bash", { command: `cp "${srcF}" "${settingsF}"` }).decision === "ask", "");
+  check("59t 신뢰 폴더에서 settings.json 삭제(rm) → ask", g59("Bash", { command: `rm "${settingsF}"` }).decision === "ask", JSON.stringify(g59("Bash", { command: `rm "${settingsF}"` })));
+  // git 저장소로 관리되는 설정 폴더(dotfiles)여도 조용히 통과하지 않음
+  mkdirSync(path.join(cfg, ".git"), { recursive: true });
+  check("59e 설정 폴더가 git 저장소여도(복구 가능 판정) settings.json → ask", Wr(settingsF).decision === "ask", JSON.stringify(Wr(settingsF)));
+  check("59e2 …셸 덮어쓰기(git 저장소 안)도 ask", g59("Bash", { command: `echo x > "${settingsF}"` }).decision === "ask", "");
+  // 환경변수가 없어도 이 PC의 통상 위치(가짜 홈 기준)는 인식(Windows 관례 경로)
+  if (WIN) {
+    const defCfg = path.join(fh, "AppData", "Roaming", "claude-code");
+    mkdirSync(defCfg, { recursive: true });
+    const defSettings = mk(path.join(defCfg, "settings.json"), "{}");
+    check("59p CLAUDE_CONFIG_DIR 없이도 통상 위치의 settings.json → ask", Wr(defSettings, { cfgEnv: null }).decision === "ask", JSON.stringify(Wr(defSettings, { cfgEnv: null })));
+  }
+  // 예외 목록 영구 제외도 "실제 설정 폴더"를 따라가야 함(설정 폴더가 ~/.claude 안쪽에 있는 환경)
+  {
+    const inner = path.join(fh, ".claude", "cfgx");
+    mkdirSync(path.join(inner, "plugins"), { recursive: true });
+    const alF = path.join(fh, "al-cfgx.json");
+    writeFileSync(alF, JSON.stringify({ version: 1, paths: [path.join(inner, "plugins")] }));
+    const r59q = g59("Write", { file_path: path.join(inner, "plugins", "x.json"), content: "y" }, { al: alF, cfgEnv: inner });
+    check("59q 설정 폴더가 ~/.claude 안쪽일 때 그 plugins를 예외 목록에 적어도 → deny(영구 제외가 실제 설정 폴더 추적)", r59q.decision === "deny", JSON.stringify(r59q));
+  }
+  // ── [독립 보안 리뷰 반영] 스트림 이름·이름 다른 junction·설정 폴더 통째 이동 ──
+  {
+    const instF = mk(path.join(cfg, "plugins", "installed_plugins.json"), "{}");
+    if (WIN) {
+      const ads = Wr(settingsF + "::$DATA");
+      check("59u NTFS 스트림 이름(settings.json::$DATA)으로 덮어쓰기 → ask", ads.decision === "ask", JSON.stringify(ads));
+    }
+    const jl = path.join(proj, "j");
+    let jok = false;
+    try { symlinkSync(path.join(cfg, "plugins"), jl, WIN ? "junction" : "dir"); jok = existsSync(jl); } catch {}
+    if (jok) {
+      const via = Wr(path.join(jl, "installed_plugins.json"));
+      check("59v 이름이 다른 junction(→설정 plugins) 경유 Write → ask", via.decision === "ask", JSON.stringify(via));
+      check("59v2 같은 경유 셸 리다이렉트 → ask", g59("Bash", { command: `echo x > "${path.join(jl, "installed_plugins.json")}"` }).decision === "ask", "");
+      try { rmSync(jl, { force: true }); } catch {}
+    } else {
+      console.log("  SKIP  59v junction (생성 불가 환경)");
+    }
+    const mvCfg = g59("Bash", { command: `mv "${cfg}" "${cfg}-old"` });
+    check("59w 신뢰 폴더에서 설정 폴더 통째 이동(mv) → ask(다음 세션에 설정·가드가 사라짐)", mvCfg.decision === "ask", JSON.stringify(mvCfg));
+    const other = path.join(proj, "otherdir");
+    mkdirSync(other, { recursive: true });
+    const jl2 = path.join(proj, "j2");
+    let jok2 = false;
+    try { symlinkSync(other, jl2, WIN ? "junction" : "dir"); jok2 = existsSync(jl2); } catch {}
+    if (jok2) {
+      mk(path.join(other, "plain.json"), "{}");
+      check("59y 설정과 무관한 junction 경유 일반 파일 → 마찰 없음", Wr(path.join(jl2, "plain.json")).decision === null, JSON.stringify(Wr(path.join(jl2, "plain.json"))));
+      try { rmSync(jl2, { force: true }); } catch {}
+    }
+  }
+
+  // ── [자체 재점검 발견] 와일드카드 삭제는 글자 그대로의 경로가 없어도 실제 파일로 펼쳐 검사해야 함 ──
+  {
+    mk(settingsF, "{}");
+    mk(path.join(cfg, "plugins", "installed_plugins.json"), "{}");
+    mk(path.join(proj, "a.log"));
+    check("59x 신뢰 폴더에서 설정 plugins 와일드카드 삭제(rm plugins/*.json) → ask",
+      g59("Bash", { command: `rm "${path.join(cfg, "plugins")}${path.sep}*.json"` }).decision === "ask", "");
+    check("59x2 설정 파일 와일드카드 삭제(rm settings.*) → ask",
+      g59("Bash", { command: `rm "${cfg}${path.sep}settings.*"` }).decision === "ask", "");
+    check("59x3 PowerShell 설정 폴더 와일드카드 삭제 → ask",
+      g59("PowerShell", { command: `Remove-Item "${cfg}${path.sep}*.json"` }).decision === "ask", "");
+    check("59x4 일반 폴더 와일드카드 삭제는 기존대로(신뢰 시 통과)",
+      g59("Bash", { command: `rm "${proj}${path.sep}*.log"` }).decision === null, "");
+  }
+
+  try { rmSync(fh, { recursive: true, force: true }); } catch {}
+}
+
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)
 try { rmSync(bwork, { recursive: true, force: true }); } catch {}
 try { if (backupDir1) rmSync(backupDir1, { recursive: true, force: true }); } catch {}

@@ -407,11 +407,87 @@ function isSensitive(absInput) {
 // Windows 경로만 실측 확인(파일 존재 직접 확인, 2026-07-27). Mac/Linux는 Node/Electron 통상 관례
 // 추정(⚪ 미검증) — 틀려도 그냥 매칭 안 될 뿐 과잉차단 리스크 없음(fail-open 방향이라 안전).
 function isActiveClaudeCodeConfigFile(abs) {
-  let candidate;
-  if (WIN) candidate = path.join(homedir(), "AppData", "Roaming", "claude-code", "settings.json");
-  else if (MAC) candidate = path.join(homedir(), "Library", "Application Support", "claude-code", "settings.json");
-  else candidate = path.join(homedir(), ".config", "claude-code", "settings.json");
-  return toComparable(abs) === toComparable(candidate);
+  const a = toComparable(abs);
+  return activeConfigDirs().some((d) => a === toComparable(path.join(d, "settings.json")));
+}
+// [2026-11-26 BV-8] 실제로 쓰이는 Claude Code 설정 폴더 — 환경변수(CLAUDE_CONFIG_DIR) 우선 + 기존 관례 경로.
+// 이 PC처럼 설정 폴더를 옮겨 쓰면 ~/.claude가 아니라 이쪽에 진짜 settings.json(훅·플러그인 목록)과 플러그인 캐시가 있다.
+function activeConfigDirs() {
+  const dirs = [];
+  const env = process.env.CLAUDE_CONFIG_DIR;
+  if (typeof env === "string" && env.trim() && path.isAbsolute(env.trim())) dirs.push(path.resolve(env.trim()));
+  const home = homedir();
+  const def = WIN
+    ? path.join(home, "AppData", "Roaming", "claude-code")
+    : MAC
+      ? path.join(home, "Library", "Application Support", "claude-code")
+      : path.join(home, ".config", "claude-code");
+  if (!dirs.some((d) => toComparable(d) === toComparable(def))) dirs.push(def);
+  return dirs;
+}
+// 안전장치 자신(실제 설정·플러그인 캐시)과 신뢰 기록(profile/whitelist/pending)은 "작업 폴더를 신뢰했다"·L3·git 복구 가능으로
+// 확인(ask)을 건너뛰면 안 된다 — 신뢰는 '작업 폴더' 기준이지 '대상 파일' 기준이 아니라서, 신뢰 폴더에서 AI가 이 파일들을
+// 조용히 고쳐 안전장치를 끄거나 스스로 신뢰를 늘릴 수 있었다. deny 승격이 아니라 ask 유지(정상 편집 요청은 여전히 가능).
+// 일반 파일·메모리 파일(projects/*/memory)은 대상이 아니라 마찰이 늘지 않는다.
+const NEVER_ASK_NAMES = new Set(["settings.json", "settings.local.json", "profile.json", "whitelist.json", "pending-trust.json"]);
+// 환경변수로 신뢰 파일 경로를 바꿔 쓰는 경우(이름이 달라질 수 있음)도 사전 필터가 놓치지 않게 — 파일시스템 조회 없음
+function neverAskNames() {
+  const names = new Set(NEVER_ASK_NAMES);
+  for (const v of [process.env.SODAM_PROFILE_FILE, process.env.SODAM_WHITELIST_FILE, process.env.SODAM_PENDING_FILE]) {
+    if (v) names.add(toComparable(path.basename(v)));
+  }
+  for (const d of activeConfigDirs()) names.add(toComparable(path.basename(d)));
+  return names;
+}
+let NEVER_ASK_FLOOR = null;
+function neverAskFloor() {
+  if (NEVER_ASK_FLOOR) return NEVER_ASK_FLOOR;
+  const files = [];
+  const trees = [];
+  for (const d of activeConfigDirs()) {
+    files.push(d); // 설정 폴더 "자체"(정확히 일치만) — 통째 이동하면 다음 세션에 설정·훅(이 가드 포함)이 사라짐
+    files.push(path.join(d, "settings.json"), path.join(d, "settings.local.json"));
+    trees.push(path.join(d, "plugins"), path.join(d, "hooks"));
+  }
+  const sdm = path.join(homedir(), ".sodamharness");
+  files.push(path.join(sdm, "profile.json"), path.join(sdm, "whitelist.json"), path.join(sdm, "pending-trust.json"));
+  for (const v of [process.env.SODAM_PROFILE_FILE, process.env.SODAM_WHITELIST_FILE, process.env.SODAM_PENDING_FILE]) {
+    if (v) files.push(v);
+  }
+  const forms = (p) => {
+    const lit = toComparable(path.resolve(p));
+    const c = canonPath(p);
+    return c !== null && c !== lit ? [lit, c] : [lit];
+  };
+  NEVER_ASK_FLOOR = { files: files.flatMap(forms), trees: trees.flatMap(forms) };
+  return NEVER_ASK_FLOOR;
+}
+function isNeverAutoAskTarget(abs) {
+  try {
+    // 덮어쓰기·삭제·이동으로 잃는 것은 '존재하는' 경로뿐 — 없는 경로는 비교 불필요(깊고 없는 경로가 많아도 비용 0)
+    if (!existsSync(abs)) return false;
+    // NTFS 대체 스트림(file::$DATA)은 본문을 그대로 덮어쓰므로 떼고 비교
+    const strip = (s) => (WIN ? s.replace(/(?<=[^\\]):[^\\]*$/, "") : s);
+    const forms = [strip(toComparable(path.resolve(abs)))];
+    const c = canonPath(abs); // 이름이 다른 junction·링크도 실제 위치로(존재 경로라 realpath 1회, 결과 캐시)
+    if (c !== null && !forms.includes(strip(c))) forms.push(strip(c));
+    // 값싼 사전 필터: 이름이 해당 파일/설정 폴더이거나 plugins·hooks 아래일 때만 영구 목록(비싼 쪽)을 계산
+    const names = neverAskNames();
+    const looksRelevant = forms.some((f) => {
+      const segs = f.split(path.sep);
+      return names.has(segs[segs.length - 1]) || segs.includes("plugins") || segs.includes("hooks");
+    });
+    if (!looksRelevant) return false;
+    const fl = neverAskFloor();
+    return forms.some((f) => fl.files.includes(f) || fl.trees.some((t) => f === t || f.startsWith(t + path.sep)));
+  } catch {
+    return true; // 판정 오류 → 건너뛰지 않음(ask 유지) = fail-closed
+  }
+}
+function trustHintText(guardedCfg) {
+  return guardedCfg
+    ? " (⚠️ 안전장치 설정·신뢰 기록 파일이라, 이 폴더를 신뢰해 뒀어도 이런 파일은 항상 먼저 확인해요.)"
+    : ' (이 폴더에서 이런 작업을 계속 할 거면 "이 폴더는 안 물어봐도 돼"라고 하면 이 폴더에서는 12시간 동안 안 물을게요. 대화를 새로 시작해도 유지돼요.)';
 }
 function isSymlink(p) {
   try {
@@ -615,8 +691,17 @@ function insideSoftZone(a) {
 // 구역 안이라도 영구 제외: 안전장치 자신을 끄거나 바꿀 수 있는 곳
 function isSelfProtectPath(a) {
   for (const h of homeVariants()) {
-    const exact = [path.join(h, ".claude", "settings.json"), path.join(h, ".claude", "settings.local.json")];
-    const trees = [path.join(h, ".claude", "plugins"), path.join(h, ".claude", "hooks"), path.join(h, ".config", "claude-code")];
+    const exact = [
+      path.join(h, ".claude", "settings.json"),
+      path.join(h, ".claude", "settings.local.json"),
+      ...activeConfigDirs().flatMap((d) => [path.join(d, "settings.json"), path.join(d, "settings.local.json")]),
+    ];
+    const trees = [
+      path.join(h, ".claude", "plugins"),
+      path.join(h, ".claude", "hooks"),
+      path.join(h, ".config", "claude-code"),
+      ...activeConfigDirs().flatMap((d) => [path.join(d, "plugins"), path.join(d, "hooks")]),
+    ];
     // 이름만이 아니라 "진짜 그 파일/폴더"를 지킨다 — settings.json이 dotfiles 링크이거나 hooks가 junction이면
     // 링크가 가리키는 실제 위치도 영구 제외(canonPath 변형 포함, 리뷰 지적)
     for (const p of exact) {
@@ -1085,11 +1170,15 @@ function main() {
       );
       return;
     }
+    // [BV-8] 안전장치 설정·신뢰 기록 파일이 대상에 끼어 있으면 아래 "확인 건너뛰기" 3종(git 복구·L3·폴더 신뢰)을 쓰지 않는다
+    // 와일드카드(rm plugins/*.json)는 글자 그대로의 경로가 존재하지 않으므로, 백업과 같은 방식으로 실제 파일로 펼쳐서 검사
+    const guardedCfg = [...expandGlobsForBackup(delPaths), ...dests].some((ap) => isNeverAutoAskTarget(ap));
     // [2026-07-03 정밀화 2차·U2] 안전 명령의 덮어쓰기(echo >·cp·mv 등)가 전부 (git 저장소 안 + 비밀 아님)이면
     // 백업만 뜨고 확인 생략 — Write/Edit(P2)와 동일 논리. 위험명령(rm 등)은 대상 아님(level !== "safe").
     if (
       level === "safe" &&
       owExisting.length > 0 &&
+      !guardedCfg &&
       owExisting.every((ap) => !isSecretFile(ap) && !!findGitRoot(ap))
     ) {
       passThrough();
@@ -1097,20 +1186,20 @@ function main() {
     }
     // 맞춤 마법사 L3: 백업이 온전히 성공한 risky 작업은 ask 생략(비밀파일이 껴 있으면 위 backupPaths에서
     // res.skippedSecrets에 잡히므로 fullyBackedUp이 false가 되어 이 분기를 안 타고 아래 ask로 그대로 이어짐.
-    if (AUTONOMY === "L3" && level !== "safe" && fullyBackedUp(res)) {
+    if (AUTONOMY === "L3" && level !== "safe" && !guardedCfg && fullyBackedUp(res)) {
       passThrough();
       return;
     }
     // 세션 화이트리스트(D1): 이 폴더·이 작업을 이미 신뢰했으면 백업만 하고 묻지 않는다(deny는 위에서 이미 끝남).
     const opClass = opClassOf(cmdForClass, false);
-    if (isTrusted(sessionId, cwd, opClass, TRUST_TTL_MS)) {
+    if (!guardedCfg && isTrusted(sessionId, cwd, opClass, TRUST_TTL_MS)) {
       passThrough(); // 신뢰됨 — 백업은 이미 떴고, 안 물음(보호는 유지)
       return;
     }
-    recordPending(sessionId, cwd, opClass); // "안 물어봐도 돼" 하면 이 작업을 신뢰로 승격
+    if (!guardedCfg) recordPending(sessionId, cwd, opClass); // "안 물어봐도 돼" 하면 이 작업을 신뢰로 승격(설정·신뢰 파일은 승격 유도 안 함)
     decide(
       "ask",
-      `되돌리기 어려운 작업이에요. 먼저 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 정말 진행할까요? 잘못되면 "되돌려 줘"라고 하면 복구할 수 있어요. (이 폴더에서 이런 작업을 계속 할 거면 "이 폴더는 안 물어봐도 돼"라고 하면 이 폴더에서는 12시간 동안 안 물을게요. 대화를 새로 시작해도 유지돼요.)${BYPASS_WARN}`,
+      `되돌리기 어려운 작업이에요. 먼저 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)} 정말 진행할까요? 잘못되면 "되돌려 줘"라고 하면 복구할 수 있어요.${trustHintText(guardedCfg)}${BYPASS_WARN}`,
     );
     return;
   }
@@ -1152,25 +1241,28 @@ function main() {
     }
     // [2026-07-03 정밀화] 전부 (git 저장소 안 + 비밀파일 아님)이면 확인 생략 — 방금 뜬 백업 + git 이중 복구 가능.
     // 비밀파일은 백업이 안 뜨므로(A3) 반드시 ask 유지. 민감위치·심볼릭 링크 deny는 위에서 이미 끝남.
-    const allRecoverable = overwrites.every((t) => {
-      const abs = resolveLoose(cwd, t);
-      return !isSecretFile(abs) && !!findGitRoot(abs);
-    });
+    const guardedCfg = overwrites.some((t) => isNeverAutoAskTarget(t)); // [BV-8] 안전장치 설정·신뢰 기록 파일은 확인 건너뛰기 금지
+    const allRecoverable =
+      !guardedCfg &&
+      overwrites.every((t) => {
+        const abs = resolveLoose(cwd, t);
+        return !isSecretFile(abs) && !!findGitRoot(abs);
+      });
     if (allRecoverable) {
       passThrough();
       return;
     }
     // 맞춤 마법사 L3: 백업이 온전히 성공했으면(비밀파일 없음) ask 생략
-    if (AUTONOMY === "L3" && fullyBackedUp(res)) {
+    if (AUTONOMY === "L3" && !guardedCfg && fullyBackedUp(res)) {
       passThrough();
       return;
     }
     const opClass = opClassOf("", true); // = "overwrite"
-    if (isTrusted(sessionId, cwd, opClass, TRUST_TTL_MS)) {
+    if (!guardedCfg && isTrusted(sessionId, cwd, opClass, TRUST_TTL_MS)) {
       passThrough(); // 신뢰됨 — 백업은 이미 떴고, 안 물음
       return;
     }
-    recordPending(sessionId, cwd, opClass);
+    if (!guardedCfg) recordPending(sessionId, cwd, opClass);
     // [2026-07-27·12 C1 후속] 자기보호 인지 강화: deny 승격 없이 이 문구만 추가.
     // 알려진 한계(문서화만, 이번 변경 범위 밖) — 아래 두 경로는 이 문구를 건너뛴다(기존 동작, 신규 아님):
     // ① 맞춤 마법사 L3(현재 기본 L1이라 비활성) ② 같은 폴더 화이트리스트 신뢰(D1). 필요 시 별도 결정 사항.
@@ -1179,7 +1271,7 @@ function main() {
       : "";
     decide(
       "ask",
-      `기존 파일을 바꾸기 전에 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)}${selfProtectNote} 진행할까요? 잘못되면 "되돌려 줘"로 복구돼요. (이 폴더에서 이런 작업을 계속 할 거면 "이 폴더는 안 물어봐도 돼"라고 하면 이 폴더에서는 12시간 동안 안 물을게요. 대화를 새로 시작해도 유지돼요.)${BYPASS_WARN}`,
+      `기존 파일을 바꾸기 전에 백업해 뒀어요(파일 ${res.count}개).${secretNote(res)}${selfProtectNote} 진행할까요? 잘못되면 "되돌려 줘"로 복구돼요.${trustHintText(guardedCfg)}${BYPASS_WARN}`,
     );
     return;
   }
