@@ -470,8 +470,16 @@ function isDotClaudeSettings(f) {
 }
 function isNeverAutoAskTarget(abs) {
   try {
-    // NTFS 대체 스트림(file::$DATA)은 본문을 그대로 덮어쓰므로 떼고 비교
-    const strip = (s) => (WIN ? s.replace(/(?<=[^\\]):[^\\]*$/, "") : s);
+    // NTFS 대체 스트림(file::$DATA)은 본문을 그대로 덮어쓰므로 떼고, 각 이름 끝의 점·공백도 뗀다
+    // (Windows·셸은 ".claude.\settings.json."을 진짜 ".claude\settings.json"으로 씀 — 리뷰 지적)
+    const strip = (s) =>
+      WIN
+        ? s
+            .replace(/(?<=[^\\]):[^\\]*$/, "")
+            .split("\\")
+            .map((seg) => seg.replace(/[. ]+$/, "") || seg)
+            .join("\\")
+        : s;
     const lit = strip(toComparable(path.resolve(abs)));
     const exists = existsSync(abs);
     const names = neverAskNames();
@@ -1261,7 +1269,9 @@ function main() {
     }
     // [2026-07-03 정밀화] 전부 (git 저장소 안 + 비밀파일 아님)이면 확인 생략 — 방금 뜬 백업 + git 이중 복구 가능.
     // 비밀파일은 백업이 안 뜨므로(A3) 반드시 ask 유지. 민감위치·심볼릭 링크 deny는 위에서 이미 끝남.
-    const guardedCfg = overwrites.some((t) => isNeverAutoAskTarget(t)); // [BV-8] 안전장치 설정·신뢰 기록 파일은 확인 건너뛰기 금지
+    // [BV-8] 안전장치 설정·신뢰 기록 파일은 확인 건너뛰기 금지 — 같은 호출에 '새 보호 파일'이 섞여 있어도 포함
+    const guardedCfg =
+      overwrites.some((t) => isNeverAutoAskTarget(t)) || createsGuardedFile(targets.map((t) => resolveLoose(cwd, t)));
     const allRecoverable =
       !guardedCfg &&
       overwrites.every((t) => {

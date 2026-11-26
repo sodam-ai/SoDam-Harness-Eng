@@ -1022,9 +1022,9 @@ A: No. The wizard only adjusts **how often** the "Really do this?" prompt appear
 
 ---
 
-**Q22. What does "308 self-tests passing" mean?**
+**Q22. What does "314 self-tests passing" mean?**
 
-A: During development, SoDamHarness ran 308 test cases (blocking dangerous actions, backups, undo, edge cases, adversarial bypass attempts, file move/rename protection, `git commit` secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them passed. It confirms "the core features work as intended" — not "100% perfect in every situation."
+A: During development, SoDamHarness ran 314 test cases (blocking dangerous actions, backups, undo, edge cases, adversarial bypass attempts, file move/rename protection, `git commit` secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them passed. It confirms "the core features work as intended" — not "100% perfect in every situation."
 
 ---
 
@@ -1036,7 +1036,7 @@ A: During development, SoDamHarness ran 308 test cases (blocking dangerous actio
 ### 2026-11-26 (0.1.8) — Safety-setting and trust-record files are always confirmed, even with "stop asking in this folder"
 - **What**: With a folder trusted (or at L3), the AI could edit the **real Claude settings file (`settings.json`), the plugin folder, and the trust-record files (`profile.json`, `whitelist.json`, `pending-trust.json`)** without a prompt, because trust is keyed to the *working folder* and so also covered target files outside it.
 - **Fix**: These files alone are now **always confirmed first**, regardless of trust, L3 or git-recoverability (it is a prompt, not a block, so legitimate requests still work). **`.claude/settings.json` and `settings.local.json` inside any project folder** are covered too (they can change hooks and permissions or switch the safety belt off), and **creating** one of these settings or trust files is also confirmed. Ordinary files and the AI's memory files get **no extra prompts.** The settings-folder location follows the `CLAUDE_CONFIG_DIR` environment variable, and the exception list's never-unlockable set follows it too.
-- **All 308 self-tests pass** (42 new in this release, zero regressions).
+- **All 314 self-tests pass** (48 new in this release, zero regressions).
 
 ### 2026-11-26 (0.1.7) — New exception list `allowlist.json` (relief when the AI could not edit ordinary working files)
 - **What**: You can unlock **only the sub-folders you approve yourself** inside the default-blocked locations (`~/.claude`, `~/.config`) so the AI can edit them (see Section 7). Whole-folder deletion and catastrophic-command blocking, backup and confirmation all stay in force.
@@ -1220,7 +1220,7 @@ We want to be fully honest about what SoDamHarness can and cannot do.
 - **Verified on Windows; Mac is untested.** The code is written to be cross-platform, but Mac behavior has not been formally verified. Please report any Mac-specific issues to the developer.
 - Backups are file-by-file. Whole folders are never backed up as a unit (which is exactly why whole-folder deletion is blocked instead).
 - A full disk or missing permissions can cause a backup to fail.
-- **308/308 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts, file move/rename protection, and the custom wizard's L1/L2/L3 levels). This confirms the core features work as intended — it does not mean "100% perfect in every situation."
+- **314/314 self-tests passing** as of the current release — all known test cases pass (including adversarial bypass attempts, file move/rename protection, and the custom wizard's L1/L2/L3 levels). This confirms the core features work as intended — it does not mean "100% perfect in every situation."
 - For truly important data, **do not rely on this tool alone.** Use a dedicated backup solution (Windows Backup, Time Machine, cloud storage, an external drive, etc.) in addition to SoDamHarness.
 - **Think before you act.** The best safety measure is a moment of careful thought before asking the AI to do something irreversible.
 
@@ -1235,7 +1235,7 @@ From the repository folder, run:
 ```
 node hooks/_selftest.mjs
 ```
-On success the last line reads something like `결과: 308 PASS / 0 FAIL` (the number may differ by version — "결과" means "result"). If even one test fails, it means a regression was introduced into the safety logic — do not ship the change.
+On success the last line reads something like `결과: 314 PASS / 0 FAIL` (the number may differ by version — "결과" means "result"). If even one test fails, it means a regression was introduced into the safety logic — do not ship the change.
 
 ### Build
 **There is no separate build step.** This is plain Node.js, so there's no compile/bundle stage — edits take effect immediately (confirmed directly: `package.json` has no build script defined).

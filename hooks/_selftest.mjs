@@ -1814,6 +1814,26 @@ if (WIN) {
     check("59z13 플러그인 폴더 안 새 파일 → 기존대로 통과(트리는 '있는 파일'만 확인)", Wr(path.join(cfg, "plugins", "cache", "new.txt")).decision === null, "");
   }
 
+  // ── [3차 자동 보안 리뷰 반영] 이름 끝의 점·공백 / 일반 덮어쓰기와 새 보호 파일 혼합 ──
+  {
+    const pc = path.join(proj, "w3", ".claude");
+    mkdirSync(pc, { recursive: true });
+    const real = mk(path.join(pc, "settings.json"), "{}");
+    const newL = path.join(pc, "settings.local.json");
+    if (WIN) {
+      const sep = path.sep;
+      const base = path.join(proj, "w3");
+      check("59w1 PowerShell 'settings.json.'(끝 점) 덮어쓰기 → ask", g59("PowerShell", { command: 'Set-Content "' + real + '." x' }).decision === "ask", "");
+      check("59w2 폴더 이름 끝 점(.claude.) 덮어쓰기 → ask", g59("PowerShell", { command: 'Set-Content "' + base + sep + ".claude." + sep + 'settings.json" x' }).decision === "ask", "");
+      check("59w3 셸로 새 settings.local.json(끝 점) 만들기 → ask", g59("Bash", { command: 'echo x > "' + newL + '."' }).decision === "ask", "");
+      check("59w4 Write 폴더 이름 끝 점 경로 → ask", Wr(base + sep + ".claude." + sep + "settings.local.json").decision === "ask", "");
+    }
+    mk(plain);
+    const mixed = g59("MultiEdit", { file_path: plain, edits: [{ file_path: newL }] });
+    check("59w5 신뢰 폴더: 일반 파일 덮어쓰기 + 새 보호 파일이 섞인 호출 → ask", mixed.decision === "ask", JSON.stringify(mixed));
+    check("59w6 끝 점 없는 일반 새 파일 → 계속 통과", Wr(path.join(proj, "w3", "note.txt")).decision === null, "");
+  }
+
   try { rmSync(fh, { recursive: true, force: true }); } catch {}
 }
 

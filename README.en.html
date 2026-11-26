@@ -2082,8 +2082,8 @@ deletion, system deletion) stays on at every level, secret files
 blocks the action. Fewer prompts does not mean fewer safeguards — the
 underlying protections are unchanged.</p>
 <hr />
-<p><strong>Q22. What does "308 self-tests passing" mean?</strong></p>
-<p>A: During development, SoDamHarness ran 308 test cases (blocking
+<p><strong>Q22. What does "314 self-tests passing" mean?</strong></p>
+<p>A: During development, SoDamHarness ran 314 test cases (blocking
 dangerous actions, backups, undo, edge cases, adversarial bypass
 attempts, file move/rename protection, <code>git commit</code>
 secret-file checks, and the wizard's L1/L2/L3 behavior) and all of them
@@ -2117,7 +2117,7 @@ files is also confirmed. Ordinary files and the AI's memory files get
 <strong>no extra prompts.</strong> The settings-folder location follows
 the <code>CLAUDE_CONFIG_DIR</code> environment variable, and the
 exception list's never-unlockable set follows it too.</li>
-<li><strong>All 308 self-tests pass</strong> (42 new in this release,
+<li><strong>All 314 self-tests pass</strong> (48 new in this release,
 zero regressions).</li>
 </ul>
 <h3
@@ -2638,7 +2638,7 @@ verified. Please report any Mac-specific issues to the developer.</li>
 unit (which is exactly why whole-folder deletion is blocked
 instead).</li>
 <li>A full disk or missing permissions can cause a backup to fail.</li>
-<li><strong>308/308 self-tests passing</strong> as of the current
+<li><strong>314/314 self-tests passing</strong> as of the current
 release — all known test cases pass (including adversarial bypass
 attempts, file move/rename protection, and the custom wizard's L1/L2/L3
 levels). This confirms the core features work as intended — it does not
@@ -2662,7 +2662,7 @@ only for people who want to open or modify the code.</p>
 <p>From the repository folder, run:</p>
 <pre><code>node hooks/_selftest.mjs</code></pre>
 <p>On success the last line reads something like
-<code>결과: 308 PASS / 0 FAIL</code> (the number may differ by version —
+<code>결과: 314 PASS / 0 FAIL</code> (the number may differ by version —
 "결과" means "result"). If even one test fails, it means a regression
 was introduced into the safety logic — do not ship the change.</p>
 <h3 id="build">Build</h3>

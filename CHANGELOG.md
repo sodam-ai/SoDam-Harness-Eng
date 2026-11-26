@@ -22,8 +22,12 @@
   L3로 만들거나 신뢰 목록을 만들어 스스로 완화하는 틈) ⑥ **어느 폴더든** `.claude/settings.json`·`settings.local.json`
   (훅·권한·`disableAllHooks`)도 확인(git 저장소 안이면 조용히 통과했음). 지적 1건은 해당 없음(대상 경로는 이미
   `resolveLoose`를 거친 절대경로). `plugins`·`hooks` 폴더 트리는 마찰을 막기 위해 '있는 파일'만 대상.
-- **검증**: 자가검증 266 → **308 PASS / 0 FAIL**(59번 42개). 지연 시간 0.1.7과 동일 수준, 실제 환경 스모크 정상.
-- **알려진 한계(이번 변경 이전부터, 수정 안 함)**: `tee`·`sed -i`는 쓰기로 인식하지 못함 / AI가 `profile.mjs --set`·`whitelist.mjs --trust-last`를 실행하는 경로는 사용자 동의
+- **3차 자동 보안 리뷰 반영(재현 → 테스트 고정)**: ⑦ 이름 끝에 점·공백을 붙인 경로(`.claude.\settings.json.` — Windows·
+  셸은 진짜 파일에 씀)로 우회 ⑧ 한 호출에 일반 덮어쓰기와 새 보호 파일이 섞이면 확인 생략. 지적 1건(위험 명령의 새 파일
+  경로)은 이미 확인되고 있었음(재현 확인).
+- **검증**: 자가검증 266 → **314 PASS / 0 FAIL**(59번 48개). 지연 시간 0.1.7과 동일 수준, 실제 환경 스모크 정상.
+- **알려진 한계(이번 변경 이전부터, 수정 안 함)**: `tee`·`sed -i`·`curl -o`는 쓰기로 인식하지 못함(어떤 파일이든
+  백업·확인 없음) / AI가 `profile.mjs --set`·`whitelist.mjs --trust-last`를 실행하는 경로는 사용자 동의
   흐름의 설계상 가드가 판별하지 못함 / 8.3 짧은 이름·하드링크(BV-7).
 - 관련: `hooks/guard.mjs`(`isNeverAutoAskTarget`·`activeConfigDirs`), `hooks/_selftest.mjs` 59번, README 7·8·10-1,
   `commands/status.md`(백업 보관 안내 50개·14일 → 실제 값 100개·30일 정정), `data/safety-rules.json`(개인 규칙 파일 위치 안내 정정)
