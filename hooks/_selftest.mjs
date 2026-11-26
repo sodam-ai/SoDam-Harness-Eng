@@ -4,7 +4,7 @@
 // 주의: guard는 명령을 절대 실행하지 않는다(검사만). 임시 파일/폴더는 테스트가 직접 만들고 지운다.
 
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, readdirSync, utimesSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, readdirSync, utimesSync, symlinkSync } from "node:fs";
 import { tmpdir, homedir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -48,6 +48,9 @@ writeFileSync(aFile, "hello");
 const aDir = path.join(work, "folder1");
 mkdirSync(aDir, { recursive: true });
 const sysFile = WIN ? "C:\\Windows\\sdh_x.txt" : "/etc/sdh_x.txt";
+// [BV-1] 예외 목록(allowlist) 기본 경로를 "없는 파일"로 고정 — 사용자가 진짜 ~/.sodamharness/allowlist.json을
+// 만들어 둬도 기존 테스트가 영향받지 않게(재현성). 58번만 자기 예외 파일을 따로 주입한다.
+process.env.SODAM_ALLOWLIST_FILE = path.join(work, "no-allowlist-global.json");
 
 console.log("SoDamHarness guard 자가 테스트");
 
@@ -1380,6 +1383,236 @@ if (WIN) {
 
   try { rmSync(skWork, { recursive: true, force: true }); } catch {}
   try { rmSync(bp57.dir, { recursive: true, force: true }); } catch {}
+}
+
+// 58) [신규·2026-11-26 BV-1] deny 축 예외 목록(allowlist) — 14_GUARD_ARCHITECTURE_REDESIGN.md §2-4-1이 정본.
+//     예외 목록은 "민감위치 deny" 한 단계만 건너뛴다. 치명·폴더재귀삭제·백업·ask는 그대로여야 하고,
+//     자기보호 대상(settings.json·plugins·hooks·자격증명·시스템·예외파일 자신)은 목록에 적어도 영구 deny.
+//     파일 없음/깨짐/타입오류/무효 항목 = 예외 0개(fail-closed). 진짜 홈 폴더는 건드리지 않도록
+//     USERPROFILE/HOME을 임시 가짜 홈으로 바꿔 실행한다(백업·보류·신뢰 파일도 전부 가짜 홈/임시 경로).
+{
+  const fakeHome = mkdtempSync(path.join(tmpdir(), "sdh-fakehome-"));
+  const claudeDir = path.join(fakeHome, ".claude");
+  const configDir = path.join(fakeHome, ".config");
+  mkdirSync(claudeDir, { recursive: true });
+  mkdirSync(configDir, { recursive: true });
+  const zone = path.join(claudeDir, "sdh-zone");
+  const P = (...p) => path.join(zone, ...p);
+  const noAl = path.join(work, "al-none.json"); // 만들지 않는 경로 = 예외 파일 없음
+  const g58 = (tool, input, al, name = "al-main.json") => {
+    let alFile = noAl;
+    if (al !== undefined) {
+      alFile = path.join(work, name);
+      writeFileSync(alFile, typeof al === "string" ? al : JSON.stringify(al));
+    }
+    const r = spawnSync(process.execPath, [GUARD], {
+      input: JSON.stringify({ tool_name: tool, tool_input: input, cwd: work }),
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        USERPROFILE: fakeHome,
+        HOME: fakeHome,
+        SODAM_ALLOWLIST_FILE: alFile,
+        SODAM_BACKUPS_ROOT: path.join(fakeHome, "bk"),
+        SODAM_WHITELIST_FILE: path.join(fakeHome, "wl.json"),
+        SODAM_PENDING_FILE: path.join(fakeHome, "pend.json"),
+      },
+    });
+    if (r.status !== 0 && r.status !== null) return { decision: "CRASH", reason: r.stderr || "" };
+    const out = (r.stdout || "").trim();
+    if (!out) return { decision: null, reason: "" };
+    try {
+      const o = JSON.parse(out).hookSpecificOutput || {};
+      return { decision: o.permissionDecision || null, reason: o.permissionDecisionReason || "" };
+    } catch {
+      return { decision: "PARSE_ERROR", reason: out };
+    }
+  };
+  const AL = { version: 1, paths: [zone] };
+  const W = (file, al, name) => g58("Write", { file_path: file, content: "x" }, al, name);
+  const SENS_MSG = "시스템·안전장치"; // 민감위치 deny 메시지에만 들어 있는 문구
+
+  // ── 기본/양성 ──
+  check("58a 예외 파일 없음 → ~/.claude 안 새 파일 쓰기 deny(기존 동작 그대로)", W(P("new.txt")).decision === "deny", "");
+  check("58b 예외 폴더 안 새 파일 Write → 통과", W(P("new.txt"), AL).decision === null, JSON.stringify(W(P("new.txt"), AL)));
+  check("58c 예외 폴더 안 새 파일 셸 리다이렉트 → 통과(셸 경로도 같은 함수)",
+    g58("Bash", { command: `echo x > "${P("new2.txt")}"` }, AL).decision === null, "");
+  check("58d 예외 폴더 밖 형제 경로는 계속 deny", W(path.join(claudeDir, "sdh-other", "n.txt"), AL).decision === "deny", "");
+  check("58e 예외 폴더 안쪽 깊은 하위 경로도 통과(폴더 접두 일치)", W(P("sub", "deep", "n.txt"), AL).decision === null, "");
+  check("58f 이름만 비슷한 폴더(sdh-zone-evil, 구분자 경계 없음)는 deny", W(path.join(claudeDir, "sdh-zone-evil", "n.txt"), AL).decision === "deny", "");
+
+  // ── 영구 제외(hard): 목록에 일부러 다 적어도 절대 안 풀림 ──
+  {
+    const hardTargets = {
+      "settings.json": path.join(claudeDir, "settings.json"),
+      "settings.local.json": path.join(claudeDir, "settings.local.json"),
+      "plugins 폴더(캐시된 가드 코드)": path.join(claudeDir, "plugins", "cache", "x", "guard.mjs"),
+      "hooks 폴더": path.join(claudeDir, "hooks", "guard.mjs"),
+      ".config/claude-code": path.join(configDir, "claude-code", "settings.json"),
+      ".ssh(자격증명)": path.join(fakeHome, ".ssh", "id_x"),
+      ".codex(자격증명)": path.join(fakeHome, ".codex", "auth.json"),
+      "홈 루트 자체": fakeHome,
+      "시스템 폴더": sysFile,
+    };
+    const hardList = {
+      version: 1,
+      paths: [
+        zone,
+        path.join(claudeDir, "settings.json"), path.join(claudeDir, "settings.local.json"),
+        path.join(claudeDir, "plugins"), path.join(claudeDir, "plugins", "cache"),
+        path.join(claudeDir, "hooks"), path.join(configDir, "claude-code"),
+        path.join(fakeHome, ".ssh"), path.join(fakeHome, ".codex"), fakeHome, claudeDir, configDir,
+        path.dirname(sysFile),
+      ],
+    };
+    for (const [label, tgt] of Object.entries(hardTargets)) {
+      check(`58g hard 제외: ${label} → 목록에 적어도 deny`, W(tgt, hardList).decision === "deny", JSON.stringify(W(tgt, hardList)));
+    }
+    check("58g2 같은 목록에서도 정상 항목(zone)은 통과 — 목록 전체가 버려지지 않음", W(P("ok.txt"), hardList).decision === null, "");
+  }
+
+  // ── 예외 파일 자기보호(AI가 자기 deny를 스스로 풀 수 없어야 함) ──
+  {
+    const defAl = path.join(fakeHome, ".sodamharness", "allowlist.json");
+    check("58h-1 기본 위치 allowlist.json에 AI Write → deny", W(defAl, AL).decision === "deny", JSON.stringify(W(defAl, AL)));
+    check("58h-2 기본 위치 allowlist.json에 셸 리다이렉트 → deny", g58("Bash", { command: `echo {} > "${defAl}"` }, AL).decision === "deny", "");
+    const eff = path.join(work, "al-main.json");
+    check("58h-3 실제 읽는(주입) 예외 파일에 AI Write → deny", W(eff, AL).decision === "deny", JSON.stringify(W(eff, AL)));
+  }
+
+  // ── 불변식: 예외는 민감위치 deny '한 단계'만 건너뜀 ──
+  {
+    const rr = g58("Bash", { command: `rm -rf "${P("sub")}"` }, AL);
+    check("58i-1 예외 폴더 안에서도 폴더 재귀삭제는 deny", rr.decision === "deny", JSON.stringify(rr));
+    check("58i-2 …그 이유는 '민감위치'가 아니라 '폴더 통째 삭제' 규칙(예외가 그 규칙을 안 건드림)",
+      rr.decision === "deny" && rr.reason.includes("폴더를 통째로") && !rr.reason.includes(SENS_MSG), rr.reason);
+    const rp = g58("PowerShell", { command: `Remove-Item -Recurse -Force "${P("sub")}"` }, AL);
+    check("58i-3 PowerShell 재귀삭제도 같은 이유로 deny",
+      rp.decision === "deny" && rp.reason.includes("폴더를 통째로") && !rp.reason.includes(SENS_MSG), JSON.stringify(rp));
+    const rc = g58("PowerShell", { command: `Format-Volume -DriveLetter Z; echo x > "${P("c.txt")}"` }, AL);
+    check("58j 치명 명령은 예외 폴더 대상이 섞여 있어도 deny(치명 규칙 유지)",
+      rc.decision === "deny" && rc.reason.includes("되돌릴 수 없는") && !rc.reason.includes(SENS_MSG), JSON.stringify(rc));
+    const rf = g58("Bash", { command: `rm -rf "${P("sub")}"` }, { ...AL, excludes_catastrophic: false, excludes_recursive_delete: false });
+    check("58j2 파일에 'excludes_*: false' 같은 키를 넣어도 무시(불변식은 코드 상수)",
+      rf.decision === "deny" && rf.reason.includes("폴더를 통째로"), JSON.stringify(rf));
+    // 기존 파일 덮어쓰기: 예외가 백업·확인 단계를 없애지 않음
+    mkdirSync(zone, { recursive: true });
+    const exist = P("existing.txt");
+    writeFileSync(exist, "old");
+    const ow = W(exist, AL);
+    check("58k 예외 폴더 안 '기존 파일' 덮어쓰기 → 통과가 아니라 백업 후 ask(다음 안전단계 유지)",
+      ow.decision === "ask" && ow.reason.includes("백업"), JSON.stringify(ow));
+    const rmx = g58("Bash", { command: `rm "${exist}"` }, AL);
+    check("58k2 예외 폴더 안 파일 삭제 → 통과가 아니라 백업 후 ask", rmx.decision === "ask" && rmx.reason.includes("백업"), JSON.stringify(rmx));
+  }
+
+  // ── fail-closed: 파일 상태가 이상하면 예외 0개 ──
+  check("58l 예외 파일 JSON 깨짐 → deny", W(P("n.txt"), "{ not valid json !!").decision === "deny", "");
+  check("58l2 예외 파일 비어 있음 → deny", W(P("n.txt"), "").decision === "deny", "");
+  check("58l3 최상위가 배열(스키마 위반) → deny", W(P("n.txt"), [zone]).decision === "deny", "");
+  check("58l4 paths가 문자열(타입 이상) → deny", W(P("n.txt"), { version: 1, paths: zone }).decision === "deny", "");
+  check("58l5 paths 안이 전부 비문자열 → deny", W(P("n.txt"), { version: 1, paths: [123, null, {}, [zone]] }).decision === "deny", "");
+  check("58l6 version 없음 → deny(스키마 버전 필수)", W(P("n.txt"), { paths: [zone] }).decision === "deny", "");
+  check("58l7 version이 모르는 값(2) → deny", W(P("n.txt"), { version: 2, paths: [zone] }).decision === "deny", "");
+  // ── 무효 항목은 '조용히 풀리는' 쪽이 아니라 '안 풀리는' 쪽 ──
+  check("58m 글롭(*) 항목 → 무효 → deny", W(P("n.txt"), { version: 1, paths: [path.join(zone, "*")] }).decision === "deny", "");
+  check("58m2 상대경로 항목 → 무효 → deny", W(P("n.txt"), { version: 1, paths: [path.join(".claude", "sdh-zone")] }).decision === "deny", "");
+  check("58m3 '..' 포함 항목 → 무효 → deny", W(P("n.txt"), { version: 1, paths: [`${claudeDir}${path.sep}other${path.sep}..${path.sep}sdh-zone`] }).decision === "deny", ""); // path.join은 '..'를 미리 지워 버리므로 문자열로 직접 조립
+  check("58m4 ~/.claude 폴더 통째 항목 → 무효(안쪽 하위 경로만 허용) → deny", W(P("n.txt"), { version: 1, paths: [claudeDir] }).decision === "deny", "");
+  check("58m5 ~/.config 폴더 통째 항목 → 무효 → deny", W(path.join(configDir, "x", "n.txt"), { version: 1, paths: [configDir] }).decision === "deny", "");
+  check("58m6 .claude/.config 밖 경로(~/.ssh 안쪽) 항목 → 무효 → deny", W(path.join(fakeHome, ".ssh", "sub", "n.txt"), { version: 1, paths: [path.join(fakeHome, ".ssh", "sub")] }).decision === "deny", "");
+  check("58m7 .config 안쪽 정상 항목은 통과", W(path.join(configDir, "myapp", "n.txt"), { version: 1, paths: [path.join(configDir, "myapp")] }).decision === null, "");
+
+  // ── junction/심볼릭 링크로 hard 위치를 가리키는 우회 ──
+  {
+    const sshDir = path.join(fakeHome, ".ssh");
+    mkdirSync(sshDir, { recursive: true });
+    writeFileSync(path.join(sshDir, "exist.txt"), "k");
+    const link = P("evil");
+    let linked = false;
+    try {
+      mkdirSync(zone, { recursive: true });
+      symlinkSync(sshDir, link, WIN ? "junction" : "dir");
+      linked = existsSync(link);
+    } catch {}
+    if (linked) {
+      check("58n 예외 폴더 안 링크→.ssh: 새 파일 쓰기 → deny(realpath 재검사)", W(path.join(link, "new.txt"), AL).decision === "deny", JSON.stringify(W(path.join(link, "new.txt"), AL)));
+      check("58n2 예외 폴더 안 링크→.ssh: 기존 파일 쓰기 → deny", W(path.join(link, "exist.txt"), AL).decision === "deny", "");
+      try { rmSync(link, { force: true }); } catch {}
+    } else {
+      console.log("  SKIP  58n junction/symlink (생성 불가 환경)");
+    }
+  }
+
+  // ── [독립 보안 리뷰 반영·2026-11-26] 우회 3종: 예외 파일 자기보호 우회 / 링크로 연결된 영구제외 / 깊은 경로 fail-open ──
+  {
+    const makeLink = (target, link) => {
+      try {
+        symlinkSync(target, link, WIN ? "junction" : "dir");
+        return existsSync(link);
+      } catch {
+        return false;
+      }
+    };
+    // (1) 예외 파일: NTFS 스트림(::$DATA)·부모 junction 경유로 AI가 자기 예외 파일을 만들 수 없어야 함
+    const sodamDir = path.join(fakeHome, ".sodamharness");
+    mkdirSync(sodamDir, { recursive: true });
+    const defAl2 = path.join(sodamDir, "allowlist.json");
+    if (WIN) {
+      check("58o-1 allowlist.json::$DATA(NTFS 스트림 이름) Write → deny", W(defAl2 + "::$DATA", AL).decision === "deny", JSON.stringify(W(defAl2 + "::$DATA", AL)));
+      check("58o-2 allowlist.json::$DATA — 예외 파일이 없는 기본 상태에서도 deny", W(defAl2 + "::$DATA").decision === "deny", "");
+    }
+    const viaDir = path.join(fakeHome, "sdh-via");
+    mkdirSync(viaDir, { recursive: true });
+    if (makeLink(sodamDir, path.join(viaDir, "lnk"))) {
+      check("58o-3 부모 junction(→~/.sodamharness) 경유 allowlist.json Write → deny", W(path.join(viaDir, "lnk", "allowlist.json"), AL).decision === "deny", JSON.stringify(W(path.join(viaDir, "lnk", "allowlist.json"), AL)));
+      check("58o-4 같은 우회, 예외 파일이 없는 기본 상태에서도 deny", W(path.join(viaDir, "lnk", "allowlist.json")).decision === "deny", "");
+      try { rmSync(path.join(viaDir, "lnk"), { force: true }); } catch {}
+    } else {
+      console.log("  SKIP  58o-3/4 junction (생성 불가 환경)");
+    }
+    // (2) 영구 제외 폴더가 링크면, 링크가 가리키는 '진짜 위치'도 영구 제외여야 함
+    mkdirSync(zone, { recursive: true });
+    const realHooks = P("myhooks");
+    mkdirSync(realHooks, { recursive: true });
+    const hooksLink = path.join(claudeDir, "hooks");
+    if (makeLink(realHooks, hooksLink)) {
+      check("58p-1 ~/.claude/hooks가 링크 → 진짜 위치(zone/myhooks)에 쓰기 → 예외 폴더(zone)가 있어도 deny",
+        W(path.join(realHooks, "h.mjs"), AL).decision === "deny", JSON.stringify(W(path.join(realHooks, "h.mjs"), AL)));
+      check("58p-2 항목으로 ~/.claude/hooks를 직접 적어도(진짜 위치가 영구 제외) → deny",
+        W(path.join(realHooks, "h.mjs"), { version: 1, paths: [hooksLink] }).decision === "deny", "");
+      check("58p-3 같은 zone의 다른 정상 경로는 계속 통과", W(P("fine.txt"), AL).decision === null, "");
+      try { rmSync(hooksLink, { force: true }); } catch {}
+    } else {
+      console.log("  SKIP  58p junction (생성 불가 환경)");
+    }
+    // (3) 존재하지 않는 아주 깊은 경로(64단계 초과)에서 링크 해석을 포기하고 통과시키면 안 됨
+    const pluginsDir = path.join(claudeDir, "plugins");
+    mkdirSync(pluginsDir, { recursive: true });
+    const deepLink = P("j2");
+    if (makeLink(pluginsDir, deepLink)) {
+      const deep = path.join(deepLink, ...Array(70).fill("a"), "x.json");
+      check("58q 링크(→plugins) 뒤 70단계 깊은 새 경로 → deny(링크 해석 포기 = fail-open 금지)", W(deep, AL).decision === "deny", JSON.stringify(W(deep, AL)));
+      try { rmSync(deepLink, { force: true }); } catch {}
+    } else {
+      console.log("  SKIP  58q junction (생성 불가 환경)");
+    }
+  }
+
+  // ── [독립 재검토 반영] 성능·fail-closed 고정: 깊고 없는 경로가 많아도 치명 deny까지 빨리 도달해야 함 ──
+  {
+    const deepP = (i) => `x${i}/` + "d/".repeat(300);
+    const cmd = `rm -rf ${Array.from({ length: 10 }, (_, i) => deepP(i)).join(" ")} ~`;
+    const t0 = Date.now();
+    const rr = g58("Bash", { command: cmd }, undefined);
+    const ms = Date.now() - t0;
+    // 수정 전 약 16초(훅 타임아웃 30초에 근접 → 타임아웃되면 deny가 무력화될 수 있음), 원본·수정 후 0.2초 안팎
+    check("58r 깊고 없는 경로 10개 + 홈 삭제 → deny이고 8초 안에 판정(타임아웃 근접 금지)", rr.decision === "deny" && ms < 8000, `${ms}ms ${JSON.stringify(rr)}`);
+    const deepAl = path.join(fakeHome, "w", ...Array(70).fill("a"), "allowlist.json");
+    check("58r2 예외 파일 이름인데 비정상적으로 깊은 경로 → 해석 포기 대신 deny(fail-closed)", W(deepAl, AL).decision === "deny", JSON.stringify(W(deepAl, AL)));
+  }
+
+  try { rmSync(fakeHome, { recursive: true, force: true }); } catch {}
 }
 
 // 테스트로 만든 백업/임시폴더 정리(사용자 백업 오염 최소화)

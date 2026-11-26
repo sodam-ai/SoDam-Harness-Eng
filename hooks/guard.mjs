@@ -309,6 +309,10 @@ function isSensitiveRaw(absInput) {
   }
   const a = toComparable(abs);
 
+  // [2026-11-26 BV-1] 예외 목록 파일 자신은 항상 민감 — AI가 자기 deny를 스스로 풀 수 없게 보호
+  // (settings.json과 같은 등급·텍스트 기반이라 사고 방지용이지 악의적 우회 방지용은 아님, §8.8)
+  if (isAllowlistFilePath(abs, a)) return true;
+
   // Context 처방 예외 — ~/.claude/CLAUDE.md · AGENTS.md 는 Context가 처방하는 대상 파일.
   // settings.json 등 나머지 .claude/* 는 여전히 차단 (C1 보안 원칙).
   if (
@@ -522,6 +526,143 @@ function loadExtraRules() {
   return acc;
 }
 const EXTRA = loadExtraRules(); // 모듈 로드 시 1회(매 훅 호출마다 새 프로세스라 사용자 편집을 바로 반영)
+
+// ── [2026-11-26 BV-1] deny 축 예외 목록(allowlist) — 설계 정본: .PRD/14_GUARD_ARCHITECTURE_REDESIGN.md §2-4-1 ──
+// 사용자가 직접 승인한 경로만 "민감위치 deny" 한 단계를 건너뛰게 한다. 그 뒤의 치명·폴더재귀삭제·백업·ask·
+// 심볼릭 링크 판정은 전부 그대로 실행된다(호출부 코드 순서로 보장). 불변식은 데이터 옵션이 아니라 코드 상수다.
+// 풀 수 있는 곳 = ~/.claude · ~/.config 의 "안쪽 하위 경로"뿐이며, 그 안에서도 자기보호 대상(settings.json·
+// plugins·hooks·.config/claude-code)과 예외 파일 자신은 영구 제외. 파일 없음/깨짐/타입오류/무효 항목 = 예외 0개
+// (fail-closed = 지금과 동일하게 deny). 이 파일은 isSensitiveRaw()가 보호하므로 AI는 못 쓰고 사용자만 편집한다.
+const ALLOWLIST_DEFAULT = path.join(homedir(), ".sodamharness", "allowlist.json");
+const ALLOWLIST_FILE = process.env.SODAM_ALLOWLIST_FILE || ALLOWLIST_DEFAULT; // 테스트 주입(SODAM_RULES_FILE과 같은 신뢰 모델)
+
+// 홈 경로의 "글자 그대로"와 "실제(realpath)" 두 형태 — Windows 8.3 짧은 이름·링크 홈에서도 같은 곳으로 판정
+let HOME_VARIANTS = null; // 훅은 호출마다 새 프로세스라 1회 계산이면 충분(경로마다 realpath를 반복하면 느려짐)
+function homeVariants() {
+  if (HOME_VARIANTS) return HOME_VARIANTS;
+  const h = homedir();
+  const out = [h];
+  const r = realOf(h);
+  if (r && toComparable(r) !== toComparable(h)) out.push(r);
+  HOME_VARIANTS = out;
+  return out;
+}
+// 경로의 실제 위치를 비교용 문자열로 — 존재하는 가장 깊은 조상을 realpath로 풀고 나머지 이름을 붙인다
+// (junction/심볼릭 링크를 따라간 결과가 나오며, 아직 없는 새 파일 경로도 일관되게 처리됨)
+// 끝까지 못 풀면(깊이 초과·루트까지 없음) null — 호출부는 null을 "예외 없음(deny 유지)"으로 처리한다(fail-closed).
+const CANON_CACHE = new Map(); // 영구 제외 경로·예외 파일처럼 같은 경로를 여러 번 묻는 경우의 반복 비용 제거
+function canonPath(p) {
+  const key = path.resolve(p);
+  if (CANON_CACHE.has(key)) return CANON_CACHE.get(key);
+  const v = canonPathUncached(key);
+  CANON_CACHE.set(key, v);
+  return v;
+}
+function canonPathUncached(p) {
+  let cur = path.resolve(p);
+  const tail = [];
+  for (let i = 0; i < 64; i++) {
+    const r = realOf(cur);
+    if (r) return toComparable(tail.length ? path.join(r, ...tail.reverse()) : r);
+    const parent = path.dirname(cur);
+    if (parent === cur) return null;
+    tail.push(path.basename(cur));
+    cur = parent;
+  }
+  return null;
+}
+// 예외 파일 자신인가? — 글자 일치 + NTFS 대체 스트림(file::$DATA)·후행 점/공백 제거 + 부모 junction/링크를 따라간
+// 실제 위치 일치까지 본다(이름만 비교하면 링크·스트림 이름으로 AI가 자기 예외 파일을 만들 수 있음 — 리뷰 지적).
+// abs = 절대경로(글자 보존), a = toComparable(abs)
+function isAllowlistFilePath(abs, a) {
+  const strip = (s) => (WIN ? s.replace(/:[^\\]*$/, "").replace(/[. ]+$/, "") : s);
+  const files = [ALLOWLIST_DEFAULT, ALLOWLIST_FILE];
+  const s = strip(a);
+  if (files.some((p) => s === toComparable(p))) return true;
+  // 비용 가드(독립 재검토 지적 — 안 두면 깊고 없는 경로 여러 개가 섞인 명령에서 훅이 타임아웃까지 느려져
+  // 뒤쪽 치명 deny에 도달 못 할 수 있음): 링크를 따라가는 비싼 해석은 마지막 이름이 예외 파일 이름과 같을 때만.
+  if (!files.some((p) => path.basename(s) === toComparable(path.basename(p)))) return false;
+  if (s.split(path.sep).length > 64) return true; // 이름이 같은데 비정상적으로 깊음 → 해석 포기 대신 보호 쪽(fail-closed)
+  const c = canonPath(strip(path.resolve(abs)));
+  if (c === null) return false;
+  return files.some((p) => {
+    const cp = canonPath(p);
+    return cp !== null && c === cp;
+  });
+}
+// 풀 수 있는 구역 = ~/.claude · ~/.config "안쪽"(그 폴더 자체는 제외)
+function insideSoftZone(a) {
+  for (const h of homeVariants()) {
+    for (const d of [".claude", ".config"]) {
+      const z = toComparable(path.join(h, d));
+      if (a.startsWith(z + path.sep)) return true;
+    }
+  }
+  return false;
+}
+// 구역 안이라도 영구 제외: 안전장치 자신을 끄거나 바꿀 수 있는 곳
+function isSelfProtectPath(a) {
+  for (const h of homeVariants()) {
+    const exact = [path.join(h, ".claude", "settings.json"), path.join(h, ".claude", "settings.local.json")];
+    const trees = [path.join(h, ".claude", "plugins"), path.join(h, ".claude", "hooks"), path.join(h, ".config", "claude-code")];
+    // 이름만이 아니라 "진짜 그 파일/폴더"를 지킨다 — settings.json이 dotfiles 링크이거나 hooks가 junction이면
+    // 링크가 가리키는 실제 위치도 영구 제외(canonPath 변형 포함, 리뷰 지적)
+    for (const p of exact) {
+      for (const v of [toComparable(p), canonPath(p)]) if (v !== null && a === v) return true;
+    }
+    for (const p of trees) {
+      for (const t of [toComparable(p), canonPath(p)]) {
+        if (t !== null && (a === t || a.startsWith(t + path.sep))) return true;
+      }
+    }
+  }
+  return false;
+}
+// a = toComparable 형태. 풀 수 있는 구역 밖이거나 자기보호 대상이거나 예외 파일 자신이면 영구 제외(hard)
+function isHardProtected(a) {
+  for (const p of [ALLOWLIST_DEFAULT, ALLOWLIST_FILE]) {
+    if (a === toComparable(p)) return true;
+    const cp = canonPath(p);
+    if (cp !== null && a === cp) return true;
+  }
+  if (!insideSoftZone(a)) return true;
+  return isSelfProtectPath(a);
+}
+// 예외 목록 읽기 — 검증을 통과한 항목만 비교용 경로로 반환. 어디서든 이상하면 빈 배열(fail-closed)
+function loadAllowlist() {
+  const out = [];
+  const j = readRulesFile(ALLOWLIST_FILE); // 없음/깨짐/빈 파일 = null
+  if (!j || typeof j !== "object" || Array.isArray(j) || j.version !== 1 || !Array.isArray(j.paths)) return out;
+  for (const e of j.paths) {
+    if (typeof e !== "string" || !e || e.includes("\0")) continue;
+    if (/[*?[\]{}]/.test(e)) continue; // 글롭 금지(의도보다 넓게 풀릴 수 있음)
+    if (!path.isAbsolute(e)) continue; // 상대경로 금지
+    if (e.split(/[\\/]+/).includes("..")) continue; // '..' 금지
+    const c = canonPath(e);
+    if (c === null || !insideSoftZone(c)) continue; // ~/.claude·~/.config 안쪽 하위 경로만(폴더 통째·구역 밖·해석 불가 무효)
+    if (isHardProtected(c) || isHardProtected(toComparable(path.resolve(e)))) continue; // 자기보호 대상 항목은 무효
+    out.push(c);
+  }
+  return out;
+}
+// 이 경로의 "민감위치 deny"를 건너뛰어도 되는가? (호출부는 isSensitive(abs)가 참일 때만 부른다)
+function allowlistPermits(abs) {
+  try {
+    const entries = loadAllowlist();
+    if (entries.length === 0) return false;
+    if (abs.split(/[\\/]+/).length > 64) return false; // 비정상적으로 깊은 경로는 해석하지 않고 예외 없음(deny 유지)
+    // 마지막 이름이 링크면(끊어진 링크 포함) 링크를 통해 구역 밖에 쓰게 될 수 있어 불허
+    try {
+      if (lstatSync(abs).isSymbolicLink()) return false;
+    } catch {}
+    if (isHardProtected(toComparable(path.resolve(abs)))) return false; // 글자 그대로의 경로
+    const c = canonPath(abs); // 링크·junction을 따라간 실제 경로(해석 불가면 null → 예외 없음)
+    if (c === null || isHardProtected(c)) return false;
+    return entries.some((e) => c === e || c.startsWith(e + path.sep));
+  } catch {
+    return false; // 예기치 못한 오류 → 예외 없음(deny 유지)
+  }
+}
 
 // ── 맞춤 마법사 설정 로드 (기본 L1=현재 동작과 100% 동일) ──
 // 불변: 이 값은 ask 빈도만 바꾼다. deny(치명·민감위치·폴더재귀삭제)·백업은 레벨과 무관하게 항상 그대로.
@@ -881,7 +1022,7 @@ function main() {
 
     // 민감 위치 차단: 삭제계열 경로 + 모든 쓰기 대상(새 파일이어도 시스템 위치엔 쓰기 금지)
     for (const ap of [...delPaths, ...dests]) {
-      if (isSensitive(ap)) {
+      if (isSensitive(ap) && !allowlistPermits(ap)) { // [BV-1] 예외는 이 한 단계만 건너뜀 — 아래 치명·재귀삭제·백업·ask는 그대로
         decide(
           "deny",
           "이 위치엔 시스템·안전장치 설정이 들어 있어 AI가 직접 건드리지 못해요. 꼭 필요하면 파일을 직접 열어 확인 후 처리하세요 — 안전장치는 그대로 유지돼요.",
@@ -966,7 +1107,7 @@ function main() {
   const targets = writeTargets(ti);
   for (const t of targets) {
     const abs = resolveLoose(cwd, t);
-    if (isSensitive(abs)) {
+    if (isSensitive(abs) && !allowlistPermits(abs)) { // [BV-1] 같은 함수로 셸 경로와 일관되게 처리
       decide("deny", "이 파일엔 시스템·안전장치 설정이 들어 있어 AI가 직접 못 바꿔요. 꼭 바꿔야 하면 파일을 직접 열어 확실한 부분만 바꾸세요 — 안전장치는 그대로 유지돼요.");
       return;
     }
